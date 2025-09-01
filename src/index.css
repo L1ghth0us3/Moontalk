@@ -92,6 +92,10 @@ body.theme-fantasy .sub-panel {
   background: #f8f1e4;
   border-color: #d7c5a1;
 }
+/* Finite table odd/even rows (fantasy) */
+body.theme-fantasy .finite-table thead { background-color: #efe6d6; }
+body.theme-fantasy .finite-table tbody tr.row-odd { background-color: #fdfaf4; }
+body.theme-fantasy .finite-table tbody tr.row-even { background-color: #f6f1e8; }
 
 /* Inputs */
 body.theme-fantasy input, body.theme-fantasy textarea, body.theme-fantasy select {
@@ -113,6 +117,10 @@ body.theme-plain .sub-panel {
   background: #ffffff;
   border-color: #e5e7eb;
 }
+/* Finite table (plain) */
+body.theme-plain .finite-table thead { background-color: #f8fafc; }
+body.theme-plain .finite-table tbody tr.row-odd { background-color: #ffffff; }
+body.theme-plain .finite-table tbody tr.row-even { background-color: #f9fafb; }
 body.theme-plain button {
   border-radius: 8px;
   border: 1px solid #e5e7eb;
@@ -135,6 +143,11 @@ body.theme-dark .sub-panel {
   background: #191823;
   border-color: #3a3345;
 }
+/* Finite table (dark) */
+body.theme-dark .finite-table thead { background-color: #23222b; }
+body.theme-dark .finite-table tbody tr.row-odd { background-color: #1f1e26; }
+body.theme-dark .finite-table tbody tr.row-even { background-color: #191823; }
+body.theme-dark .finite-table th, body.theme-dark .finite-table td { color: #eae6df; }
 body.theme-dark .fantasy-card h2,
 body.theme-dark .fantasy-card h3 {
   font-family: Georgia, "Times New Roman", Times, serif;
