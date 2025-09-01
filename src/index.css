@@ -27,14 +27,13 @@ a:hover {
 body { margin: 0; min-width: 320px; min-height: 100vh; }
 
 /* Fantasy theme */
+/* Dracula-inspired fantasy theme */
 body.theme-fantasy {
-  color: #2b2116;
-  background-color: #f2eadf;
+  color: #f8f8f2;              /* Foreground */
+  background-color: #282a36;   /* Background */
   background-image:
-    radial-gradient(ellipse at top left, rgba(139,94,52,0.05), transparent 60%),
-    radial-gradient(ellipse at bottom right, rgba(166,124,82,0.06), transparent 60%),
-    url('/paper.svg');
-  background-blend-mode: multiply, multiply, normal;
+    radial-gradient(1200px 600px at 10% 0%, rgba(98,114,164,0.14), transparent 60%), /* Comment */
+    radial-gradient(1000px 500px at 100% 100%, rgba(68,71,90,0.20), transparent 60%); /* Current Line */
 }
 /* Plain theme */
 body.theme-plain {
@@ -58,53 +57,54 @@ h1 {
 
 body.theme-fantasy button {
   border-radius: 10px;
-  border: 1px solid #cbb189;
+  border: 1px solid #6272a4;
   padding: 0.6em 1.2em;
   font-size: 1em;
   font-weight: 600;
   font-family: inherit;
-  background-color: #f7efe4;
-  color: #4a3724;
+  background-color: #303246;
+  color: #f8f8f2;
   cursor: pointer;
   transition: background-color 0.2s, box-shadow 0.2s;
   box-shadow: 0 1px 0 rgba(0,0,0,0.04), inset 0 0 0 9999px rgba(255,255,255,0.0);
 }
 body.theme-fantasy button:hover {
-  background-color: #f3e8d8;
+  background-color: #363955;
 }
 body.theme-fantasy button:focus,
 body.theme-fantasy button:focus-visible {
-  outline: 3px solid rgba(166,124,82,0.3);
+  outline: 3px solid rgba(189,147,249,0.45);
   outline-offset: 2px;
 }
 
 /* Fantasy cards */
 body.theme-fantasy .fantasy-card {
-  background: #fbf7ef;
-  border-color: #d7c5a1 !important;
-  box-shadow: 0 2px 0 rgba(0,0,0,0.05), inset 0 0 0 9999px rgba(255,255,255,0.02);
+  background: #2b2d3a;
+  border-color: #44475a !important;
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.02) inset;
 }
 body.theme-fantasy .fantasy-card h2 {
   font-family: Georgia, "Times New Roman", Times, serif;
   letter-spacing: 0.02em;
 }
 body.theme-fantasy .sub-panel {
-  background: #f8f1e4;
-  border-color: #d7c5a1;
+  background: #1f2230;
+  border-color: #44475a;
 }
 /* Finite table odd/even rows (fantasy) */
-body.theme-fantasy .finite-table thead { background-color: #efe6d6; }
-body.theme-fantasy .finite-table tbody tr.row-odd { background-color: #fdfaf4; }
-body.theme-fantasy .finite-table tbody tr.row-even { background-color: #f6f1e8; }
+body.theme-fantasy .finite-table thead { background-color: #303246; }
+body.theme-fantasy .finite-table tbody tr.row-odd { background-color: #2b2d3a; }
+body.theme-fantasy .finite-table tbody tr.row-even { background-color: #25283a; }
+body.theme-fantasy .finite-table th, body.theme-fantasy .finite-table td { color: #f8f8f2; }
 
 /* Inputs */
 body.theme-fantasy input, body.theme-fantasy textarea, body.theme-fantasy select {
-  background-color: #fffdf8;
-  border-color: #d7c5a1;
-  color: #3a2b1e;
+  background-color: #1e2030;
+  border-color: #44475a;
+  color: #f8f8f2;
 }
 body.theme-fantasy input::placeholder, body.theme-fantasy textarea::placeholder {
-  color: #9f8c72;
+  color: #6272a4;
 }
 
 /* Plain theme neutralize fantasy-card */
