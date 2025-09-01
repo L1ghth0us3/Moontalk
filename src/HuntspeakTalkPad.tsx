@@ -206,15 +206,15 @@ export default function HuntspeakTalkPad() {
       <div className="grid grid-cols-1 lg:grid-cols-4 2xl:grid-cols-5 gap-6">
         {/* Left rail: Lexicon */}
         <aside className="lg:col-span-1 space-y-6">
-          <section className="rounded-3xl border border-neutral-200 p-4 shadow-sm">
+          <section className="rounded-3xl border border-neutral-200 p-4 shadow-sm overflow-hidden">
             <h2 className="text-lg font-semibold mb-3">Verb Roots</h2>
             <RootCreator onCreate={addRoot} />
             <div className="mt-3 max-h-[20rem] overflow-y-auto space-y-2 pr-1">
               {roots.map(r => (
                 <button key={r.id} onClick={() => setSelectedId(r.id)} className={`w-full text-left px-3 py-2 rounded-xl border ${selectedId === r.id ? "border-blue-500 bg-blue-50" : "border-neutral-200 hover:bg-neutral-50"}`}>
-                  <div className="flex items-center justify-between">
-                    <div className="font-semibold text-lg">{[r.c1, r.c2, r.c3].join("-")}</div>
-                    <div className="text-xs text-neutral-500 truncate max-w-[10rem]">{r.gloss || "(no gloss)"}</div>
+                  <div className="flex items-center justify-between gap-2 min-w-0">
+                    <div className="font-semibold text-lg shrink-0">{[r.c1, r.c2, r.c3].join("-")}</div>
+                    <div className="text-xs text-neutral-500 truncate flex-1 min-w-0 text-right">{r.gloss || "(no gloss)"}</div>
                   </div>
                 </button>
               ))}
@@ -224,11 +224,11 @@ export default function HuntspeakTalkPad() {
             {selected && (
               <div className="mt-4 space-y-2">
                 <h3 className="text-sm font-semibold">Edit selected</h3>
-                <div className="grid grid-cols-4 gap-2">
-                  <input className="px-2 py-1 rounded-lg border border-neutral-300" value={selected.c1} onChange={e => updateRoot(selected.id, { c1: e.target.value })} />
-                  <input className="px-2 py-1 rounded-lg border border-neutral-300" value={selected.c2} onChange={e => updateRoot(selected.id, { c2: e.target.value })} />
-                  <input className="px-2 py-1 rounded-lg border border-neutral-300" value={selected.c3} onChange={e => updateRoot(selected.id, { c3: e.target.value })} />
-                  <button onClick={() => deleteRoot(selected.id)} className="px-2 py-1 rounded-lg border border-red-300 text-red-600 hover:bg-red-50">Delete</button>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  <input className="w-full min-w-0 px-2 py-1 rounded-lg border border-neutral-300" value={selected.c1} onChange={e => updateRoot(selected.id, { c1: e.target.value })} />
+                  <input className="w-full min-w-0 px-2 py-1 rounded-lg border border-neutral-300" value={selected.c2} onChange={e => updateRoot(selected.id, { c2: e.target.value })} />
+                  <input className="w-full min-w-0 px-2 py-1 rounded-lg border border-neutral-300" value={selected.c3} onChange={e => updateRoot(selected.id, { c3: e.target.value })} />
+                  <button onClick={() => deleteRoot(selected.id)} className="w-full md:w-auto px-2 py-1 rounded-lg border border-red-300 text-red-600 hover:bg-red-50">Delete</button>
                 </div>
                 <input className="w-full px-2 py-1 rounded-lg border border-neutral-300" placeholder="gloss" value={selected.gloss} onChange={e => updateRoot(selected.id, { gloss: e.target.value })} />
                 <input
@@ -257,7 +257,7 @@ export default function HuntspeakTalkPad() {
             </div>
           </section>
 
-          <section className="rounded-3xl border border-neutral-200 p-4 shadow-sm">
+          <section className="rounded-3xl border border-neutral-200 p-4 shadow-sm overflow-hidden">
             <h2 className="text-lg font-semibold mb-3">Nouns</h2>
             <NounCreator onCreate={addNoun} />
             <div className="mt-3 max-h-[20rem] overflow-y-auto space-y-2 pr-1">
@@ -269,9 +269,9 @@ export default function HuntspeakTalkPad() {
                     selectedNounId === n.id ? "border-blue-500 bg-blue-50" : "border-neutral-200 hover:bg-neutral-50"
                   }`}
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="font-semibold text-lg">{n.word}</div>
-                    <div className="text-xs text-neutral-500 truncate max-w-[10rem]">{n.gloss || "(no gloss)"}</div>
+                  <div className="flex items-center justify-between gap-2 min-w-0">
+                    <div className="font-semibold text-lg truncate max-w-full">{n.word}</div>
+                    <div className="text-xs text-neutral-500 truncate flex-1 min-w-0 text-right">{n.gloss || "(no gloss)"}</div>
                   </div>
                 </button>
               ))}
@@ -280,16 +280,16 @@ export default function HuntspeakTalkPad() {
             {selectedNoun && (
               <div className="mt-4 space-y-2">
                 <h3 className="text-sm font-semibold">Edit selected</h3>
-                <div className="grid grid-cols-4 gap-2">
-                  <input className="px-2 py-1 rounded-lg border border-neutral-300"
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  <input className="w-full min-w-0 px-2 py-1 rounded-lg border border-neutral-300"
                          value={selectedNoun.word}
                          onChange={e => updateNoun(selectedNoun.id, { word: e.target.value })} />
-                  <input className="col-span-2 px-2 py-1 rounded-lg border border-neutral-300"
+                  <input className="md:col-span-2 w-full min-w-0 px-2 py-1 rounded-lg border border-neutral-300"
                          placeholder="gloss"
                          value={selectedNoun.gloss}
                          onChange={e => updateNoun(selectedNoun.id, { gloss: e.target.value })} />
                   <button onClick={() => deleteNoun(selectedNoun.id)}
-                          className="px-2 py-1 rounded-lg border border-red-300 text-red-600 hover:bg-red-50">
+                          className="w-full md:w-auto px-2 py-1 rounded-lg border border-red-300 text-red-600 hover:bg-red-50">
                     Delete
                   </button>
                 </div>
@@ -531,16 +531,16 @@ function RootCreator({ onCreate }: { onCreate: (r: Partial<Root>) => void }) {
   const submit = () => { onCreate({ c1, c2, c3, gloss }); setC1(""); setC2(""); setC3(""); setGloss(""); };
   return (
     <div className="rounded-2xl bg-neutral-50 p-3 border border-neutral-200">
-      <div className="grid grid-cols-[repeat(3,auto)_1fr_auto] gap-2 items-center">
-        <input className="h-10 w-[2.5rem] px-2 rounded-lg border border-neutral-300 bg-white text-neutral-900 placeholder-neutral-500 text-center" placeholder="C1" value={c1} onChange={e => setC1(e.target.value)} />
-        <input className="h-10 w-[2.5rem] px-2 rounded-lg border border-neutral-300 bg-white text-neutral-900 placeholder-neutral-500 text-center" placeholder="C2" value={c2} onChange={e => setC2(e.target.value)} />
-        <input className="h-10 w-[2.5rem] px-2 rounded-lg border border-neutral-300 bg-white text-neutral-900 placeholder-neutral-500 text-center" placeholder="C3" value={c3} onChange={e => setC3(e.target.value)} />
-        <input className="h-10 min-w-0 w-full px-3 rounded-lg border border-neutral-300 bg-white text-neutral-900 placeholder-neutral-500" placeholder="gloss (e.g., ‘track; hunt’ )" value={gloss} onChange={e => setGloss(e.target.value)} />
+      <div className="flex flex-wrap items-center gap-2">
+        <input className="h-10 w-12 px-2 rounded-lg border border-neutral-300 bg-white text-neutral-900 placeholder-neutral-500 text-center" placeholder="C1" value={c1} onChange={e => setC1(e.target.value)} />
+        <input className="h-10 w-12 px-2 rounded-lg border border-neutral-300 bg-white text-neutral-900 placeholder-neutral-500 text-center" placeholder="C2" value={c2} onChange={e => setC2(e.target.value)} />
+        <input className="h-10 w-12 px-2 rounded-lg border border-neutral-300 bg-white text-neutral-900 placeholder-neutral-500 text-center" placeholder="C3" value={c3} onChange={e => setC3(e.target.value)} />
+        <input className="h-10 min-w-0 flex-1 px-3 rounded-lg border border-neutral-300 bg-white text-neutral-900 placeholder-neutral-500" placeholder="gloss (e.g., ‘track; hunt’ )" value={gloss} onChange={e => setGloss(e.target.value)} />
         <button
           disabled={disabled}
           onClick={submit}
           aria-label="Add root"
-          className={`h-10 w-10 rounded-xl flex items-center justify-center
+          className={`h-10 w-10 shrink-0 rounded-xl flex items-center justify-center
             ${disabled
               ? "bg-neutral-700 text-neutral-400 cursor-not-allowed"
               : "bg-neutral-900 text-white hover:bg-neutral-800"}`}
@@ -560,14 +560,14 @@ function NounCreator({ onCreate }: { onCreate: (n: Partial<Noun>) => void }) {
 
   return (
     <div className="rounded-2xl bg-neutral-50 p-3 border border-neutral-200">
-      <div className="grid grid-cols-[4rem_4rem_4rem_minmax(10rem,1fr)_2.5rem] gap-2 items-center">
-        <input className="col-span-3 px-2 py-1 rounded-lg border border-neutral-300 bg-white text-neutral-900 placeholder-neutral-500"
+      <div className="flex flex-wrap items-center gap-2">
+        <input className="flex-1 min-w-[8rem] px-2 py-1 rounded-lg border border-neutral-300 bg-white text-neutral-900 placeholder-neutral-500"
                placeholder="noun (e.g., mallūb)" value={word} onChange={e => setWord(e.target.value)} />
-        <input className="col-span-3 px-2 py-1 rounded-lg border border-neutral-300 bg-white text-neutral-900 placeholder-neutral-500"
+        <input className="flex-1 min-w-[10rem] px-2 py-1 rounded-lg border border-neutral-300 bg-white text-neutral-900 placeholder-neutral-500"
                placeholder="gloss (e.g., trap)" value={gloss} onChange={e => setGloss(e.target.value)} />
         <button disabled={disabled}
                 onClick={submit}
-                className={`col-span-1 px-3 py-2 rounded-xl ${disabled ? "border border-neutral-200 text-neutral-400" : "border border-emerald-300 text-emerald-700 hover:bg-emerald-50"}`}>
+                className={`h-10 w-10 shrink-0 rounded-xl ${disabled ? "border border-neutral-200 text-neutral-400" : "border border-emerald-300 text-emerald-700 hover:bg-emerald-50"}`}>
           +
         </button>
       </div>
