@@ -24,10 +24,10 @@ a:hover {
   color: #535bf2;
 }
 
-body {
-  margin: 0;
-  min-width: 320px;
-  min-height: 100vh;
+body { margin: 0; min-width: 320px; min-height: 100vh; }
+
+/* Fantasy theme */
+body.theme-fantasy {
   color: #2b2116;
   background-color: #f2eadf;
   background-image:
@@ -36,13 +36,18 @@ body {
     url('/paper.svg');
   background-blend-mode: multiply, multiply, normal;
 }
+/* Plain theme */
+body.theme-plain {
+  color: #213547;
+  background-color: #ffffff;
+}
 
 h1 {
   font-size: 3.2em;
   line-height: 1.1;
 }
 
-button {
+body.theme-fantasy button {
   border-radius: 10px;
   border: 1px solid #cbb189;
   padding: 0.6em 1.2em;
@@ -55,34 +60,52 @@ button {
   transition: background-color 0.2s, box-shadow 0.2s;
   box-shadow: 0 1px 0 rgba(0,0,0,0.04), inset 0 0 0 9999px rgba(255,255,255,0.0);
 }
-button:hover {
+body.theme-fantasy button:hover {
   background-color: #f3e8d8;
 }
-button:focus,
-button:focus-visible {
+body.theme-fantasy button:focus,
+body.theme-fantasy button:focus-visible {
   outline: 3px solid rgba(166,124,82,0.3);
   outline-offset: 2px;
 }
 
 /* Fantasy cards */
-.fantasy-card {
+body.theme-fantasy .fantasy-card {
   background: #fbf7ef;
   border-color: #d7c5a1 !important;
   box-shadow: 0 2px 0 rgba(0,0,0,0.05), inset 0 0 0 9999px rgba(255,255,255,0.02);
 }
-.fantasy-card h2 {
+body.theme-fantasy .fantasy-card h2 {
   font-family: Georgia, "Times New Roman", Times, serif;
   letter-spacing: 0.02em;
 }
 
 /* Inputs */
-input, textarea, select {
+body.theme-fantasy input, body.theme-fantasy textarea, body.theme-fantasy select {
   background-color: #fffdf8;
   border-color: #d7c5a1;
   color: #3a2b1e;
 }
-input::placeholder, textarea::placeholder {
+body.theme-fantasy input::placeholder, body.theme-fantasy textarea::placeholder {
   color: #9f8c72;
+}
+
+/* Plain theme neutralize fantasy-card */
+body.theme-plain .fantasy-card {
+  background: #ffffff;
+  border-color: #e5e7eb !important; /* neutral-200 */
+  box-shadow: none;
+}
+body.theme-plain button {
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background-color: #f9f9f9;
+  color: #213547;
+}
+body.theme-plain input, body.theme-plain textarea, body.theme-plain select {
+  background-color: #ffffff;
+  border-color: #e5e7eb;
+  color: #213547;
 }
 
 @media (prefers-color-scheme: light) {
