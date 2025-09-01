@@ -53,7 +53,7 @@ function NounCreator({ onCreate }: { onCreate: (n: Partial<Noun>) => void }){
   const disabled = !word;
   const submit = () => { onCreate({ word, gloss }); setWord(""); setGloss(""); };
   return (
-    <div className="rounded-2xl bg-neutral-50 p-3 border border-neutral-200">
+    <div className="rounded-2xl p-3 border sub-panel">
       <div className="flex flex-wrap items-center gap-2">
         <input className="flex-1 min-w-[8rem] px-2 py-1 rounded-lg border border-neutral-300 bg-white text-neutral-900 placeholder-neutral-500" placeholder="noun (e.g., mallūb)" value={word} onChange={e=>setWord(e.target.value)} />
         <input className="flex-1 min-w-[10rem] px-2 py-1 rounded-lg border border-neutral-300 bg-white text-neutral-900 placeholder-neutral-500" placeholder="gloss (e.g., trap)" value={gloss} onChange={e=>setGloss(e.target.value)} />

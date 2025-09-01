@@ -88,6 +88,10 @@ body.theme-fantasy .fantasy-card h2 {
   font-family: Georgia, "Times New Roman", Times, serif;
   letter-spacing: 0.02em;
 }
+body.theme-fantasy .sub-panel {
+  background: #f8f1e4;
+  border-color: #d7c5a1;
+}
 
 /* Inputs */
 body.theme-fantasy input, body.theme-fantasy textarea, body.theme-fantasy select {
@@ -104,6 +108,10 @@ body.theme-plain .fantasy-card {
   background: #ffffff;
   border-color: #e5e7eb !important; /* neutral-200 */
   box-shadow: none;
+}
+body.theme-plain .sub-panel {
+  background: #ffffff;
+  border-color: #e5e7eb;
 }
 body.theme-plain button {
   border-radius: 8px;
@@ -122,6 +130,10 @@ body.theme-dark .fantasy-card {
   background: #1b1a20;
   border-color: #3a3345 !important;
   box-shadow: 0 0 0 1px rgba(255,255,255,0.02) inset;
+}
+body.theme-dark .sub-panel {
+  background: #191823;
+  border-color: #3a3345;
 }
 body.theme-dark .fantasy-card h2,
 body.theme-dark .fantasy-card h3 {
