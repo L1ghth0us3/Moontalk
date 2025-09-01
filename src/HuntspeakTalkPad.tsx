@@ -109,11 +109,27 @@ export default function HuntspeakTalkPad(){
             <div className="space-y-4">
               <div>
                 <div className="text-sm font-medium mb-1">Theme</div>
-                <div className="grid grid-cols-4 gap-2">
-                  <button className={`px-3 py-2 rounded-lg border ${theme==='auto'?'bg-blue-50 border-blue-300':'border-neutral-300'}`} onClick={()=>setTheme('auto')}>Auto</button>
-                  <button className={`px-3 py-2 rounded-lg border ${theme==='fantasy'?'bg-amber-50 border-amber-300':'border-neutral-300'}`} onClick={()=>setTheme('fantasy')}>Fantasy</button>
-                  <button className={`px-3 py-2 rounded-lg border ${theme==='plain'?'bg-neutral-50 border-neutral-300':'border-neutral-300'}`} onClick={()=>setTheme('plain')}>Plain</button>
-                  <button className={`px-3 py-2 rounded-lg border ${theme==='dark'?'bg-neutral-800 border-neutral-600 text-white':'border-neutral-300'}`} onClick={()=>setTheme('dark')}>Dark</button>
+                <div className="grid grid-cols-4 gap-2" role="group" aria-label="Theme selector">
+                  <button
+                    aria-pressed={theme==='auto'}
+                    className={`px-3 py-2 rounded-lg border transition ${theme==='auto' ? 'ring-2 ring-blue-300 border-blue-500 font-semibold' : 'border-neutral-300'}`}
+                    onClick={()=>setTheme('auto')}
+                  >{theme==='auto' ? '✓ Auto' : 'Auto'}</button>
+                  <button
+                    aria-pressed={theme==='fantasy'}
+                    className={`px-3 py-2 rounded-lg border transition ${theme==='fantasy' ? 'ring-2 ring-amber-200 border-amber-500 font-semibold' : 'border-neutral-300'}`}
+                    onClick={()=>setTheme('fantasy')}
+                  >{theme==='fantasy' ? '✓ Fantasy' : 'Fantasy'}</button>
+                  <button
+                    aria-pressed={theme==='plain'}
+                    className={`px-3 py-2 rounded-lg border transition ${theme==='plain' ? 'ring-2 ring-neutral-200 border-neutral-500 font-semibold' : 'border-neutral-300'}`}
+                    onClick={()=>setTheme('plain')}
+                  >{theme==='plain' ? '✓ Plain' : 'Plain'}</button>
+                  <button
+                    aria-pressed={theme==='dark'}
+                    className={`px-3 py-2 rounded-lg border transition ${theme==='dark' ? 'ring-2 ring-violet-300 border-neutral-600 font-semibold text-white bg-neutral-800' : 'border-neutral-300'}`}
+                    onClick={()=>setTheme('dark')}
+                  >{theme==='dark' ? '✓ Dark' : 'Dark'}</button>
                 </div>
               </div>
             </div>
