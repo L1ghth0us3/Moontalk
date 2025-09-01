@@ -21,7 +21,7 @@ export default function RootEditor({ initial, onChange, selectedId, onSelect }: 
   const deleteRoot = (id: string) => { setRoots(prev=> prev.filter(r=> r.id!==id)); if (selectedId===id) onSelect(roots.find(r=> r.id!==id)?.id ?? null); };
 
   return (
-    <section className="rounded-3xl border border-neutral-200 p-4 shadow-sm overflow-hidden">
+    <section className="rounded-3xl border border-neutral-200 p-4 shadow-sm overflow-hidden fantasy-card">
       <h2 className="text-xl md:text-2xl font-semibold mb-3">Verb Roots</h2>
       <RootCreator onCreate={addRoot} />
       <div className="mt-3 max-h-[20rem] overflow-y-auto space-y-2 pr-1">

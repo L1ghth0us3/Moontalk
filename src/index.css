@@ -26,10 +26,15 @@ a:hover {
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
   min-width: 320px;
   min-height: 100vh;
+  color: #2b2116;
+  background-color: #f2eadf;
+  background-image:
+    radial-gradient(ellipse at top left, rgba(139,94,52,0.05), transparent 60%),
+    radial-gradient(ellipse at bottom right, rgba(166,124,82,0.06), transparent 60%),
+    url('/paper.svg');
+  background-blend-mode: multiply, multiply, normal;
 }
 
 h1 {
@@ -38,22 +43,46 @@ h1 {
 }
 
 button {
-  border-radius: 8px;
-  border: 1px solid transparent;
+  border-radius: 10px;
+  border: 1px solid #cbb189;
   padding: 0.6em 1.2em;
   font-size: 1em;
-  font-weight: 500;
+  font-weight: 600;
   font-family: inherit;
-  background-color: #1a1a1a;
+  background-color: #f7efe4;
+  color: #4a3724;
   cursor: pointer;
-  transition: border-color 0.25s;
+  transition: background-color 0.2s, box-shadow 0.2s;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.04), inset 0 0 0 9999px rgba(255,255,255,0.0);
 }
 button:hover {
-  border-color: #646cff;
+  background-color: #f3e8d8;
 }
 button:focus,
 button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+  outline: 3px solid rgba(166,124,82,0.3);
+  outline-offset: 2px;
+}
+
+/* Fantasy cards */
+.fantasy-card {
+  background: #fbf7ef;
+  border-color: #d7c5a1 !important;
+  box-shadow: 0 2px 0 rgba(0,0,0,0.05), inset 0 0 0 9999px rgba(255,255,255,0.02);
+}
+.fantasy-card h2 {
+  font-family: Georgia, "Times New Roman", Times, serif;
+  letter-spacing: 0.02em;
+}
+
+/* Inputs */
+input, textarea, select {
+  background-color: #fffdf8;
+  border-color: #d7c5a1;
+  color: #3a2b1e;
+}
+input::placeholder, textarea::placeholder {
+  color: #9f8c72;
 }
 
 @media (prefers-color-scheme: light) {

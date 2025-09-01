@@ -17,7 +17,7 @@ export default function NounEditor({ initial, onChange, selectedId, onSelect }: 
   const deleteNoun = (id: string) => { setNouns(prev=> prev.filter(n=> n.id!==id)); if (selectedId===id) onSelect(nouns.find(n=> n.id!==id)?.id ?? null); };
 
   return (
-    <section className="rounded-3xl border border-neutral-200 p-4 shadow-sm overflow-hidden">
+    <section className="rounded-3xl border border-neutral-200 p-4 shadow-sm overflow-hidden fantasy-card">
       <h2 className="text-xl md:text-2xl font-semibold mb-3">Nouns</h2>
       <NounCreator onCreate={addNoun} />
       <div className="mt-3 max-h-[20rem] overflow-y-auto space-y-2 pr-1">

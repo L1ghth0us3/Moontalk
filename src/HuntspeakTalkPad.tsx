@@ -38,7 +38,7 @@ export default function HuntspeakTalkPad(){
           <NounEditor initial={nouns} onChange={setNouns} selectedId={selectedNounId} onSelect={setSelectedNounId} />
         </aside>
         <main className="lg:col-span-3 2xl:col-span-4 space-y-6">
-          <section className="rounded-3xl border border-neutral-200 p-4 shadow-sm">
+          <section className="rounded-3xl border border-neutral-200 p-4 shadow-sm fantasy-card">
             <h2 className="text-xl md:text-2xl font-semibold mb-1">Talk Pad</h2>
             <p className="text-sm text-neutral-600 mb-3">Pick who + verb + tense, type object. Copy & paste into chat.</p>
             <TalkPad roots={roots} nouns={nouns} />
