@@ -43,8 +43,12 @@ export default function HuntspeakTalkPad(){
             <p className="text-sm text-neutral-600 mb-3">Pick who + verb + tense, type object. Copy & paste into chat.</p>
             <TalkPad roots={roots} nouns={nouns} />
           </section>
-          {selected && <FiniteForms root={selected} />}
-          {selected && <RenderDerivations root={selected} />}
+          {selected && (
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
+              <FiniteForms root={selected} />
+              <RenderDerivations root={selected} />
+            </div>
+          )}
           <FreeTranslator roots={roots} nouns={nouns} />
         </main>
       </div>
