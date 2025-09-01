@@ -65,23 +65,37 @@ body.theme-fantasy button {
   background-color: #303246;
   color: #f8f8f2;
   cursor: pointer;
-  transition: background-color 0.2s, box-shadow 0.2s;
-  box-shadow: 0 1px 0 rgba(0,0,0,0.04), inset 0 0 0 9999px rgba(255,255,255,0.0);
+  transition: background-color 0.2s, box-shadow 0.2s, transform 0.05s;
+  box-shadow:
+    0 1px 0 rgba(0,0,0,0.25),
+    0 6px 16px rgba(0,0,0,0.30),
+    0 0 0 1px rgba(189,147,249,0.18) inset; /* purple inner */
 }
 body.theme-fantasy button:hover {
   background-color: #363955;
+  box-shadow:
+    0 2px 0 rgba(0,0,0,0.25),
+    0 8px 20px rgba(0,0,0,0.35),
+    0 0 0 1px rgba(189,147,249,0.22) inset;
 }
 body.theme-fantasy button:focus,
 body.theme-fantasy button:focus-visible {
   outline: 3px solid rgba(189,147,249,0.45);
   outline-offset: 2px;
+  box-shadow:
+    0 2px 0 rgba(0,0,0,0.25),
+    0 10px 24px rgba(0,0,0,0.38),
+    0 0 0 2px rgba(189,147,249,0.28) inset;
 }
 
 /* Fantasy cards */
 body.theme-fantasy .fantasy-card {
   background: #2b2d3a;
   border-color: #44475a !important;
-  box-shadow: 0 0 0 1px rgba(255,255,255,0.02) inset;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.02) inset,
+    0 8px 24px rgba(0,0,0,0.35),
+    0 0 0 2px rgba(189,147,249,0.10);
 }
 body.theme-fantasy .fantasy-card h2 {
   font-family: Georgia, "Times New Roman", Times, serif;
@@ -90,6 +104,9 @@ body.theme-fantasy .fantasy-card h2 {
 body.theme-fantasy .sub-panel {
   background: #1f2230;
   border-color: #44475a;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.03) inset,
+    0 6px 18px rgba(0,0,0,0.32);
 }
 /* Finite table odd/even rows (fantasy) */
 body.theme-fantasy .finite-table thead { background-color: #303246; }
@@ -102,9 +119,17 @@ body.theme-fantasy input, body.theme-fantasy textarea, body.theme-fantasy select
   background-color: #1e2030;
   border-color: #44475a;
   color: #f8f8f2;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.35);
 }
 body.theme-fantasy input::placeholder, body.theme-fantasy textarea::placeholder {
   color: #6272a4;
+}
+body.theme-fantasy input:focus,
+body.theme-fantasy textarea:focus,
+body.theme-fantasy select:focus {
+  outline: 2px solid #bd93f9;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px rgba(189,147,249,0.25), inset 0 1px 2px rgba(0,0,0,0.35);
 }
 
 /* Plain theme neutralize fantasy-card */
@@ -137,11 +162,14 @@ body.theme-plain input, body.theme-plain textarea, body.theme-plain select {
 body.theme-dark .fantasy-card {
   background: #1b1a20;
   border-color: #3a3345 !important;
-  box-shadow: 0 0 0 1px rgba(255,255,255,0.02) inset;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.02) inset,
+    0 8px 24px rgba(0,0,0,0.45);
 }
 body.theme-dark .sub-panel {
   background: #191823;
   border-color: #3a3345;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.40);
 }
 /* Finite table (dark) */
 body.theme-dark .finite-table thead { background-color: #23222b; }
@@ -159,6 +187,7 @@ body.theme-dark button {
   border: 1px solid #3a3345;
   background-color: #201e28;
   color: #eae6df;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.40);
 }
 body.theme-dark button:hover { background-color: #262433; }
 body.theme-dark button:focus, body.theme-dark button:focus-visible {
@@ -169,6 +198,7 @@ body.theme-dark input, body.theme-dark textarea, body.theme-dark select {
   background-color: #191823;
   border-color: #3a3345;
   color: #eae6df;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.45);
 }
 body.theme-dark input::placeholder, body.theme-dark textarea::placeholder { color: #8b8595; }
 
