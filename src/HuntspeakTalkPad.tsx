@@ -14,7 +14,8 @@ export default function HuntspeakTalkPad(){
   const [nouns, setNouns] = useState<Noun[]>(DEFAULT_NOUNS);
   const [selectedId, setSelectedId] = useState<string|null>(roots[0]?.id || null);
   const [selectedNounId, setSelectedNounId] = useState<string|null>(nouns[0]?.id || null);
-  const [theme, setTheme] = useLocalStorageState<'fantasy'|'plain'|'dark'>("huntspeak_theme", 'fantasy');
+  const [theme, setTheme] = useLocalStorageState<'fantasy'|'plain'|'dark'|'auto'>("huntspeak_theme", 'fantasy');
+  const [systemDark, setSystemDark] = useState<boolean>(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
@@ -26,11 +27,30 @@ export default function HuntspeakTalkPad(){
     if (!selectedNounId && nouns[0]) setSelectedNounId(nouns[0].id);
     else if (selectedNounId && !nouns.some(n=>n.id===selectedNounId)) setSelectedNounId(nouns[0]?.id || null);
   }, [nouns, selectedNounId]);
+  // Track system dark preference for 'auto' theme
   useEffect(()=>{
+    if (typeof window === 'undefined' || !('matchMedia' in window)) return;
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const apply = () => setSystemDark(!!mq.matches);
+    apply();
+    mq.addEventListener?.('change', apply as any);
+    // Fallback for older browsers
+    // @ts-ignore
+    mq.addListener && mq.addListener(apply);
+    return () => {
+      mq.removeEventListener?.('change', apply as any);
+      // @ts-ignore
+      mq.removeListener && mq.removeListener(apply);
+    };
+  }, []);
+
+  // Apply effective theme class
+  useEffect(()=>{
+    const effective = theme==='auto' ? (systemDark ? 'dark' : 'fantasy') : theme;
     const b = document.body;
     b.classList.remove('theme-fantasy','theme-plain','theme-dark');
-    b.classList.add(theme==='fantasy' ? 'theme-fantasy' : theme==='dark' ? 'theme-dark' : 'theme-plain');
-  }, [theme]);
+    b.classList.add(effective==='fantasy' ? 'theme-fantasy' : effective==='dark' ? 'theme-dark' : 'theme-plain');
+  }, [theme, systemDark]);
 
   const selected = roots.find(r=>r.id===selectedId) || null;
 
@@ -89,7 +109,8 @@ export default function HuntspeakTalkPad(){
             <div className="space-y-4">
               <div>
                 <div className="text-sm font-medium mb-1">Theme</div>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-4 gap-2">
+                  <button className={`px-3 py-2 rounded-lg border ${theme==='auto'?'bg-blue-50 border-blue-300':'border-neutral-300'}`} onClick={()=>setTheme('auto')}>Auto</button>
                   <button className={`px-3 py-2 rounded-lg border ${theme==='fantasy'?'bg-amber-50 border-amber-300':'border-neutral-300'}`} onClick={()=>setTheme('fantasy')}>Fantasy</button>
                   <button className={`px-3 py-2 rounded-lg border ${theme==='plain'?'bg-neutral-50 border-neutral-300':'border-neutral-300'}`} onClick={()=>setTheme('plain')}>Plain</button>
                   <button className={`px-3 py-2 rounded-lg border ${theme==='dark'?'bg-neutral-800 border-neutral-600 text-white':'border-neutral-300'}`} onClick={()=>setTheme('dark')}>Dark</button>
