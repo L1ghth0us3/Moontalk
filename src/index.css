@@ -42,6 +42,15 @@ body.theme-plain {
   background-color: #ffffff;
 }
 
+/* Stylized dark theme */
+body.theme-dark {
+  color: #eae6df;
+  background-color: #0f0f14;
+  background-image:
+    radial-gradient(1200px 600px at 10% 0%, rgba(107,85,150,0.12), transparent 60%),
+    radial-gradient(1000px 500px at 100% 100%, rgba(30,120,120,0.12), transparent 60%);
+}
+
 h1 {
   font-size: 3.2em;
   line-height: 1.1;
@@ -107,6 +116,36 @@ body.theme-plain input, body.theme-plain textarea, body.theme-plain select {
   border-color: #e5e7eb;
   color: #213547;
 }
+
+/* Dark theme widgets */
+body.theme-dark .fantasy-card {
+  background: #1b1a20;
+  border-color: #3a3345 !important;
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.02) inset;
+}
+body.theme-dark .fantasy-card h2,
+body.theme-dark .fantasy-card h3 {
+  font-family: Georgia, "Times New Roman", Times, serif;
+  letter-spacing: 0.02em;
+  color: #f0eadd;
+}
+body.theme-dark button {
+  border-radius: 10px;
+  border: 1px solid #3a3345;
+  background-color: #201e28;
+  color: #eae6df;
+}
+body.theme-dark button:hover { background-color: #262433; }
+body.theme-dark button:focus, body.theme-dark button:focus-visible {
+  outline: 3px solid rgba(120,120,200,0.35);
+  outline-offset: 2px;
+}
+body.theme-dark input, body.theme-dark textarea, body.theme-dark select {
+  background-color: #191823;
+  border-color: #3a3345;
+  color: #eae6df;
+}
+body.theme-dark input::placeholder, body.theme-dark textarea::placeholder { color: #8b8595; }
 
 @media (prefers-color-scheme: light) {
   :root {
