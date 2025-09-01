@@ -34,7 +34,7 @@ export default function RenderDerivations({ root }: { root: Root }){
   } as const;
 
   return (
-    <section className="rounded-3xl border border-neutral-200 p-4 shadow-sm">
+    <section className="rounded-3xl border border-neutral-200 p-4 shadow-sm fantasy-card">
       <h2 className="text-xl md:text-2xl font-semibold mb-1">Derivations</h2>
       <p className="text-sm text-neutral-600 mb-3">Handy non-finite patterns (binyanim-style).</p>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

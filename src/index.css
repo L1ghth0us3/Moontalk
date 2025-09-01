@@ -24,12 +24,30 @@ a:hover {
   color: #535bf2;
 }
 
-body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+body { margin: 0; min-width: 320px; min-height: 100vh; }
+
+/* Fantasy theme */
+/* Dracula-inspired fantasy theme */
+body.theme-fantasy {
+  color: #f8f8f2;              /* Foreground */
+  background-color: #282a36;   /* Background */
+  background-image:
+    radial-gradient(1200px 600px at 10% 0%, rgba(98,114,164,0.14), transparent 60%), /* Comment */
+    radial-gradient(1000px 500px at 100% 100%, rgba(68,71,90,0.20), transparent 60%); /* Current Line */
+}
+/* Plain theme */
+body.theme-plain {
+  color: #213547;
+  background-color: #ffffff;
+}
+
+/* Stylized dark theme */
+body.theme-dark {
+  color: #eae6df;
+  background-color: #0f0f14;
+  background-image:
+    radial-gradient(1200px 600px at 10% 0%, rgba(107,85,150,0.12), transparent 60%),
+    radial-gradient(1000px 500px at 100% 100%, rgba(30,120,120,0.12), transparent 60%);
 }
 
 h1 {
@@ -37,24 +55,152 @@ h1 {
   line-height: 1.1;
 }
 
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
+body.theme-fantasy button {
+  border-radius: 10px;
+  border: 1px solid #6272a4;
   padding: 0.6em 1.2em;
   font-size: 1em;
-  font-weight: 500;
+  font-weight: 600;
   font-family: inherit;
-  background-color: #1a1a1a;
+  background-color: #303246;
+  color: #f8f8f2;
   cursor: pointer;
-  transition: border-color 0.25s;
+  transition: background-color 0.2s, box-shadow 0.2s, transform 0.05s;
+  box-shadow:
+    0 1px 0 rgba(0,0,0,0.25),
+    0 6px 16px rgba(0,0,0,0.30),
+    0 0 0 1px rgba(189,147,249,0.18) inset; /* purple inner */
 }
-button:hover {
-  border-color: #646cff;
+body.theme-fantasy button:hover {
+  background-color: #363955;
+  box-shadow:
+    0 2px 0 rgba(0,0,0,0.25),
+    0 8px 20px rgba(0,0,0,0.35),
+    0 0 0 1px rgba(189,147,249,0.22) inset;
 }
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+body.theme-fantasy button:focus,
+body.theme-fantasy button:focus-visible {
+  outline: 3px solid rgba(189,147,249,0.45);
+  outline-offset: 2px;
+  box-shadow:
+    0 2px 0 rgba(0,0,0,0.25),
+    0 10px 24px rgba(0,0,0,0.38),
+    0 0 0 2px rgba(189,147,249,0.28) inset;
 }
+
+/* Fantasy cards */
+body.theme-fantasy .fantasy-card {
+  background: #2b2d3a;
+  border-color: #44475a !important;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.02) inset,
+    0 8px 24px rgba(0,0,0,0.35),
+    0 0 0 2px rgba(189,147,249,0.10);
+}
+body.theme-fantasy .fantasy-card h2 {
+  font-family: Georgia, "Times New Roman", Times, serif;
+  letter-spacing: 0.02em;
+}
+body.theme-fantasy .sub-panel {
+  background: #1f2230;
+  border-color: #44475a;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.03) inset,
+    0 6px 18px rgba(0,0,0,0.32);
+}
+/* Finite table odd/even rows (fantasy) */
+body.theme-fantasy .finite-table thead { background-color: #303246; }
+body.theme-fantasy .finite-table tbody tr.row-odd { background-color: #2b2d3a; }
+body.theme-fantasy .finite-table tbody tr.row-even { background-color: #25283a; }
+body.theme-fantasy .finite-table th, body.theme-fantasy .finite-table td { color: #f8f8f2; }
+
+/* Inputs */
+body.theme-fantasy input, body.theme-fantasy textarea, body.theme-fantasy select {
+  background-color: #1e2030;
+  border-color: #44475a;
+  color: #f8f8f2;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.35);
+}
+body.theme-fantasy input::placeholder, body.theme-fantasy textarea::placeholder {
+  color: #6272a4;
+}
+body.theme-fantasy input:focus,
+body.theme-fantasy textarea:focus,
+body.theme-fantasy select:focus {
+  outline: 2px solid #bd93f9;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px rgba(189,147,249,0.25), inset 0 1px 2px rgba(0,0,0,0.35);
+}
+
+/* Plain theme neutralize fantasy-card */
+body.theme-plain .fantasy-card {
+  background: #ffffff;
+  border-color: #e5e7eb !important; /* neutral-200 */
+  box-shadow: none;
+}
+body.theme-plain .sub-panel {
+  background: #ffffff;
+  border-color: #e5e7eb;
+}
+/* Finite table (plain) */
+body.theme-plain .finite-table thead { background-color: #f8fafc; }
+body.theme-plain .finite-table tbody tr.row-odd { background-color: #ffffff; }
+body.theme-plain .finite-table tbody tr.row-even { background-color: #f9fafb; }
+body.theme-plain button {
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background-color: #f9f9f9;
+  color: #213547;
+}
+body.theme-plain input, body.theme-plain textarea, body.theme-plain select {
+  background-color: #ffffff;
+  border-color: #e5e7eb;
+  color: #213547;
+}
+
+/* Dark theme widgets */
+body.theme-dark .fantasy-card {
+  background: #1b1a20;
+  border-color: #3a3345 !important;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.02) inset,
+    0 8px 24px rgba(0,0,0,0.45);
+}
+body.theme-dark .sub-panel {
+  background: #191823;
+  border-color: #3a3345;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.40);
+}
+/* Finite table (dark) */
+body.theme-dark .finite-table thead { background-color: #23222b; }
+body.theme-dark .finite-table tbody tr.row-odd { background-color: #1f1e26; }
+body.theme-dark .finite-table tbody tr.row-even { background-color: #191823; }
+body.theme-dark .finite-table th, body.theme-dark .finite-table td { color: #eae6df; }
+body.theme-dark .fantasy-card h2,
+body.theme-dark .fantasy-card h3 {
+  font-family: Georgia, "Times New Roman", Times, serif;
+  letter-spacing: 0.02em;
+  color: #f0eadd;
+}
+body.theme-dark button {
+  border-radius: 10px;
+  border: 1px solid #3a3345;
+  background-color: #201e28;
+  color: #eae6df;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.40);
+}
+body.theme-dark button:hover { background-color: #262433; }
+body.theme-dark button:focus, body.theme-dark button:focus-visible {
+  outline: 3px solid rgba(120,120,200,0.35);
+  outline-offset: 2px;
+}
+body.theme-dark input, body.theme-dark textarea, body.theme-dark select {
+  background-color: #191823;
+  border-color: #3a3345;
+  color: #eae6df;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.45);
+}
+body.theme-dark input::placeholder, body.theme-dark textarea::placeholder { color: #8b8595; }
 
 @media (prefers-color-scheme: light) {
   :root {

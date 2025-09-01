@@ -36,7 +36,7 @@ export default function FreeTranslator({ roots, nouns }: { roots: Root[]; nouns:
   }
 
   return (
-    <section className="rounded-3xl border border-neutral-200 p-4 shadow-sm">
+    <section className="rounded-3xl border border-neutral-200 p-4 shadow-sm fantasy-card">
       <h2 className="text-xl md:text-2xl font-semibold mb-1">Free Translator (simple, 1-verb lines)</h2>
       <p className="text-sm text-neutral-600 mb-3">Try: <code>we will hunt with a trap from the Shroud</code>. Recognizes pronouns + will/did/not + with/to/from.</p>
       <div className="space-y-2">

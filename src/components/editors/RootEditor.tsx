@@ -21,7 +21,7 @@ export default function RootEditor({ initial, onChange, selectedId, onSelect }: 
   const deleteRoot = (id: string) => { setRoots(prev=> prev.filter(r=> r.id!==id)); if (selectedId===id) onSelect(roots.find(r=> r.id!==id)?.id ?? null); };
 
   return (
-    <section className="rounded-3xl border border-neutral-200 p-4 shadow-sm overflow-hidden">
+    <section className="rounded-3xl border border-neutral-200 p-4 shadow-sm overflow-hidden fantasy-card">
       <h2 className="text-xl md:text-2xl font-semibold mb-3">Verb Roots</h2>
       <RootCreator onCreate={addRoot} />
       <div className="mt-3 max-h-[20rem] overflow-y-auto space-y-2 pr-1">
@@ -61,7 +61,7 @@ function RootCreator({ onCreate }: { onCreate: (r: Partial<Root>) => void }) {
   const disabled = !c1 || !c2 || !c3;
   const submit = () => { onCreate({ c1, c2, c3, gloss }); setC1(""); setC2(""); setC3(""); setGloss(""); };
   return (
-    <div className="rounded-2xl bg-neutral-50 p-3 border border-neutral-200">
+    <div className="rounded-2xl p-3 border sub-panel">
       <div className="flex flex-wrap items-center gap-2">
         <input className="h-10 w-12 px-2 rounded-lg border border-neutral-300 bg-white text-neutral-900 placeholder-neutral-500 text-center" placeholder="C1" value={c1} onChange={e => setC1(e.target.value)} />
         <input className="h-10 w-12 px-2 rounded-lg border border-neutral-300 bg-white text-neutral-900 placeholder-neutral-500 text-center" placeholder="C2" value={c2} onChange={e => setC2(e.target.value)} />
