@@ -37,7 +37,7 @@ export default function FreeTranslator({ roots, nouns }: { roots: Root[]; nouns:
 
   return (
     <section className="rounded-3xl border border-neutral-200 p-4 shadow-sm">
-      <h2 className="text-lg font-semibold mb-1">Free Translator (simple, 1-verb lines)</h2>
+      <h2 className="text-xl md:text-2xl font-semibold mb-1">Free Translator (simple, 1-verb lines)</h2>
       <p className="text-sm text-neutral-600 mb-3">Try: <code>we will hunt with a trap from the Shroud</code>. Recognizes pronouns + will/did/not + with/to/from.</p>
       <div className="space-y-2">
         <textarea className="w-full h-20 px-3 py-2 rounded-xl border border-neutral-300" placeholder="Type: we will hunt with a trap from the Shroud" value={en} onChange={e=>setEn(e.target.value)} />

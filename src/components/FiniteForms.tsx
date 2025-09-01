@@ -20,7 +20,7 @@ export default function FiniteForms({ root }: { root: Root }){
 
   return (
     <section className="rounded-3xl border border-neutral-200 p-4 shadow-sm">
-      <h2 className="text-lg font-semibold mb-1">Finite forms</h2>
+      <h2 className="text-xl md:text-2xl font-semibold mb-1">Finite Forms</h2>
       <p className="text-sm text-neutral-600 mb-3">Template: <code>C1 + (SUBJ V) + C2 + (TENSE V) + C3</code></p>
       <div className="flex flex-wrap items-center gap-3 mb-3">
         <Toggle label="Negation" info="Adds naaq-; naq- before k/g/q." checked={showNeg} onChange={setShowNeg} />

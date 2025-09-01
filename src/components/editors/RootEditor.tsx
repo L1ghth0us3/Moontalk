@@ -22,7 +22,7 @@ export default function RootEditor({ initial, onChange, selectedId, onSelect }: 
 
   return (
     <section className="rounded-3xl border border-neutral-200 p-4 shadow-sm overflow-hidden">
-      <h2 className="text-lg font-semibold mb-3">Verb Roots</h2>
+      <h2 className="text-xl md:text-2xl font-semibold mb-3">Verb Roots</h2>
       <RootCreator onCreate={addRoot} />
       <div className="mt-3 max-h-[20rem] overflow-y-auto space-y-2 pr-1">
         {roots.map(r => (
