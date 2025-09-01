@@ -2,34 +2,30 @@ import { PRONOUNS, TENSES } from "../types";
 import type { Root } from "../types";
 import { buildFinite, withHabitual, withNegation, withProgressive } from "../lib/morphology";
 import Toggle from "./ui/Toggle";
+import { useState, useMemo } from "react";
 
 export default function FiniteForms({ root }: { root: Root }){
-  const [state, setState] = ((): [
-    { showNeg:boolean; showProg:boolean; showHab:boolean },
-    (p: Partial<{showNeg:boolean; showProg:boolean; showHab:boolean}>)=>void
-  ] => {
-    // tiny internal unpersisted state
-    let s = { showNeg:false, showProg:false, showHab:false };
-    return [s, (p)=>{ Object.assign(s, p); }];
-  })();
+  const [showNeg, setShowNeg] = useState(false);
+  const [showProg, setShowProg] = useState(false);
+  const [showHab, setShowHab] = useState(false);
 
-  const rows = PRONOUNS.map(p => {
+  const rows = useMemo(() => PRONOUNS.map(p => {
     const baseForms = TENSES.map(t => buildFinite(root, p.subjV, t.vowel));
     let forms = baseForms;
-    if (state.showProg) forms = forms.map(f => withProgressive(f, root));
-    if (state.showHab) forms = forms.map(f => withHabitual(f));
-    if (state.showNeg) forms = forms.map(f => withNegation(f));
+    if (showProg) forms = forms.map(f => withProgressive(f, root));
+    if (showHab) forms = forms.map(f => withHabitual(f));
+    if (showNeg) forms = forms.map(f => withNegation(f));
     return { p, items: forms };
-  });
+  }), [root, showNeg, showProg, showHab]);
 
   return (
     <section className="rounded-3xl border border-neutral-200 p-4 shadow-sm">
       <h2 className="text-lg font-semibold mb-1">Finite forms</h2>
       <p className="text-sm text-neutral-600 mb-3">Template: <code>C1 + (SUBJ V) + C2 + (TENSE V) + C3</code></p>
       <div className="flex flex-wrap items-center gap-3 mb-3">
-        <Toggle label="Negation" info="Adds naaq-; naq- before k/g/q." checked={state.showNeg} onChange={v=>setState({showNeg:v})} />
-        <Toggle label="Progressive" info="Geminate C2 before tense vowel." checked={state.showProg} onChange={v=>setState({showProg:v})} />
-        <Toggle label="Habitual" info="Adds -ar for habitual." checked={state.showHab} onChange={v=>setState({showHab:v})} />
+        <Toggle label="Negation" info="Adds naaq-; naq- before k/g/q." checked={showNeg} onChange={setShowNeg} />
+        <Toggle label="Progressive" info="Geminate C2 before tense vowel." checked={showProg} onChange={setShowProg} />
+        <Toggle label="Habitual" info="Adds -ar for habitual." checked={showHab} onChange={setShowHab} />
       </div>
       <div className="overflow-x-auto rounded-2xl shadow-sm border border-neutral-200">
         <table className="table-fixed w-full text-sm 2xl:text-base text-neutral-900">

@@ -5,6 +5,7 @@ import RootEditor from "./components/editors/RootEditor";
 import NounEditor from "./components/editors/NounEditor";
 import TalkPad from "./components/TalkPad";
 import RenderDerivations from "./components/Derivations";
+import FreeTranslator from "./components/FreeTranslator";
 import FiniteForms from "./components/FiniteForms";
 
 export default function HuntspeakTalkPad(){
@@ -13,8 +14,14 @@ export default function HuntspeakTalkPad(){
   const [selectedId, setSelectedId] = useState<string|null>(roots[0]?.id || null);
   const [selectedNounId, setSelectedNounId] = useState<string|null>(nouns[0]?.id || null);
 
-  useEffect(()=>{ if (!selectedId && roots[0]) setSelectedId(roots[0].id); }, [roots, selectedId]);
-  useEffect(()=>{ if (!selectedNounId && nouns[0]) setSelectedNounId(nouns[0].id); }, [nouns, selectedNounId]);
+  useEffect(()=>{
+    if (!selectedId && roots[0]) setSelectedId(roots[0].id);
+    else if (selectedId && !roots.some(r=>r.id===selectedId)) setSelectedId(roots[0]?.id || null);
+  }, [roots, selectedId]);
+  useEffect(()=>{
+    if (!selectedNounId && nouns[0]) setSelectedNounId(nouns[0].id);
+    else if (selectedNounId && !nouns.some(n=>n.id===selectedNounId)) setSelectedNounId(nouns[0]?.id || null);
+  }, [nouns, selectedNounId]);
 
   const selected = roots.find(r=>r.id===selectedId) || null;
 
@@ -38,6 +45,7 @@ export default function HuntspeakTalkPad(){
           </section>
           {selected && <FiniteForms root={selected} />}
           {selected && <RenderDerivations root={selected} />}
+          <FreeTranslator roots={roots} nouns={nouns} />
         </main>
       </div>
     </div>
