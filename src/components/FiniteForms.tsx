@@ -3,12 +3,14 @@ import type { Root } from "../types";
 import { buildFinite, withHabitual, withNegation, withProgressive } from "../lib/morphology";
 import Toggle from "./ui/Toggle";
 import { useState, useMemo } from "react";
+import { useLocalStorageState } from "../lib/storage";
 
 export default function FiniteForms({ root }: { root: Root }){
   const [showNeg, setShowNeg] = useState(false);
   const [showProg, setShowProg] = useState(false);
   const [showHab, setShowHab] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useLocalStorageState<boolean>('huntspeak_collapse_finite', false);
+  const [showCollapse] = useLocalStorageState<boolean>('huntspeak_show_collapse', false);
 
   const rows = useMemo(() => PRONOUNS.map(p => {
     const baseForms = TENSES.map(t => buildFinite(root, p.subjV, t.vowel));
@@ -23,7 +25,11 @@ export default function FiniteForms({ root }: { root: Root }){
     <section className="rounded-3xl border border-neutral-200 p-4 shadow-sm fantasy-card">
       <div className="flex items-center justify-between mb-1">
         <h2 className="text-xl md:text-2xl font-semibold">Finite Forms</h2>
-        <button className="px-2 py-1 text-sm rounded border border-neutral-300 hover:bg-neutral-50" onClick={()=>setCollapsed(c=>!c)}>{collapsed? 'Expand' : 'Collapse'}</button>
+        {showCollapse && (
+          <button aria-label={collapsed? 'Expand' : 'Collapse'} className="px-2 py-1 text-sm rounded border border-neutral-300 hover:bg-neutral-50" onClick={()=>setCollapsed(c=>!c)}>
+            {collapsed ? '▸' : '▾'}
+          </button>
+        )}
       </div>
       {!collapsed && (
       <>

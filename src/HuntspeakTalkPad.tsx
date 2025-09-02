@@ -53,10 +53,14 @@ export default function HuntspeakTalkPad(){
   }, [theme, systemDark]);
 
   const selected = roots.find(r=>r.id===selectedId) || null;
-  const [talkCollapsed, setTalkCollapsed] = useState(false);
+  const [showCollapse, setShowCollapse] = useLocalStorageState<boolean>('huntspeak_show_collapse', false);
+  const [talkCollapsed, setTalkCollapsed] = useLocalStorageState<boolean>('huntspeak_collapse_talk', false);
   function TalkPadCollapse(){
+    if (!showCollapse) return null;
     return (
-      <button className="px-2 py-1 text-sm rounded border border-neutral-300 hover:bg-neutral-50" onClick={()=>setTalkCollapsed(c=>!c)}>{talkCollapsed? 'Expand' : 'Collapse'}</button>
+      <button aria-label={talkCollapsed? 'Expand' : 'Collapse'} className="px-2 py-1 text-sm rounded border border-neutral-300 hover:bg-neutral-50" onClick={()=>setTalkCollapsed(c=>!c)}>
+        {talkCollapsed ? '▸' : '▾'}
+      </button>
     );
   }
   function TalkPadBody(){
@@ -177,6 +181,14 @@ export default function HuntspeakTalkPad(){
                     onClick={()=>setTheme('dark')}
                   >{theme==='dark' ? '✓ Dark' : 'Dark'}</button>
                 </div>
+              </div>
+              <div className="pt-2 border-t border-neutral-200/70">
+                <div className="text-sm font-medium mb-2">Interface</div>
+                <label className="inline-flex items-center gap-2 select-none">
+                  <input type="checkbox" className="h-4 w-4" checked={showCollapse} onChange={e=>setShowCollapse(e.target.checked)} />
+                  <span>Show collapse controls</span>
+                  <span className="text-xs opacity-70">({showCollapse ? 'On' : 'Off'})</span>
+                </label>
               </div>
               <div className="pt-2 border-t border-neutral-200/70">
                 <div className="text-sm font-medium mb-2">Data</div>

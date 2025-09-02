@@ -21,12 +21,17 @@ export default function RootEditor({ initial, onChange, selectedId, onSelect }: 
   const deleteRoot = (id: string) => { setRoots(prev=> prev.filter(r=> r.id!==id)); if (selectedId===id) onSelect(roots.find(r=> r.id!==id)?.id ?? null); };
 
   const [collapsed, setCollapsed] = useLocalStorageState<boolean>('huntspeak_collapse_roots', false);
+  const [showCollapse] = useLocalStorageState<boolean>('huntspeak_show_collapse', false);
 
   return (
     <section className="rounded-3xl border border-neutral-200 p-4 shadow-sm overflow-hidden fantasy-card">
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-xl md:text-2xl font-semibold">Verb Roots</h2>
-        <button className="px-2 py-1 text-sm rounded border border-neutral-300 hover:bg-neutral-50" onClick={()=>setCollapsed(c=>!c)}>{collapsed? 'Expand' : 'Collapse'}</button>
+        {showCollapse && (
+          <button aria-label={collapsed? 'Expand' : 'Collapse'} className="px-2 py-1 text-sm rounded border border-neutral-300 hover:bg-neutral-50" onClick={()=>setCollapsed(c=>!c)}>
+            {collapsed ? '▸' : '▾'}
+          </button>
+        )}
       </div>
       {!collapsed && (
       <>

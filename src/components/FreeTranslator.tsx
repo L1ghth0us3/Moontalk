@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocalStorageState } from "../lib/storage";
 import type { Noun, Root } from "../types";
 import { findRootByEnglish, withHabitual, withNegation, withProgressive } from "../lib/morphology";
 
@@ -7,7 +8,8 @@ const clip = async (text: string) => { try { await navigator.clipboard.writeText
 export default function FreeTranslator({ roots, nouns }: { roots: Root[]; nouns: Noun[] }){
   const [en, setEn] = useState("");
   const [hs, setHs] = useState("");
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useLocalStorageState<boolean>('huntspeak_collapse_translator', false);
+  const [showCollapse] = useLocalStorageState<boolean>('huntspeak_show_collapse', false);
 
   function norm(s: string) { return s.toLowerCase().replace(/[()]/g, "").replace(/\s+/g, " ").trim(); }
   function stripArticles(s: string) { return s.replace(/^(a|an|the)\s+/, ""); }
@@ -40,7 +42,11 @@ export default function FreeTranslator({ roots, nouns }: { roots: Root[]; nouns:
     <section className="rounded-3xl border border-neutral-200 p-4 shadow-sm fantasy-card">
       <div className="flex items-center justify-between mb-1">
         <h2 className="text-xl md:text-2xl font-semibold">Free Translator (simple, 1-verb lines)</h2>
-        <button className="px-2 py-1 text-sm rounded border border-neutral-300 hover:bg-neutral-50" onClick={()=>setCollapsed(c=>!c)}>{collapsed? 'Expand' : 'Collapse'}</button>
+        {showCollapse && (
+          <button aria-label={collapsed? 'Expand' : 'Collapse'} className="px-2 py-1 text-sm rounded border border-neutral-300 hover:bg-neutral-50" onClick={()=>setCollapsed(c=>!c)}>
+            {collapsed ? '▸' : '▾'}
+          </button>
+        )}
       </div>
       {!collapsed && (
       <>

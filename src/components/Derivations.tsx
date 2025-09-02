@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
+import { useLocalStorageState } from "../lib/storage";
 import type { Root } from "../types";
 
 const DERIVATIONS = [
@@ -33,13 +34,18 @@ export default function RenderDerivations({ root }: { root: Root }){
     concept:  `nominal: the act/idea of ${gerund(base)}`,
   } as const;
 
-  const [collapsed, setCollapsed] = useState(false as any) as [boolean, any];
+  const [collapsed, setCollapsed] = useLocalStorageState<boolean>('huntspeak_collapse_derivations', false);
+  const [showCollapse] = useLocalStorageState<boolean>('huntspeak_show_collapse', false);
   // lightweight state without adding storage util here
   return (
     <section className="rounded-3xl border border-neutral-200 p-4 shadow-sm fantasy-card">
       <div className="flex items-center justify-between mb-1">
         <h2 className="text-xl md:text-2xl font-semibold">Derivations</h2>
-        <button className="px-2 py-1 text-sm rounded border border-neutral-300 hover:bg-neutral-50" onClick={()=>setCollapsed((c:boolean)=>!c)}>{collapsed? 'Expand' : 'Collapse'}</button>
+        {showCollapse && (
+          <button aria-label={collapsed? 'Expand' : 'Collapse'} className="px-2 py-1 text-sm rounded border border-neutral-300 hover:bg-neutral-50" onClick={()=>setCollapsed(c=>!c)}>
+            {collapsed ? '▸' : '▾'}
+          </button>
+        )}
       </div>
       {!collapsed && (
       <>
