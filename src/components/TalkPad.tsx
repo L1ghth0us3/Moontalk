@@ -23,6 +23,8 @@ export default function TalkPad({ roots, nouns, selectedRootId, onSelectRoot }: 
     obj: "", objectNounId: "", withNounId: "", toText: "", fromText: "",
     question: false, register: { attn:false, flank:false, hush:false },
   });
+  const [syncMorph] = useLocalStorageState<boolean>(LS_KEYS.morphSync, true);
+  const [morph, setMorph] = useLocalStorageState<{neg:boolean;prog:boolean;hab:boolean}>(LS_KEYS.morphToggles, {neg:false,prog:false,hab:false});
 
   // Keep selected IDs valid when upstream lists mutate (add/remove).
   useEffect(()=>{
@@ -30,6 +32,12 @@ export default function TalkPad({ roots, nouns, selectedRootId, onSelectRoot }: 
     if (state.withNounId && !nouns.find(n=>n.id===state.withNounId)) setState(s=>({ ...s, withNounId: "" }));
     if (state.objectNounId && !nouns.find(n=>n.id===state.objectNounId)) setState(s=>({ ...s, objectNounId: "" }));
   }, [roots, nouns]);
+
+  // When sync is enabled, mirror shared morph toggles into Talk Pad state
+  useEffect(()=>{
+    if (!syncMorph) return;
+    setState(s=> ({ ...s, neg: morph.neg, prog: morph.prog, hab: morph.hab }));
+  }, [syncMorph, morph.neg, morph.prog, morph.hab]);
 
   // Follow external selected root from the Verb Root component when provided.
   useEffect(()=>{
@@ -106,9 +114,9 @@ export default function TalkPad({ roots, nouns, selectedRootId, onSelectRoot }: 
           <div className="text-xs uppercase tracking-wide text-neutral-500 mb-2">Tense</div>
           <NiceSelect value={state.tenseKey} onChange={k=>setState(s=>({...s, tenseKey:k}))} items={TENSES.map(t=>({ value:t.key, label:t.label }))} />
           <div className="mt-2 flex flex-wrap gap-3">
-            <Toggle label="Negation" info="Adds naaq-; becomes naq- before k/g/q." checked={state.neg} onChange={v=>setState(s=>({...s, neg:v}))} />
-            <Toggle label="Progressive" info="Geminate C2 before tense vowel." checked={state.prog} onChange={v=>setState(s=>({...s, prog:v}))} />
-            <Toggle label="Habitual" info="Adds -ar for habitual." checked={state.hab} onChange={v=>setState(s=>({...s, hab:v}))} />
+            <Toggle label="Negation" info="Adds naaq-; becomes naq- before k/g/q." checked={state.neg} onChange={v=>{ setState(s=>({...s, neg:v})); if (syncMorph) setMorph(m=>({...m, neg:v})); }} />
+            <Toggle label="Progressive" info="Geminate C2 before tense vowel." checked={state.prog} onChange={v=>{ setState(s=>({...s, prog:v})); if (syncMorph) setMorph(m=>({...m, prog:v})); }} />
+            <Toggle label="Habitual" info="Adds -ar for habitual." checked={state.hab} onChange={v=>{ setState(s=>({...s, hab:v})); if (syncMorph) setMorph(m=>({...m, hab:v})); }} />
           </div>
         </div>
         <div className="rounded-2xl border border-neutral-200 p-3">

@@ -6,6 +6,8 @@ export const LS_KEYS = {
   talk: "huntspeak_talkpad",
   selectedRoot: "huntspeak_selected_root",
   composerCollapsed: "huntspeak_collapse_composer",
+  morphToggles: "huntspeak_morph_toggles",
+  morphSync: "huntspeak_morph_sync",
 } as const;
 
 /** Read and JSON‑parse a value from localStorage with a safe fallback. */

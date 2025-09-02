@@ -3,7 +3,7 @@ import type { Root } from "../types";
 import { buildFinite, withHabitual, withNegation, withProgressive } from "../lib/morphology";
 import Toggle from "./ui/Toggle";
 import { useState, useMemo } from "react";
-import { useLocalStorageState } from "../lib/storage";
+import { useLocalStorageState, LS_KEYS } from "../lib/storage";
 
 /**
  * Matrix of finite forms for a single root across all pronouns × tenses,
@@ -14,16 +14,21 @@ export default function FiniteForms({ root, showCollapse = false }: { root: Root
   const [showProg, setShowProg] = useState(false);
   const [showHab, setShowHab] = useState(false);
   const [collapsed, setCollapsed] = useLocalStorageState<boolean>('huntspeak_collapse_finite', false);
+  const [syncMorph] = useLocalStorageState<boolean>(LS_KEYS.morphSync, true);
+  const [morph, setMorph] = useLocalStorageState<{neg:boolean;prog:boolean;hab:boolean}>(LS_KEYS.morphToggles, {neg:false,prog:false,hab:false});
+  const effNeg = syncMorph ? morph.neg : showNeg;
+  const effProg = syncMorph ? morph.prog : showProg;
+  const effHab = syncMorph ? morph.hab : showHab;
 
   // Precompute the table rows when inputs/toggles change.
   const rows = useMemo(() => PRONOUNS.map(p => {
     const baseForms = TENSES.map(t => buildFinite(root, p.subjV, t.vowel));
     let forms = baseForms;
-    if (showProg) forms = forms.map(f => withProgressive(f, root));
-    if (showHab) forms = forms.map(f => withHabitual(f));
-    if (showNeg) forms = forms.map(f => withNegation(f));
+    if (effProg) forms = forms.map(f => withProgressive(f, root));
+    if (effHab) forms = forms.map(f => withHabitual(f));
+    if (effNeg) forms = forms.map(f => withNegation(f));
     return { p, items: forms };
-  }), [root, showNeg, showProg, showHab]);
+  }), [root, effNeg, effProg, effHab]);
 
   // Dynamic spacing based on the longest visible cell (approximate by character length)
   const maxFormLen = useMemo(() => {
@@ -61,9 +66,9 @@ export default function FiniteForms({ root, showCollapse = false }: { root: Root
       <>
       <p className="text-sm text-neutral-600 mb-3">Template: <code>C1 + (SUBJ V) + C2 + (TENSE V) + C3</code></p>
       <div className="flex flex-wrap items-center gap-3 mb-3">
-        <Toggle label="Negation" info="Adds naaq-; naq- before k/g/q." checked={showNeg} onChange={setShowNeg} />
-        <Toggle label="Progressive" info="Geminate C2 before tense vowel." checked={showProg} onChange={setShowProg} />
-        <Toggle label="Habitual" info="Adds -ar for habitual." checked={showHab} onChange={setShowHab} />
+        <Toggle label="Negation" info="Adds naaq-; naq- before k/g/q." checked={effNeg} onChange={(v)=> syncMorph ? setMorph(m=>({...m, neg:v})) : setShowNeg(v)} />
+        <Toggle label="Progressive" info="Geminate C2 before tense vowel." checked={effProg} onChange={(v)=> syncMorph ? setMorph(m=>({...m, prog:v})) : setShowProg(v)} />
+        <Toggle label="Habitual" info="Adds -ar for habitual." checked={effHab} onChange={(v)=> syncMorph ? setMorph(m=>({...m, hab:v})) : setShowHab(v)} />
       </div>
       <div className="overflow-x-auto rounded-2xl shadow-sm border border-neutral-200">
         <table className="table-fixed w-full text-sm 2xl:text-base finite-table">
