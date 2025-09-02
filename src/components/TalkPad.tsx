@@ -108,7 +108,8 @@ export default function TalkPad({ roots, nouns, selectedRootId, onSelectRoot }: 
           <NiceSelect value={state.withNounId} onChange={v=>setState(s=>({...s, withNounId:v}))} items={[{value:"", label:"— none —"}, ...nouns.map(n=>({ value:n.id, label:`${n.word} — ${n.gloss || ""}` }))]} />
         </div>
         <div className="rounded-2xl border border-neutral-200 p-3">
-          <div className="text-xs uppercase tracking-wide text-neutral-500 mb-2">To / From</div>
+          <div className="text-xs uppercase tracking-wide text-neutral-500 mb-1">To / From</div>
+          <div className="text-xs text-neutral-500 mb-2">Use <code>ga</code> for “to” and <code>ʌs</code> for “from” (e.g., <code>ga</code> prey; <code>ʌs</code> Shroud).</div>
           <div className="grid grid-cols-2 gap-2">
             <input className="px-2 py-2 rounded-lg border border-neutral-300" placeholder="to (ga) — e.g., prey" value={state.toText} onChange={e=>setState(s=>({...s, toText:e.target.value}))} />
             <input className="px-2 py-2 rounded-lg border border-neutral-300" placeholder="from (ʌs) — e.g., Shroud" value={state.fromText} onChange={e=>setState(s=>({...s, fromText:e.target.value}))} />
