@@ -20,7 +20,7 @@ export default function TalkPad({ roots, nouns, selectedRootId, onSelectRoot }: 
     rootId: roots[0]?.id || "",
     tenseKey: TENSES[0].key,
     neg: false, prog: false, hab: false,
-    obj: "", withNounId: "", toText: "", fromText: "",
+    obj: "", objectNounId: "", withNounId: "", toText: "", fromText: "",
     question: false, register: { attn:false, flank:false, hush:false },
   });
 
@@ -28,6 +28,7 @@ export default function TalkPad({ roots, nouns, selectedRootId, onSelectRoot }: 
   useEffect(()=>{
     if (state.rootId && !roots.find(r=>r.id===state.rootId)) setState(s=>({ ...s, rootId: roots[0]?.id || "" }));
     if (state.withNounId && !nouns.find(n=>n.id===state.withNounId)) setState(s=>({ ...s, withNounId: "" }));
+    if (state.objectNounId && !nouns.find(n=>n.id===state.objectNounId)) setState(s=>({ ...s, objectNounId: "" }));
   }, [roots, nouns]);
 
   // Follow external selected root from the Verb Root component when provided.
@@ -42,6 +43,18 @@ export default function TalkPad({ roots, nouns, selectedRootId, onSelectRoot }: 
   const tense = TENSES.find(t=>t.key===state.tenseKey) || TENSES[0];
   const r = useMemo(()=> roots.find(x=>x.id===state.rootId) || roots[0], [roots, state.rootId]);
   const withNoun = nouns.find(n=>n.id===state.withNounId);
+  const objectNoun = nouns.find(n=>n.id===state.objectNounId);
+
+  // Migrate legacy free-text obj to objectNounId when possible
+  useEffect(()=>{
+    if (!state.obj || state.objectNounId) return;
+    const needle = state.obj.toLowerCase().trim();
+    if (!needle) return;
+    const match = nouns.find(n => n.word.toLowerCase() === needle
+      || n.gloss.toLowerCase() === needle
+      || (n.synonyms || []).some(s => s.toLowerCase() === needle));
+    if (match) setState(s=>({ ...s, objectNounId: match.id }));
+  }, [state.obj, state.objectNounId, nouns]);
 
   // Build the Huntspeak verb form in stages with optional morphology toggles.
   const hsVerb = useMemo(()=>{
@@ -61,7 +74,7 @@ export default function TalkPad({ roots, nouns, selectedRootId, onSelectRoot }: 
     const bits: string[] = [];
     bits.push(pron.form);
     bits.push(hsVerb);
-    if (state.obj.trim()) bits.push(state.obj.trim());
+    if (objectNoun) bits.push(objectNoun.word);
     if (withNoun) bits.push("fi", withNoun.word);
     if (state.toText.trim()) bits.push("ga", state.toText.trim());
     if (state.fromText.trim()) bits.push("ʌs", state.fromText.trim());
@@ -100,7 +113,11 @@ export default function TalkPad({ roots, nouns, selectedRootId, onSelectRoot }: 
         </div>
         <div className="rounded-2xl border border-neutral-200 p-3">
           <div className="text-xs uppercase tracking-wide text-neutral-500 mb-2">Object (what)</div>
-          <input className="w-full px-2 py-2 rounded-lg border border-neutral-300" placeholder="prey / stag / mark…" value={state.obj} onChange={e=>setState(s=>({...s, obj:e.target.value}))} />
+          <NiceSelect
+            value={state.objectNounId}
+            onChange={v=>setState(s=>({...s, objectNounId:v}))}
+            items={[{value:"", label:"— none —"}, ...nouns.map(n=>({ value:n.id, label:`${n.word} — ${n.gloss || ""}` }))]}
+          />
         </div>
         <div className="rounded-2xl border border-neutral-200 p-3">
           <div className="text-xs uppercase tracking-wide text-neutral-500 mb-1">With (instrument)</div>
