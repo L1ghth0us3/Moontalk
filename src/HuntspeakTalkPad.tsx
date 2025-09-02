@@ -23,7 +23,7 @@ export default function HuntspeakTalkPad(){
   const [nouns, setNouns] = useState<Noun[]>(DEFAULT_NOUNS);
   const [selectedId, setSelectedId] = useLocalStorageState<string|null>(LS_KEYS.selectedRoot, roots[0]?.id || null);
   const [selectedNounId, setSelectedNounId] = useState<string|null>(nouns[0]?.id || null);
-  const [theme, setTheme] = useLocalStorageState<'fantasy'|'plain'|'dark'|'auto'>("huntspeak_theme", 'fantasy');
+  const [theme, setTheme] = useLocalStorageState<'fantasy'|'plain'|'dark'|'auto'>("huntspeak_theme", 'auto');
   const [systemDark, setSystemDark] = useState<boolean>(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [dataOpen, setDataOpen] = useState(false);
@@ -236,12 +236,12 @@ export default function HuntspeakTalkPad(){
                     aria-pressed={theme==='fantasy'}
                     className={`px-3 py-2 rounded-lg border transition ${theme==='fantasy' ? 'ring-2 ring-amber-200 border-amber-500 font-semibold' : 'border-neutral-300'}`}
                     onClick={()=>setTheme('fantasy')}
-                  >{theme==='fantasy' ? '✓ Fantasy' : 'Fantasy'}</button>
+                  >{theme==='fantasy' ? '✓ Dracula' : 'Dracula'}</button>
                   <button
                     aria-pressed={theme==='plain'}
                     className={`px-3 py-2 rounded-lg border transition ${theme==='plain' ? 'ring-2 ring-neutral-200 border-neutral-500 font-semibold' : 'border-neutral-300'}`}
                     onClick={()=>setTheme('plain')}
-                  >{theme==='plain' ? '✓ Plain' : 'Plain'}</button>
+                  >{theme==='plain' ? '✓ Light' : 'Light'}</button>
                   <button
                     aria-pressed={theme==='dark'}
                     className={`px-3 py-2 rounded-lg border transition ${theme==='dark' ? 'ring-2 ring-violet-300 border-neutral-600 font-semibold text-white bg-neutral-800' : 'border-neutral-300'}`}
