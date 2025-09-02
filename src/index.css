@@ -227,7 +227,7 @@ body.theme-dark .result-card .copy-btn { border-color: #5ea585; }
 
 /* Composer overlay tabs (full-width split) */
 .composer-tabs { border-radius: 0.75rem; overflow: hidden; }
-.composer-tabs .tab { text-align: center; padding: 0; font-weight: 500; }
+.composer-tabs .tab { text-align: center; padding: 0.625rem 0.75rem; font-weight: 500; }
 .composer-tabs .tab + .tab { border-left: 1px solid rgba(0,0,0,0.08); }
 
 body.theme-plain .composer-tabs { background: #f8fafc; border: 1px solid #e5e7eb; }

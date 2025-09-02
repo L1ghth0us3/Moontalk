@@ -138,7 +138,7 @@ export default function HuntspeakTalkPad(){
       {/* Sticky composer: tabs for Talk Pad and Translator */}
       <div className="sticky top-2 z-30">
         <section className="rounded-3xl border border-neutral-200 p-4 shadow-sm fantasy-card">
-          <div className="composer-tabs mb-3 grid grid-cols-2" role="tablist" aria-label="Composer">
+          <div className="composer-tabs mb-3 grid grid-cols-2 -mx-4 -mt-4" role="tablist" aria-label="Composer">
             <button
               role="tab"
               aria-selected={composerTab==='talk'}
