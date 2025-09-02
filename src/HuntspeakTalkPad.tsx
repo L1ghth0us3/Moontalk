@@ -28,6 +28,7 @@ export default function HuntspeakTalkPad(){
   const [systemDark, setSystemDark] = useState<boolean>(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [dataOpen, setDataOpen] = useState(false);
+  const [tab, setTab] = useLocalStorageState<'verbs'|'nouns'|'compose'>("huntspeak_tab", 'verbs');
 
   // Keep a valid selected root when the roots list changes (e.g. delete).
   useEffect(()=>{
@@ -128,35 +129,64 @@ export default function HuntspeakTalkPad(){
             <p className="text-neutral-600 mt-1">RP-ready: create words and get instant Huntspeak lines.</p>
           </div>
           <nav aria-label="Main" className="flex items-center gap-2">
+            <div role="tablist" aria-label="Sections" className="flex items-center gap-2">
+              <button aria-pressed={tab==='verbs'} className={`px-3 py-2 rounded-xl border transition ${tab==='verbs' ? 'ring-2 ring-blue-300 border-blue-500 font-semibold' : 'border-neutral-300 hover:bg-neutral-50'}`} onClick={()=>setTab('verbs')}>Verbs</button>
+              <button aria-pressed={tab==='nouns'} className={`px-3 py-2 rounded-xl border transition ${tab==='nouns' ? 'ring-2 ring-blue-300 border-blue-500 font-semibold' : 'border-neutral-300 hover:bg-neutral-50'}`} onClick={()=>setTab('nouns')}>Nouns</button>
+              <button aria-pressed={tab==='compose'} className={`px-3 py-2 rounded-xl border transition ${tab==='compose' ? 'ring-2 ring-blue-300 border-blue-500 font-semibold' : 'border-neutral-300 hover:bg-neutral-50'}`} onClick={()=>setTab('compose')}>Compose</button>
+            </div>
+            <span className="h-6 w-px bg-neutral-300 mx-1" aria-hidden="true" />
             <button className="px-3 py-2 rounded-xl border border-neutral-300 hover:bg-neutral-50" onClick={()=>setDataOpen(true)}>Data</button>
             <button className="px-3 py-2 rounded-xl border border-neutral-300 hover:bg-neutral-50" onClick={()=>setSettingsOpen(true)}>Settings</button>
           </nav>
         </div>
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 2xl:grid-cols-5 gap-6">
-        <aside className="lg:col-span-1 space-y-6">
-          <RootEditor initial={roots} onChange={setRoots} selectedId={selectedId} onSelect={setSelectedId} showCollapse={showCollapse} />
-          <NounEditor initial={nouns} onChange={setNouns} selectedId={selectedNounId} onSelect={setSelectedNounId} showCollapse={showCollapse} />
-        </aside>
-        <main className="lg:col-span-3 2xl:col-span-4 space-y-6">
-          <SelectedSummary root={selected} noun={selectedNoun} />
-          <section className="rounded-3xl border border-neutral-200 p-4 shadow-sm fantasy-card">
-            <div className="flex items-center justify-between mb-1">
-              <h2 className="text-xl md:text-2xl font-semibold">Talk Pad</h2>
-              <TalkPadCollapse />
-            </div>
-            <TalkPadBody />
-          </section>
-          {selected && (
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
-              <FiniteForms root={selected} showCollapse={showCollapse} />
-              <RenderDerivations root={selected} showCollapse={showCollapse} />
-            </div>
-          )}
-          <FreeTranslator roots={roots} nouns={nouns} showCollapse={showCollapse} />
-        </main>
-      </div>
+      {/* Persistent summary across all sections */}
+      <SelectedSummary root={selected} noun={selectedNoun} />
+
+      {/* Section content */}
+      {tab === 'verbs' && (
+        <div className="grid grid-cols-1 lg:grid-cols-4 2xl:grid-cols-5 gap-6">
+          <aside className="lg:col-span-1 space-y-6">
+            <RootEditor initial={roots} onChange={setRoots} selectedId={selectedId} onSelect={setSelectedId} showCollapse={showCollapse} />
+          </aside>
+          <main className="lg:col-span-3 2xl:col-span-4 space-y-6">
+            {selected ? (
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
+                <FiniteForms root={selected} showCollapse={showCollapse} />
+                <RenderDerivations root={selected} showCollapse={showCollapse} />
+              </div>
+            ) : (
+              <section className="rounded-3xl border border-neutral-200 p-4 shadow-sm fantasy-card">
+                <div className="text-neutral-600">Add or select a verb root to view forms.</div>
+              </section>
+            )}
+          </main>
+        </div>
+      )}
+
+      {tab === 'nouns' && (
+        <div className="grid grid-cols-1 gap-6">
+          <main className="space-y-6">
+            <NounEditor initial={nouns} onChange={setNouns} selectedId={selectedNounId} onSelect={setSelectedNounId} showCollapse={showCollapse} />
+          </main>
+        </div>
+      )}
+
+      {tab === 'compose' && (
+        <div className="grid grid-cols-1 gap-6">
+          <main className="space-y-6">
+            <section className="rounded-3xl border border-neutral-200 p-4 shadow-sm fantasy-card">
+              <div className="flex items-center justify-between mb-1">
+                <h2 className="text-xl md:text-2xl font-semibold">Talk Pad</h2>
+                <TalkPadCollapse />
+              </div>
+              <TalkPadBody />
+            </section>
+            <FreeTranslator roots={roots} nouns={nouns} showCollapse={showCollapse} />
+          </main>
+        </div>
+      )}
     </div>
     {dataOpen && (
       <>
