@@ -27,7 +27,7 @@ export default function HuntspeakTalkPad(){
   const [systemDark, setSystemDark] = useState<boolean>(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [dataOpen, setDataOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
+  const [composerTab, setComposerTab] = useLocalStorageState<'talk'|'translator'>("huntspeak_composer_tab", 'talk');
 
   // Keep a valid selected root when the roots list changes (e.g. delete).
   useEffect(()=>{
@@ -56,14 +56,7 @@ export default function HuntspeakTalkPad(){
     };
   }, []);
 
-  // Track window scroll to toggle sticky composer background
-  useEffect(()=>{
-    if (typeof window === 'undefined') return;
-    const onScroll = () => setScrolled(window.scrollY > 8);
-    onScroll();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll as any);
-  }, []);
+  // No sticky background tracking (removed by request)
 
   // Apply effective theme class to <body> whenever theme or system preference changes.
   useEffect(()=>{
@@ -142,18 +135,30 @@ export default function HuntspeakTalkPad(){
         </div>
       </header>
 
-      {/* Sticky composer: Talk Pad + Translator stay visible while scrolling */}
-      <div className="sticky top-2 z-30 transition-all">
-        <div className={`grid grid-cols-1 xl:grid-cols-2 gap-4 rounded-3xl ${scrolled ? 'sticky-bg shadow-lg px-2 py-2' : ''}`}>
-          <section className="rounded-3xl border border-neutral-200 p-4 shadow-sm fantasy-card">
-            <div className="flex items-center justify-between mb-1">
-              <h2 className="text-xl md:text-2xl font-semibold">Talk Pad</h2>
-              <TalkPadCollapse />
+      {/* Sticky composer: tabs for Talk Pad and Translator */}
+      <div className="sticky top-2 z-30">
+        <section className="rounded-3xl border border-neutral-200 p-4 shadow-sm fantasy-card">
+          <div className="flex items-center justify-between mb-2">
+            <div role="tablist" aria-label="Composer" className="flex items-center gap-2">
+              <button
+                aria-pressed={composerTab==='talk'}
+                className={`px-3 py-2 rounded-xl border transition ${composerTab==='talk' ? 'ring-2 ring-blue-300 border-blue-500 font-semibold' : 'border-neutral-300 hover:bg-neutral-50'}`}
+                onClick={()=>setComposerTab('talk')}
+              >Talk Pad</button>
+              <button
+                aria-pressed={composerTab==='translator'}
+                className={`px-3 py-2 rounded-xl border transition ${composerTab==='translator' ? 'ring-2 ring-blue-300 border-blue-500 font-semibold' : 'border-neutral-300 hover:bg-neutral-50'}`}
+                onClick={()=>setComposerTab('translator')}
+              >Free Translator</button>
             </div>
+            {composerTab==='talk' && (<TalkPadCollapse />)}
+          </div>
+          {composerTab==='talk' ? (
             <TalkPadBody />
-          </section>
-          <FreeTranslator roots={roots} nouns={nouns} showCollapse={showCollapse} />
-        </div>
+          ) : (
+            <FreeTranslator roots={roots} nouns={nouns} showCollapse={showCollapse} />
+          )}
+        </section>
       </div>
 
       {/* Below: Roots, Nouns, Finite Forms, Derivations in one row (responsive) */}
