@@ -114,7 +114,7 @@ export default function TalkPad({ roots, nouns, selectedRootId, onSelectRoot, sy
         </div>
         <div className="rounded-2xl border border-neutral-200 p-3">
           <div className="text-xs uppercase tracking-wide text-neutral-500 mb-2">Verb</div>
-          <NiceSelect value={state.rootId} onChange={id=>{ setState(s=>({...s, rootId:id})); onSelectRoot?.(id); }} items={roots.map(rt=>({ value:rt.id, label: `${[rt.c1, rt.c2, rt.c3].join("-")} — ${rt.gloss || "(no gloss)"}` }))} />
+          <NiceSelect searchable value={state.rootId} onChange={id=>{ setState(s=>({...s, rootId:id})); onSelectRoot?.(id); }} items={roots.map(rt=>({ value:rt.id, label: `${[rt.c1, rt.c2, rt.c3].join("-")} — ${rt.gloss || "(no gloss)"}` }))} />
         </div>
         <div className="rounded-2xl border border-neutral-200 p-3">
           <div className="text-xs uppercase tracking-wide text-neutral-500 mb-2">Tense</div>
@@ -148,7 +148,7 @@ export default function TalkPad({ roots, nouns, selectedRootId, onSelectRoot, sy
         </div>
         <div className="rounded-2xl border border-neutral-200 p-3">
           <div className="text-xs uppercase tracking-wide text-neutral-500 mb-2">Object (what)</div>
-          <NiceSelect
+          <NiceSelect searchable
             value={state.objectNounId}
             onChange={v=>setState(s=>({...s, objectNounId:v}))}
             items={[{value:"", label:"— none —"}, ...nouns.map(n=>({ value:n.id, label:`${n.word} — ${n.gloss || ""}` }))]}
@@ -157,7 +157,7 @@ export default function TalkPad({ roots, nouns, selectedRootId, onSelectRoot, sy
         <div className="rounded-2xl border border-neutral-200 p-3">
           <div className="text-xs uppercase tracking-wide text-neutral-500 mb-1">With (instrument)</div>
           <div className="text-xs text-neutral-500 mb-2">Instrument marked with <code>fi</code> (e.g., fi trap).</div>
-          <NiceSelect value={state.withNounId} onChange={v=>setState(s=>({...s, withNounId:v}))} items={[{value:"", label:"— none —"}, ...nouns.map(n=>({ value:n.id, label:`${n.word} — ${n.gloss || ""}` }))]} />
+          <NiceSelect searchable value={state.withNounId} onChange={v=>setState(s=>({...s, withNounId:v}))} items={[{value:"", label:"— none —"}, ...nouns.map(n=>({ value:n.id, label:`${n.word} — ${n.gloss || ""}` }))]} />
         </div>
         <div className="rounded-2xl border border-neutral-200 p-3">
           <div className="text-xs uppercase tracking-wide text-neutral-500 mb-1">To / From</div>

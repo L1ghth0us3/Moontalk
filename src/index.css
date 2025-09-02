@@ -253,6 +253,16 @@ body.theme-dark .result-card .copy-btn { border-color: #5ea585; }
 }
 .expand-card { animation: modalPopIn 160ms ease-out both; }
 
+/* Derivation card hover theme variants */
+body.theme-plain .derivation-card:hover { background-color: #f3f4f6; }
+body.theme-fantasy .derivation-card:hover { background-color: #303246; }
+body.theme-dark .derivation-card:hover { background-color: #23222b; }
+
+/* Popover panel theme variants */
+body.theme-plain .popover-panel { background: #ffffff; border-color: #e5e7eb; color: #213547; }
+body.theme-fantasy .popover-panel { background: #2b2d3a; border-color: #44475a; color: #f8f8f2; }
+body.theme-dark .popover-panel { background: #1b1a20; border-color: #3a3345; color: #eae6df; }
+
 /* Lighter background for selected root list item across themes */
 body.theme-plain .root-item--selected { background-color: #f3f4f6; }
 body.theme-fantasy .root-item--selected { background-color: #3d4160; }
