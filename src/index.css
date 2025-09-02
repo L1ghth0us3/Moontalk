@@ -225,6 +225,17 @@ body.theme-fantasy .result-card .copy-btn { border-color: #7ccaa1; }
 body.theme-dark .result-card { background: #152019; border-color: #5ea585 !important; }
 body.theme-dark .result-card .copy-btn { border-color: #5ea585; }
 
+/* Subtle one-shot background "breathe" effect for content updates */
+@keyframes pulseBg {
+  0% { background-color: transparent; }
+  15% { background-color: var(--pulse-color, rgba(180,200,255,0.16)); }
+  100% { background-color: transparent; }
+}
+.pulse-once { animation: pulseBg 700ms ease-out 1; }
+body.theme-plain .pulse-once { --pulse-color: rgba(59,130,246,0.16); }
+body.theme-fantasy .pulse-once { --pulse-color: rgba(189,147,249,0.14); }
+body.theme-dark .pulse-once { --pulse-color: rgba(124,106,165,0.16); }
+
 /* Composer overlay tabs (full-width split) */
 .composer-tabs { border-radius: 0.75rem; overflow: visible; position: relative; }
 .composer-tabs .tab { text-align: center; padding: 0.625rem 0.75rem; font-weight: 500; line-height: 1; display: flex; align-items: center; justify-content: center; height: 2.5rem; }

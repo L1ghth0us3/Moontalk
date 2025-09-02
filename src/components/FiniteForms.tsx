@@ -4,6 +4,7 @@ import { buildFinite, withHabitual, withNegation, withProgressive } from "../lib
 import Toggle from "./ui/Toggle";
 import { useState, useMemo } from "react";
 import { useLocalStorageState } from "../lib/storage";
+import { usePulseOnChange } from "../lib/usePulse";
 
 /**
  * Matrix of finite forms for a single root across all pronouns × tenses,
@@ -14,6 +15,7 @@ export default function FiniteForms({ root, showCollapse = false }: { root: Root
   const [showProg, setShowProg] = useState(false);
   const [showHab, setShowHab] = useState(false);
   const [collapsed, setCollapsed] = useLocalStorageState<boolean>('huntspeak_collapse_finite', false);
+  const pulse = usePulseOnChange([root.id]);
 
   // Precompute the table rows when inputs/toggles change.
   const rows = useMemo(() => PRONOUNS.map(p => {
@@ -26,7 +28,7 @@ export default function FiniteForms({ root, showCollapse = false }: { root: Root
   }), [root, showNeg, showProg, showHab]);
 
   return (
-    <section className="rounded-3xl border border-neutral-200 p-4 shadow-sm fantasy-card">
+    <section className={`rounded-3xl border border-neutral-200 p-4 shadow-sm fantasy-card ${pulse? 'pulse-once':''}`}>
       <div className="flex items-center justify-between mb-1">
         <h2 className="text-xl md:text-2xl font-semibold">Finite Forms</h2>
         {showCollapse && (
