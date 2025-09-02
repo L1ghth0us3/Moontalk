@@ -1,15 +1,29 @@
 import { useState } from "react";
+import { useLocalStorageState } from "../lib/storage";
 import type { Noun, Root } from "../types";
 import { findRootByEnglish, withHabitual, withNegation, withProgressive } from "../lib/morphology";
 
+// Helper: best‑effort clipboard copy; ignore failures.
 const clip = async (text: string) => { try { await navigator.clipboard.writeText(text); } catch {} };
 
-export default function FreeTranslator({ roots, nouns }: { roots: Root[]; nouns: Noun[] }){
+/**
+ * Naive English → Huntspeak translator for single‑verb clauses.
+ *
+ * Heuristics:
+ * - Detects subject pronoun (i/we/you/you all/he/she/they) and tense markers (will/did)
+ * - Flags: not/don't/didn't/won't → negation; be + -ing → progressive; "used to" → habitual
+ * - Adpositional chunks: with/ to/ from → fi/ ga/ ʌs
+ * - Looks up verb roots by matching gloss/synonyms; nouns by gloss or word.
+ */
+export default function FreeTranslator({ roots, nouns, showCollapse = false, embedded = false }: { roots: Root[]; nouns: Noun[]; showCollapse?: boolean; embedded?: boolean }){
   const [en, setEn] = useState("");
   const [hs, setHs] = useState("");
+  const [collapsed, setCollapsed] = useLocalStorageState<boolean>('huntspeak_collapse_translator', false);
 
+  // Normalize strings for loose matching.
   function norm(s: string) { return s.toLowerCase().replace(/[()]/g, "").replace(/\s+/g, " ").trim(); }
   function stripArticles(s: string) { return s.replace(/^(a|an|the)\s+/, ""); }
+  // Best‑effort noun lex lookup against word/gloss/synonyms; fallback to raw phrase.
   function lex(nouns: Noun[], phrase: string){ const p = norm(stripArticles(phrase)); const p2 = p.replace(/s$/, ""); if (p2!==p) phrase = p2; for (const n of nouns){ const w=norm(n.word), g=norm(n.gloss); if (p===w||p===g||g.includes(p)) return n.word; if (n.synonyms && n.synonyms.some(s=>norm(s)===p)) return n.word; } return phrase.trim(); }
 
   function translate(){
@@ -26,6 +40,7 @@ export default function FreeTranslator({ roots, nouns }: { roots: Root[]; nouns:
     rest = rest.trim();
     const words = rest.split(" ");
     let verbToken = words[0] || ""; verbToken = verbToken.replace(/ing$/, "");
+    // Try single‑token verb first, then a two‑word verb phrase.
     let root = findRootByEnglish(roots, verbToken); if (!root && words.length>=2) root = findRootByEnglish(roots, `${words[0]} ${words[1]}`);
     if (!root) { setHs("(Unknown verb—add a root or use Talk Pad)"); return; }
     let verb = `${root.c1}${subj.subjV}${root.c2}${tense}${root.c3}`; if (prog) verb=withProgressive(verb,root); if (hab) verb=withHabitual(verb); if (neg) verb=withNegation(verb);
@@ -35,9 +50,38 @@ export default function FreeTranslator({ roots, nouns }: { roots: Root[]; nouns:
     setHs(bits.join(" "));
   }
 
+  if (embedded) {
+    return (
+      <>
+        <p className="text-sm text-neutral-600 mb-3">Translate simple one-verb English lines into Huntspeak. Recognizes pronouns, will/did/not, and with/to/from phrases.</p>
+        <div className="space-y-2">
+          <textarea className="w-full h-20 px-3 py-2 rounded-xl border border-neutral-300" placeholder="Type: we will hunt with a trap from the Shroud" value={en} onChange={e=>setEn(e.target.value)} />
+          <div className="flex items-center gap-2">
+            <button onClick={translate} className="px-3 py-2 rounded-xl border border-neutral-300 hover:bg-neutral-50">Translate</button>
+            <button onClick={()=>clip(hs)} className="px-3 py-2 rounded-xl border border-neutral-300 hover:bg-neutral-50">Copy</button>
+            <div className="text-sm text-neutral-500">Recognizes pronouns, will/did/not, with/to/from.</div>
+          </div>
+          <div className="rounded-2xl border border-neutral-200 p-3">
+            <div className="text-xs uppercase tracking-wide text-neutral-500">Huntspeak</div>
+            <div className="text-lg font-semibold break-words mt-1">{hs || "—"}</div>
+          </div>
+        </div>
+      </>
+    );
+  }
+
   return (
-    <section className="rounded-3xl border border-neutral-200 p-4 shadow-sm">
-      <h2 className="text-lg font-semibold mb-1">Free Translator (simple, 1-verb lines)</h2>
+    <section className="rounded-3xl border border-neutral-200 p-4 shadow-sm fantasy-card">
+      <div className="flex items-center justify-between mb-1">
+        <h2 className="text-xl md:text-2xl font-semibold">Free Translator (simple, 1-verb lines)</h2>
+        {showCollapse && (
+          <button aria-label={collapsed? 'Expand' : 'Collapse'} className="px-2 py-1 text-sm rounded border border-neutral-300 hover:bg-neutral-50" onClick={()=>setCollapsed(c=>!c)}>
+            {collapsed ? '▸' : '▾'}
+          </button>
+        )}
+      </div>
+      {!collapsed && (
+      <>
       <p className="text-sm text-neutral-600 mb-3">Try: <code>we will hunt with a trap from the Shroud</code>. Recognizes pronouns + will/did/not + with/to/from.</p>
       <div className="space-y-2">
         <textarea className="w-full h-20 px-3 py-2 rounded-xl border border-neutral-300" placeholder="Type: we will hunt with a trap from the Shroud" value={en} onChange={e=>setEn(e.target.value)} />
@@ -51,6 +95,8 @@ export default function FreeTranslator({ roots, nouns }: { roots: Root[]; nouns:
           <div className="text-lg font-semibold break-words mt-1">{hs || "—"}</div>
         </div>
       </div>
+      </>
+      )}
     </section>
   );
 }

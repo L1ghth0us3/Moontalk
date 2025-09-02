@@ -1,3 +1,4 @@
+/** Small labeled checkbox with optional hover tooltip. */
 export default function Toggle({ label, checked, onChange, info }: { label: string; checked: boolean; onChange: (v: boolean)=>void; info?: string }) {
   return (
     <label className="inline-flex items-center gap-2 select-none cursor-pointer">
@@ -14,4 +15,3 @@ export default function Toggle({ label, checked, onChange, info }: { label: stri
     </label>
   );
 }
-

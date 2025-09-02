@@ -1,5 +1,9 @@
 import React from "react";
 
+/**
+ * Lightweight accessible-ish select with keyboard navigation and hover states.
+ * Keeps styling consistent across themes while avoiding native <select>.
+ */
 export default function NiceSelect({ value, onChange, items, placeholder = "Select…" }: { value: string; onChange: (v: string)=>void; items: { value: string; label: string }[]; placeholder?: string; }) {
   const [open, setOpen] = React.useState(false);
   const [hoverIdx, setHoverIdx] = React.useState<number>(-1);
@@ -40,4 +44,3 @@ export default function NiceSelect({ value, onChange, items, placeholder = "Sele
     </div>
   );
 }
-

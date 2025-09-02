@@ -6,9 +6,15 @@ import NiceSelect from "./ui/NiceSelect";
 import { LS_KEYS, useLocalStorageState } from "../lib/storage";
 import { buildFinite, withHabitual, withNegation, withProgressive } from "../lib/morphology";
 
+// Helper: best‑effort clipboard copy; ignore failures (e.g., permissions).
 const clip = async (text: string) => { try { await navigator.clipboard.writeText(text); } catch {} };
 
-export default function TalkPad({ roots, nouns }: { roots: Root[]; nouns: Noun[] }){
+/**
+ * Guided sentence builder. Users pick pronoun/root/tense and optional toggles,
+ * then optionally fill object and adpositional phrases. Produces a 1‑line
+ * Huntspeak sentence (copyable).
+ */
+export default function TalkPad({ roots, nouns, selectedRootId, onSelectRoot }: { roots: Root[]; nouns: Noun[]; selectedRootId?: string; onSelectRoot?: (id: string)=>void }){
   const [state, setState] = useLocalStorageState(LS_KEYS.talk, {
     pronForm: PRONOUNS[0].form,
     rootId: roots[0]?.id || "",
@@ -18,17 +24,26 @@ export default function TalkPad({ roots, nouns }: { roots: Root[]; nouns: Noun[]
     question: false, register: { attn:false, flank:false, hush:false },
   });
 
-  // keep IDs valid when lists change
+  // Keep selected IDs valid when upstream lists mutate (add/remove).
   useEffect(()=>{
     if (state.rootId && !roots.find(r=>r.id===state.rootId)) setState(s=>({ ...s, rootId: roots[0]?.id || "" }));
     if (state.withNounId && !nouns.find(n=>n.id===state.withNounId)) setState(s=>({ ...s, withNounId: "" }));
   }, [roots, nouns]);
+
+  // Follow external selected root from the Verb Root component when provided.
+  useEffect(()=>{
+    if (!selectedRootId) return;
+    const exists = roots.some(r=>r.id===selectedRootId);
+    if (!exists) return;
+    if (state.rootId !== selectedRootId) setState(s=>({ ...s, rootId: selectedRootId }));
+  }, [selectedRootId, roots]);
 
   const pron = PRONOUNS.find(p=>p.form===state.pronForm) || PRONOUNS[0];
   const tense = TENSES.find(t=>t.key===state.tenseKey) || TENSES[0];
   const r = useMemo(()=> roots.find(x=>x.id===state.rootId) || roots[0], [roots, state.rootId]);
   const withNoun = nouns.find(n=>n.id===state.withNounId);
 
+  // Build the Huntspeak verb form in stages with optional morphology toggles.
   const hsVerb = useMemo(()=>{
     if (!r) return "";
     let form = buildFinite(r, pron.subjV, tense.vowel);
@@ -38,6 +53,9 @@ export default function TalkPad({ roots, nouns }: { roots: Root[]; nouns: Noun[]
     return form;
   }, [r, pron, tense, state.prog, state.hab, state.neg]);
 
+  // Compose the final sentence. Order:
+  // pronoun • verb • [object] • [fi INSTR] • [ga TO] • [ʌs FROM] • [qa?]
+  // Register marks: ƛ at start (flank), aᵘ before final, ǃ at end (attention).
   const sentence = useMemo(()=>{
     if (!r) return "";
     const bits: string[] = [];
@@ -63,7 +81,7 @@ export default function TalkPad({ roots, nouns }: { roots: Root[]; nouns: Noun[]
         </div>
         <div className="rounded-2xl border border-neutral-200 p-3">
           <div className="text-xs uppercase tracking-wide text-neutral-500 mb-2">Verb</div>
-          <NiceSelect value={state.rootId} onChange={id=>setState(s=>({...s, rootId:id}))} items={roots.map(rt=>({ value:rt.id, label: `${[rt.c1, rt.c2, rt.c3].join("-")} — ${rt.gloss || "(no gloss)"}` }))} />
+          <NiceSelect value={state.rootId} onChange={id=>{ setState(s=>({...s, rootId:id})); onSelectRoot?.(id); }} items={roots.map(rt=>({ value:rt.id, label: `${[rt.c1, rt.c2, rt.c3].join("-")} — ${rt.gloss || "(no gloss)"}` }))} />
         </div>
         <div className="rounded-2xl border border-neutral-200 p-3">
           <div className="text-xs uppercase tracking-wide text-neutral-500 mb-2">Tense</div>
@@ -100,13 +118,16 @@ export default function TalkPad({ roots, nouns }: { roots: Root[]; nouns: Noun[]
             <Toggle label="aᵘ hush" checked={state.register.hush} onChange={v=>setState(s=>({...s, register:{...s.register, hush:v}}))} />
           </div>
         </div>
-      </div>
-      <div className="rounded-2xl border border-neutral-200 p-3 flex items-center gap-3">
-        <div className="flex-1">
-          <div className="text-xs uppercase tracking-wide text-neutral-500">Huntspeak</div>
-          <div className="text-xl font-semibold break-words mt-1">{sentence || "—"}</div>
+        {/* Result panel occupies the remaining slot on the second row (at 2xl) */}
+        <div className="rounded-2xl border p-3 result-card">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex-1">
+              <div className="text-xs uppercase tracking-wide opacity-80">Result (Huntspeak)</div>
+              <div className="text-xl font-semibold break-words mt-1">{sentence || "—"}</div>
+            </div>
+            <button onClick={()=>clip(sentence)} className="px-3 py-2 rounded-xl border copy-btn">Copy</button>
+          </div>
         </div>
-        <button onClick={()=>clip(sentence)} className="px-3 py-2 rounded-xl border border-neutral-300 hover:bg-neutral-50">Copy</button>
       </div>
     </div>
   );
