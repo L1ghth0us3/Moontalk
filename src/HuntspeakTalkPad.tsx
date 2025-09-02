@@ -8,7 +8,6 @@ import RenderDerivations from "./components/Derivations";
 import FreeTranslator from "./components/FreeTranslator";
 import { useLocalStorageState, LS_KEYS } from "./lib/storage";
 import FiniteForms from "./components/FiniteForms";
-import SelectedSummary from "./components/SelectedSummary";
 
 /**
  * App shell: orchestrates roots/nouns editing, sentence builder (Talk Pad),
@@ -65,7 +64,6 @@ export default function HuntspeakTalkPad(){
   }, [theme, systemDark]);
 
   const selected = roots.find(r=>r.id===selectedId) || null;
-  const selectedNoun = nouns.find(n=>n.id===selectedNounId) || null;
   const [showCollapse, setShowCollapse] = useLocalStorageState<boolean>('huntspeak_show_collapse', false);
   const [talkCollapsed, setTalkCollapsed] = useLocalStorageState<boolean>('huntspeak_collapse_talk', false);
   // Small helper UI to allow collapsing the TalkPad area when enabled in settings.
@@ -140,7 +138,6 @@ export default function HuntspeakTalkPad(){
           <NounEditor initial={nouns} onChange={setNouns} selectedId={selectedNounId} onSelect={setSelectedNounId} showCollapse={showCollapse} />
         </aside>
         <main className="lg:col-span-3 2xl:col-span-4 space-y-6">
-          <SelectedSummary root={selected} noun={selectedNoun} />
           <section className="rounded-3xl border border-neutral-200 p-4 shadow-sm fantasy-card">
             <div className="flex items-center justify-between mb-1">
               <h2 className="text-xl md:text-2xl font-semibold">Talk Pad</h2>
