@@ -7,6 +7,7 @@ import TalkPad from "./components/TalkPad";
 import RenderDerivations from "./components/Derivations";
 import FreeTranslator from "./components/FreeTranslator";
 import { useLocalStorageState, LS_KEYS } from "./lib/storage";
+import FolderTabs from "./components/ui/FolderTabs";
 import FiniteForms from "./components/FiniteForms";
 
 /**
@@ -135,34 +136,21 @@ export default function HuntspeakTalkPad(){
         </div>
       </header>
 
-      {/* Sticky composer: tabs for Talk Pad and Translator */}
+      {/* Sticky composer: FolderTabs wraps Talk Pad and Translator */}
       <div className="sticky top-2 z-30">
-        <section className="rounded-3xl border border-neutral-200 p-4 shadow-sm fantasy-card">
-          <div className="composer-tabs mb-3 grid grid-cols-2 -mx-4 -mt-4" role="tablist" aria-label="Composer">
-            <button
-              role="tab"
-              aria-selected={composerTab==='talk'}
-              className={`tab ${composerTab==='talk' ? 'tab-active' : ''}`}
-              onClick={()=>setComposerTab('talk')}
-            >Talk Pad</button>
-            <button
-              role="tab"
-              aria-selected={composerTab==='translator'}
-              className={`tab ${composerTab==='translator' ? 'tab-active' : ''}`}
-              onClick={()=>setComposerTab('translator')}
-            >Free Translator</button>
-          </div>
-          {composerTab==='talk' && (
-            <div className="flex items-center justify-end mb-2">
-              <TalkPadCollapse />
-            </div>
-          )}
+        <FolderTabs
+          value={composerTab}
+          onChange={setComposerTab}
+          rightActions={composerTab==='talk' ? <TalkPadCollapse /> : null}
+          panelClassName="fantasy-card"
+          className="rounded-3xl border border-neutral-200 shadow-sm fantasy-card p-4"
+        >
           {composerTab==='talk' ? (
             <TalkPadBody />
           ) : (
             <FreeTranslator roots={roots} nouns={nouns} showCollapse={showCollapse} />
           )}
-        </section>
+        </FolderTabs>
       </div>
 
       {/* Below: Roots, Nouns, Finite Forms, Derivations in one row (responsive) */}
