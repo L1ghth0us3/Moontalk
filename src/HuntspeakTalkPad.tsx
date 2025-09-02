@@ -174,17 +174,15 @@ export default function HuntspeakTalkPad(){
       )}
 
       {tab === 'compose' && (
-        <div className="grid grid-cols-1 gap-6">
-          <main className="space-y-6">
-            <section className="rounded-3xl border border-neutral-200 p-4 shadow-sm fantasy-card">
-              <div className="flex items-center justify-between mb-1">
-                <h2 className="text-xl md:text-2xl font-semibold">Talk Pad</h2>
-                <TalkPadCollapse />
-              </div>
-              <TalkPadBody />
-            </section>
-            <FreeTranslator roots={roots} nouns={nouns} showCollapse={showCollapse} />
-          </main>
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
+          <section className="rounded-3xl border border-neutral-200 p-4 shadow-sm fantasy-card">
+            <div className="flex items-center justify-between mb-1">
+              <h2 className="text-xl md:text-2xl font-semibold">Talk Pad</h2>
+              <TalkPadCollapse />
+            </div>
+            <TalkPadBody />
+          </section>
+          <FreeTranslator roots={roots} nouns={nouns} showCollapse={showCollapse} />
         </div>
       )}
     </div>
