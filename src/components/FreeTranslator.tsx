@@ -15,7 +15,7 @@ const clip = async (text: string) => { try { await navigator.clipboard.writeText
  * - Adpositional chunks: with/ to/ from → fi/ ga/ ʌs
  * - Looks up verb roots by matching gloss/synonyms; nouns by gloss or word.
  */
-export default function FreeTranslator({ roots, nouns, showCollapse = false }: { roots: Root[]; nouns: Noun[]; showCollapse?: boolean }){
+export default function FreeTranslator({ roots, nouns, showCollapse = false, embedded = false }: { roots: Root[]; nouns: Noun[]; showCollapse?: boolean; embedded?: boolean }){
   const [en, setEn] = useState("");
   const [hs, setHs] = useState("");
   const [collapsed, setCollapsed] = useLocalStorageState<boolean>('huntspeak_collapse_translator', false);
@@ -48,6 +48,27 @@ export default function FreeTranslator({ roots, nouns, showCollapse = false }: {
     let object = rest.replace(/^(\w+)(ing)?\b/, "").replace(/\b(with|to|from)\b[^]+$/, "").trim(); object = stripArticles(object);
     const bits: string[] = [subj.form, verb]; if (object) bits.push(lex(nouns, object)); if (withMatch) bits.push("fi", lex(nouns, withMatch[1].trim())); if (toMatch) bits.push("ga", lex(nouns, toMatch[1].trim())); if (fromMatch) bits.push("ʌs", lex(nouns, fromMatch[1].trim()));
     setHs(bits.join(" "));
+  }
+
+  if (embedded) {
+    return (
+      <>
+        <p className="text-sm text-neutral-600 mb-3">Free Translator (simple, 1-verb lines)</p>
+        <p className="text-sm text-neutral-600 mb-3">Try: <code>we will hunt with a trap from the Shroud</code>. Recognizes pronouns + will/did/not + with/to/from.</p>
+        <div className="space-y-2">
+          <textarea className="w-full h-20 px-3 py-2 rounded-xl border border-neutral-300" placeholder="Type: we will hunt with a trap from the Shroud" value={en} onChange={e=>setEn(e.target.value)} />
+          <div className="flex items-center gap-2">
+            <button onClick={translate} className="px-3 py-2 rounded-xl border border-neutral-300 hover:bg-neutral-50">Translate</button>
+            <button onClick={()=>clip(hs)} className="px-3 py-2 rounded-xl border border-neutral-300 hover:bg-neutral-50">Copy</button>
+            <div className="text-sm text-neutral-500">Recognizes pronouns, will/did/not, with/to/from.</div>
+          </div>
+          <div className="rounded-2xl border border-neutral-200 p-3">
+            <div className="text-xs uppercase tracking-wide text-neutral-500">Huntspeak</div>
+            <div className="text-lg font-semibold break-words mt-1">{hs || "—"}</div>
+          </div>
+        </div>
+      </>
+    );
   }
 
   return (

@@ -156,7 +156,7 @@ export default function HuntspeakTalkPad(){
           {composerTab==='talk' ? (
             <TalkPadBody />
           ) : (
-            <FreeTranslator roots={roots} nouns={nouns} showCollapse={showCollapse} />
+            <FreeTranslator roots={roots} nouns={nouns} embedded />
           )}
         </section>
       </div>
