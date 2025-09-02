@@ -20,9 +20,16 @@ export default function RootEditor({ initial, onChange, selectedId, onSelect }: 
   const updateRoot = (id: string, patch: Partial<Root>) => setRoots(prev=> prev.map(r=> r.id===id ? { ...r, ...patch }: r));
   const deleteRoot = (id: string) => { setRoots(prev=> prev.filter(r=> r.id!==id)); if (selectedId===id) onSelect(roots.find(r=> r.id!==id)?.id ?? null); };
 
+  const [collapsed, setCollapsed] = useLocalStorageState<boolean>('huntspeak_collapse_roots', false);
+
   return (
     <section className="rounded-3xl border border-neutral-200 p-4 shadow-sm overflow-hidden fantasy-card">
-      <h2 className="text-xl md:text-2xl font-semibold mb-3">Verb Roots</h2>
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-xl md:text-2xl font-semibold">Verb Roots</h2>
+        <button className="px-2 py-1 text-sm rounded border border-neutral-300 hover:bg-neutral-50" onClick={()=>setCollapsed(c=>!c)}>{collapsed? 'Expand' : 'Collapse'}</button>
+      </div>
+      {!collapsed && (
+      <>
       <RootCreator onCreate={addRoot} />
       <div className="mt-3 max-h-[20rem] overflow-y-auto space-y-2 pr-1">
         {roots.map(r => (
@@ -48,6 +55,8 @@ export default function RootEditor({ initial, onChange, selectedId, onSelect }: 
           <input className="w-full px-2 py-1 rounded-lg border border-neutral-300" placeholder="gloss" value={selected.gloss} onChange={e=>updateRoot(selected.id,{gloss:e.target.value})} />
           <input className="w-full px-2 py-1 rounded-lg border border-neutral-300" placeholder="extra English triggers (comma-separated)" value={synonymsText} onChange={e=>setSynonymsText(e.target.value)} onBlur={e=> updateRoot(selected.id, { synonyms: e.target.value.split(",").map(s=>s.trim()).filter(Boolean) })} />
         </div>
+      )}
+      </>
       )}
     </section>
   );

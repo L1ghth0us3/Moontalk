@@ -53,6 +53,21 @@ export default function HuntspeakTalkPad(){
   }, [theme, systemDark]);
 
   const selected = roots.find(r=>r.id===selectedId) || null;
+  const [talkCollapsed, setTalkCollapsed] = useState(false);
+  function TalkPadCollapse(){
+    return (
+      <button className="px-2 py-1 text-sm rounded border border-neutral-300 hover:bg-neutral-50" onClick={()=>setTalkCollapsed(c=>!c)}>{talkCollapsed? 'Expand' : 'Collapse'}</button>
+    );
+  }
+  function TalkPadBody(){
+    if (talkCollapsed) return null;
+    return (
+      <>
+        <p className="text-sm text-neutral-600 mb-3">Pick who + verb + tense, type object. Copy & paste into chat.</p>
+        <TalkPad roots={roots} nouns={nouns} />
+      </>
+    );
+  }
 
   // Import/Export (roots + nouns)
   function exportData(){
@@ -112,9 +127,11 @@ export default function HuntspeakTalkPad(){
         </aside>
         <main className="lg:col-span-3 2xl:col-span-4 space-y-6">
           <section className="rounded-3xl border border-neutral-200 p-4 shadow-sm fantasy-card">
-            <h2 className="text-xl md:text-2xl font-semibold mb-1">Talk Pad</h2>
-            <p className="text-sm text-neutral-600 mb-3">Pick who + verb + tense, type object. Copy & paste into chat.</p>
-            <TalkPad roots={roots} nouns={nouns} />
+            <div className="flex items-center justify-between mb-1">
+              <h2 className="text-xl md:text-2xl font-semibold">Talk Pad</h2>
+              <TalkPadCollapse />
+            </div>
+            <TalkPadBody />
           </section>
           {selected && (
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">

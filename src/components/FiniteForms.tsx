@@ -8,6 +8,7 @@ export default function FiniteForms({ root }: { root: Root }){
   const [showNeg, setShowNeg] = useState(false);
   const [showProg, setShowProg] = useState(false);
   const [showHab, setShowHab] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
 
   const rows = useMemo(() => PRONOUNS.map(p => {
     const baseForms = TENSES.map(t => buildFinite(root, p.subjV, t.vowel));
@@ -20,7 +21,12 @@ export default function FiniteForms({ root }: { root: Root }){
 
   return (
     <section className="rounded-3xl border border-neutral-200 p-4 shadow-sm fantasy-card">
-      <h2 className="text-xl md:text-2xl font-semibold mb-1">Finite Forms</h2>
+      <div className="flex items-center justify-between mb-1">
+        <h2 className="text-xl md:text-2xl font-semibold">Finite Forms</h2>
+        <button className="px-2 py-1 text-sm rounded border border-neutral-300 hover:bg-neutral-50" onClick={()=>setCollapsed(c=>!c)}>{collapsed? 'Expand' : 'Collapse'}</button>
+      </div>
+      {!collapsed && (
+      <>
       <p className="text-sm text-neutral-600 mb-3">Template: <code>C1 + (SUBJ V) + C2 + (TENSE V) + C3</code></p>
       <div className="flex flex-wrap items-center gap-3 mb-3">
         <Toggle label="Negation" info="Adds naaq-; naq- before k/g/q." checked={showNeg} onChange={setShowNeg} />
@@ -54,6 +60,8 @@ export default function FiniteForms({ root }: { root: Root }){
           </tbody>
         </table>
       </div>
+      </>
+      )}
     </section>
   );
 }
