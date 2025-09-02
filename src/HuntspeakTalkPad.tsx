@@ -228,10 +228,9 @@ export default function HuntspeakTalkPad(){
                 </div>
                 <div className="text-xs opacity-70">Exports and imports roots and nouns as JSON.</div>
                 <div className="pt-3 border-t border-neutral-200/70">
-                  <div className="text-sm font-medium mb-2 text-red-700">Danger Zone</div>
                   <button
                     title="Fully Reset Local Storage! Danger!"
-                    className="px-3 py-2 rounded-lg border border-red-300 text-red-700 hover:bg-red-50"
+                    className="btn-danger px-3 py-2 rounded-lg"
                     onClick={()=>setConfirmResetOpen(true)}
                   >Hard Reset</button>
                 </div>
