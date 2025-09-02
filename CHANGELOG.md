@@ -22,3 +22,12 @@ All notable changes to this project will be documented in this file.
 - Selected Root/Noun highlight adjustments per theme
 - Finite Forms: dynamic spacing and denser layout
 - Code comments and structure cleanup
+
+## [1.2.0] - 2025-09-02
+
+- Roots/Nouns editors: expand (⛶) modal now wider, responsive, and scrollable; quick filter + persistent search in compact view; double-click list to expand
+- Roots expanded: Edit below list (left), Finite Forms and Derivations integrated on right; Derivations in 4×2 layout on large screens
+- Derivations: click a card to save as noun (word/gloss/synonyms); theme-aware hover; themed popover; click-off to close
+- Talk Pad: searchable dropdowns (fuzzy) for Verb, Object, and With; Object uses noun dropdown; qa? question suffix
+- Morphology: progressive uses C2' (apostrophe); shared Neg/Prog/Hab sync and clickable badge
+- Data: import/export + Hard Reset in Data popup with red danger styling

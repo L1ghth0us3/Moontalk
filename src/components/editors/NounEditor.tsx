@@ -73,17 +73,7 @@ export default function NounEditor({ initial, onChange, selectedId, onSelect, sh
         {!(showSearch && query ? filtered.length : nouns.length) && <div className="text-neutral-500 text-sm">{showSearch && query ? 'No matching nouns.' : 'No nouns yet. Add one above.'}</div>}
       </div>
 
-      {selected && (
-        <div className="mt-4 space-y-2">
-          <h3 className="text-sm font-semibold">Edit selected</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-            <input className="w-full min-w-0 px-2 py-1 rounded-lg border border-neutral-300" value={selected.word} onChange={e=>updateNoun(selected.id,{word:e.target.value})} />
-            <input className="md:col-span-2 w-full min-w-0 px-2 py-1 rounded-lg border border-neutral-300" placeholder="gloss" value={selected.gloss} onChange={e=>updateNoun(selected.id,{gloss:e.target.value})} />
-            <button onClick={()=>deleteNoun(selected.id)} className="w-full md:w-auto px-2 py-1 rounded-lg border border-red-300 text-red-600 hover:bg-red-50">Delete</button>
-          </div>
-          <input className="w-full px-2 py-1 rounded-lg border border-neutral-300" placeholder="extra English triggers (comma-separated)" value={synText} onChange={e=>setSynText(e.target.value)} onBlur={e=> updateNoun(selected.id, { synonyms: e.target.value.split(",").map(s=>s.trim()).filter(Boolean) })} />
-        </div>
-      )}
+      {/* Edit selected is available in Expanded view */}
       </>
       )}
     </section>
