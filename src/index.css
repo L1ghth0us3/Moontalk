@@ -214,3 +214,13 @@ body.theme-dark input::placeholder, body.theme-dark textarea::placeholder { colo
     background-color: #f9f9f9;
   }
 }
+
+/* Result panel styling to distinguish Huntspeak output */
+body.theme-plain .result-card { background: #f0fdf4; border-color: #86efac; }
+body.theme-plain .result-card .copy-btn { border-color: #86efac; }
+
+body.theme-fantasy .result-card { background: #223229; border-color: #7ccaa1 !important; }
+body.theme-fantasy .result-card .copy-btn { border-color: #7ccaa1; }
+
+body.theme-dark .result-card { background: #152019; border-color: #5ea585 !important; }
+body.theme-dark .result-card .copy-btn { border-color: #5ea585; }

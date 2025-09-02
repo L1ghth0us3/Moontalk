@@ -110,13 +110,16 @@ export default function TalkPad({ roots, nouns }: { roots: Root[]; nouns: Noun[]
             <Toggle label="aᵘ hush" checked={state.register.hush} onChange={v=>setState(s=>({...s, register:{...s.register, hush:v}}))} />
           </div>
         </div>
-      </div>
-      <div className="rounded-2xl border border-neutral-200 p-3 flex items-center gap-3">
-        <div className="flex-1">
-          <div className="text-xs uppercase tracking-wide text-neutral-500">Huntspeak</div>
-          <div className="text-xl font-semibold break-words mt-1">{sentence || "—"}</div>
+        {/* Result panel occupies the remaining slot on the second row (at 2xl) */}
+        <div className="rounded-2xl border p-3 result-card">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex-1">
+              <div className="text-xs uppercase tracking-wide opacity-80">Result (Huntspeak)</div>
+              <div className="text-xl font-semibold break-words mt-1">{sentence || "—"}</div>
+            </div>
+            <button onClick={()=>clip(sentence)} className="px-3 py-2 rounded-xl border copy-btn">Copy</button>
+          </div>
         </div>
-        <button onClick={()=>clip(sentence)} className="px-3 py-2 rounded-xl border border-neutral-300 hover:bg-neutral-50">Copy</button>
       </div>
     </div>
   );
