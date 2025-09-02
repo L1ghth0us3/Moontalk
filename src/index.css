@@ -224,3 +224,20 @@ body.theme-fantasy .result-card .copy-btn { border-color: #7ccaa1; }
 
 body.theme-dark .result-card { background: #152019; border-color: #5ea585 !important; }
 body.theme-dark .result-card .copy-btn { border-color: #5ea585; }
+
+/* Composer overlay tabs (full-width split) */
+.composer-tabs { border-radius: 0.75rem; overflow: hidden; }
+.composer-tabs .tab { text-align: center; padding: 0.625rem 0.75rem; font-weight: 500; }
+.composer-tabs .tab + .tab { border-left: 1px solid rgba(0,0,0,0.08); }
+
+body.theme-plain .composer-tabs { background: #f8fafc; border: 1px solid #e5e7eb; }
+body.theme-plain .composer-tabs .tab { color: #213547; }
+body.theme-plain .composer-tabs .tab-active { background: #ffffff; font-weight: 600; }
+
+body.theme-fantasy .composer-tabs { background: #232538; border: 1px solid #44475a; }
+body.theme-fantasy .composer-tabs .tab { color: #f8f8f2; }
+body.theme-fantasy .composer-tabs .tab-active { background: #303246; font-weight: 700; }
+
+body.theme-dark .composer-tabs { background: #1f1e26; border: 1px solid #3a3345; }
+body.theme-dark .composer-tabs .tab { color: #eae6df; }
+body.theme-dark .composer-tabs .tab-active { background: #23222b; font-weight: 700; }

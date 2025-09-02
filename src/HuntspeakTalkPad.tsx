@@ -138,21 +138,25 @@ export default function HuntspeakTalkPad(){
       {/* Sticky composer: tabs for Talk Pad and Translator */}
       <div className="sticky top-2 z-30">
         <section className="rounded-3xl border border-neutral-200 p-4 shadow-sm fantasy-card">
-          <div className="flex items-center justify-between mb-2">
-            <div role="tablist" aria-label="Composer" className="flex items-center gap-2">
-              <button
-                aria-pressed={composerTab==='talk'}
-                className={`px-3 py-2 rounded-xl border transition ${composerTab==='talk' ? 'ring-2 ring-blue-300 border-blue-500 font-semibold' : 'border-neutral-300 hover:bg-neutral-50'}`}
-                onClick={()=>setComposerTab('talk')}
-              >Talk Pad</button>
-              <button
-                aria-pressed={composerTab==='translator'}
-                className={`px-3 py-2 rounded-xl border transition ${composerTab==='translator' ? 'ring-2 ring-blue-300 border-blue-500 font-semibold' : 'border-neutral-300 hover:bg-neutral-50'}`}
-                onClick={()=>setComposerTab('translator')}
-              >Free Translator</button>
-            </div>
-            {composerTab==='talk' && (<TalkPadCollapse />)}
+          <div className="composer-tabs mb-3 grid grid-cols-2" role="tablist" aria-label="Composer">
+            <button
+              role="tab"
+              aria-selected={composerTab==='talk'}
+              className={`tab ${composerTab==='talk' ? 'tab-active' : ''}`}
+              onClick={()=>setComposerTab('talk')}
+            >Talk Pad</button>
+            <button
+              role="tab"
+              aria-selected={composerTab==='translator'}
+              className={`tab ${composerTab==='translator' ? 'tab-active' : ''}`}
+              onClick={()=>setComposerTab('translator')}
+            >Free Translator</button>
           </div>
+          {composerTab==='talk' && (
+            <div className="flex items-center justify-end mb-2">
+              <TalkPadCollapse />
+            </div>
+          )}
           {composerTab==='talk' ? (
             <TalkPadBody />
           ) : (
