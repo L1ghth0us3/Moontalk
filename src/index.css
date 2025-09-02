@@ -202,6 +202,20 @@ body.theme-dark input, body.theme-dark textarea, body.theme-dark select {
 }
 body.theme-dark input::placeholder, body.theme-dark textarea::placeholder { color: #8b8595; }
 
+/* Sticky composer background that appears after scrolling */
+body.theme-fantasy .sticky-bg {
+  background: #2b2d3a;
+  border: 1px solid #44475a;
+}
+body.theme-plain .sticky-bg {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+}
+body.theme-dark .sticky-bg {
+  background: #1b1a20;
+  border: 1px solid #3a3345;
+}
+
 @media (prefers-color-scheme: light) {
   :root {
     color: #213547;

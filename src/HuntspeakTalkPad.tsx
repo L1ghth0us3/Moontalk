@@ -27,6 +27,7 @@ export default function HuntspeakTalkPad(){
   const [systemDark, setSystemDark] = useState<boolean>(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [dataOpen, setDataOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
   // Keep a valid selected root when the roots list changes (e.g. delete).
   useEffect(()=>{
@@ -53,6 +54,15 @@ export default function HuntspeakTalkPad(){
       // @ts-ignore
       mq.removeListener && mq.removeListener(apply);
     };
+  }, []);
+
+  // Track window scroll to toggle sticky composer background
+  useEffect(()=>{
+    if (typeof window === 'undefined') return;
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll as any);
   }, []);
 
   // Apply effective theme class to <body> whenever theme or system preference changes.
@@ -133,8 +143,8 @@ export default function HuntspeakTalkPad(){
       </header>
 
       {/* Sticky composer: Talk Pad + Translator stay visible while scrolling */}
-      <div className="sticky top-2 z-30">
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+      <div className="sticky top-2 z-30 transition-all">
+        <div className={`grid grid-cols-1 xl:grid-cols-2 gap-4 rounded-3xl ${scrolled ? 'sticky-bg shadow-lg px-2 py-2' : ''}`}>
           <section className="rounded-3xl border border-neutral-200 p-4 shadow-sm fantasy-card">
             <div className="flex items-center justify-between mb-1">
               <h2 className="text-xl md:text-2xl font-semibold">Talk Pad</h2>
@@ -146,16 +156,12 @@ export default function HuntspeakTalkPad(){
         </div>
       </div>
 
-      {/* Below: Roots, Nouns, Finite Forms, Derivations */}
-      <div className="mt-6 space-y-6">
+      {/* Below: Roots, Nouns, Finite Forms, Derivations in one row (responsive) */}
+      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 items-start">
         <RootEditor initial={roots} onChange={setRoots} selectedId={selectedId} onSelect={setSelectedId} showCollapse={showCollapse} />
         <NounEditor initial={nouns} onChange={setNouns} selectedId={selectedNounId} onSelect={setSelectedNounId} showCollapse={showCollapse} />
-        {selected && (
-          <FiniteForms root={selected} showCollapse={showCollapse} />
-        )}
-        {selected && (
-          <RenderDerivations root={selected} showCollapse={showCollapse} />
-        )}
+        {selected && (<FiniteForms root={selected} showCollapse={showCollapse} />)}
+        {selected && (<RenderDerivations root={selected} showCollapse={showCollapse} />)}
       </div>
     </div>
     {dataOpen && (
