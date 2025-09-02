@@ -202,6 +202,38 @@ body.theme-dark input, body.theme-dark textarea, body.theme-dark select {
 }
 body.theme-dark input::placeholder, body.theme-dark textarea::placeholder { color: #8b8595; }
 
+/* Main card emphasis: stands out from regular fantasy-card panels */
+body.theme-fantasy .main-card {
+  background: #2b2d3a;
+  border-color: #bd93f9 !important;
+  box-shadow:
+    0 0 0 2px rgba(189,147,249,0.20),
+    0 12px 32px rgba(0,0,0,0.45);
+}
+body.theme-fantasy .main-card .accent {
+  background: linear-gradient(90deg, rgba(189,147,249,0.60), rgba(98,114,164,0.45), transparent);
+}
+
+body.theme-plain .main-card {
+  background: #ffffff;
+  border-color: #d1d5db !important;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.08);
+}
+body.theme-plain .main-card .accent {
+  background: linear-gradient(90deg, rgba(59,130,246,0.35), rgba(99,102,241,0.25), transparent);
+}
+
+body.theme-dark .main-card {
+  background: #1b1a20;
+  border-color: #7c6aa5 !important;
+  box-shadow:
+    0 0 0 2px rgba(124,106,165,0.18),
+    0 12px 34px rgba(0,0,0,0.60);
+}
+body.theme-dark .main-card .accent {
+  background: linear-gradient(90deg, rgba(124,106,165,0.5), rgba(80,120,140,0.35), transparent);
+}
+
 @media (prefers-color-scheme: light) {
   :root {
     color: #213547;
