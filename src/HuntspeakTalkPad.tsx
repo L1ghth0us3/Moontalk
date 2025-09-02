@@ -31,6 +31,7 @@ export default function HuntspeakTalkPad(){
   const [confirmResetOpen, setConfirmResetOpen] = useState(false);
   const [syncMorph, setSyncMorph] = useLocalStorageState<boolean>(LS_KEYS.morphSync, true);
   const [sharedMorph, setSharedMorph] = useLocalStorageState<{neg:boolean;prog:boolean;hab:boolean}>(LS_KEYS.morphToggles, {neg:false,prog:false,hab:false});
+  const [nounsKey, setNounsKey] = useState(0);
 
   // Keep a valid selected root when the roots list changes (e.g. delete).
   useEffect(()=>{
@@ -147,6 +148,16 @@ export default function HuntspeakTalkPad(){
     reader.readAsText(file);
   }
 
+  // Quick-create nouns from derivations
+  function addNounQuick(n: { word: string; gloss?: string; synonyms?: string[] }){
+    const id = Math.random().toString(36).slice(2,10);
+    const nn: Noun = { id, word: n.word, gloss: n.gloss || "", synonyms: n.synonyms || [] };
+    const next = [nn, ...nouns];
+    try { localStorage.setItem(LS_KEYS.nouns, JSON.stringify(next)); } catch {}
+    setNouns(next);
+    setNounsKey(k=>k+1);
+  }
+
   return (
     <>
     <div className="p-6 2xl:p-10 max-w-none mx-auto font-sans">
@@ -191,8 +202,8 @@ export default function HuntspeakTalkPad(){
 
       {/* Below: Roots, Nouns, Finite Forms, Derivations in one row (responsive) */}
       <div className="mt-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 items-start">
-        <RootEditor initial={roots} onChange={setRoots} selectedId={selectedId} onSelect={setSelectedId} showCollapse={showCollapse} />
-        <NounEditor initial={nouns} onChange={setNouns} selectedId={selectedNounId} onSelect={setSelectedNounId} showCollapse={showCollapse} />
+        <RootEditor initial={roots} onChange={setRoots} selectedId={selectedId} onSelect={setSelectedId} showCollapse={showCollapse} onCreateNoun={addNounQuick} />
+        <NounEditor key={nounsKey} initial={nouns} onChange={setNouns} selectedId={selectedNounId} onSelect={setSelectedNounId} showCollapse={showCollapse} />
         {selected && (
           <FiniteForms
             root={selected}
@@ -203,7 +214,7 @@ export default function HuntspeakTalkPad(){
             onToggleSync={()=>setSyncMorph(v=>!v)}
           />
         )}
-        {selected && (<RenderDerivations root={selected} showCollapse={showCollapse} />)}
+        {selected && (<RenderDerivations root={selected} showCollapse={showCollapse} onCreateNoun={addNounQuick} />)}
       </div>
     </div>
       {dataOpen && (
