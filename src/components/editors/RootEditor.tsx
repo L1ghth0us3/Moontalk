@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Root } from "../../types";
 import { useLocalStorageState, LS_KEYS } from "../../lib/storage";
-import Collapse from "../ui/Collapse";
 
 const uid = () => Math.random().toString(36).slice(2, 10);
 
@@ -33,7 +32,8 @@ export default function RootEditor({ initial, onChange, selectedId, onSelect, sh
           </button>
         )}
       </div>
-      <Collapse open={!collapsed}>
+      {!collapsed && (
+      <>
       <RootCreator onCreate={addRoot} />
       <div className="mt-3 max-h-[20rem] overflow-y-auto space-y-2 pr-1">
         {roots.map(r => (
@@ -60,7 +60,8 @@ export default function RootEditor({ initial, onChange, selectedId, onSelect, sh
           <input className="w-full px-2 py-1 rounded-lg border border-neutral-300" placeholder="extra English triggers (comma-separated)" value={synonymsText} onChange={e=>setSynonymsText(e.target.value)} onBlur={e=> updateRoot(selected.id, { synonyms: e.target.value.split(",").map(s=>s.trim()).filter(Boolean) })} />
         </div>
       )}
-      </Collapse>
+      </>
+      )}
     </section>
   );
 }

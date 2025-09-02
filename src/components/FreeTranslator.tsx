@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useLocalStorageState } from "../lib/storage";
-import Collapse from "./ui/Collapse";
 import type { Noun, Root } from "../types";
 import { findRootByEnglish, withHabitual, withNegation, withProgressive } from "../lib/morphology";
 
@@ -48,7 +47,8 @@ export default function FreeTranslator({ roots, nouns, showCollapse = false }: {
           </button>
         )}
       </div>
-      <Collapse open={!collapsed}>
+      {!collapsed && (
+      <>
       <p className="text-sm text-neutral-600 mb-3">Try: <code>we will hunt with a trap from the Shroud</code>. Recognizes pronouns + will/did/not + with/to/from.</p>
       <div className="space-y-2">
         <textarea className="w-full h-20 px-3 py-2 rounded-xl border border-neutral-300" placeholder="Type: we will hunt with a trap from the Shroud" value={en} onChange={e=>setEn(e.target.value)} />
@@ -62,7 +62,8 @@ export default function FreeTranslator({ roots, nouns, showCollapse = false }: {
           <div className="text-lg font-semibold break-words mt-1">{hs || "—"}</div>
         </div>
       </div>
-      </Collapse>
+      </>
+      )}
     </section>
   );
 }
