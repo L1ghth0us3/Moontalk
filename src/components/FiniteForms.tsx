@@ -4,6 +4,7 @@ import { buildFinite, withHabitual, withNegation, withProgressive } from "../lib
 import Toggle from "./ui/Toggle";
 import { useState, useMemo } from "react";
 import { useLocalStorageState } from "../lib/storage";
+import Collapse from "./ui/Collapse";
 
 export default function FiniteForms({ root, showCollapse = false }: { root: Root, showCollapse?: boolean }){
   const [showNeg, setShowNeg] = useState(false);
@@ -30,8 +31,7 @@ export default function FiniteForms({ root, showCollapse = false }: { root: Root
           </button>
         )}
       </div>
-      {!collapsed && (
-      <>
+      <Collapse open={!collapsed}>
       <p className="text-sm text-neutral-600 mb-3">Template: <code>C1 + (SUBJ V) + C2 + (TENSE V) + C3</code></p>
       <div className="flex flex-wrap items-center gap-3 mb-3">
         <Toggle label="Negation" info="Adds naaq-; naq- before k/g/q." checked={showNeg} onChange={setShowNeg} />
@@ -65,8 +65,7 @@ export default function FiniteForms({ root, showCollapse = false }: { root: Root
           </tbody>
         </table>
       </div>
-      </>
-      )}
+      </Collapse>
     </section>
   );
 }

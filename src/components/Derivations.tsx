@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { useLocalStorageState } from "../lib/storage";
+import Collapse from "./ui/Collapse";
 import type { Root } from "../types";
 
 const DERIVATIONS = [
@@ -46,8 +47,7 @@ export default function RenderDerivations({ root, showCollapse = false }: { root
           </button>
         )}
       </div>
-      {!collapsed && (
-      <>
+      <Collapse open={!collapsed}>
       <p className="text-sm text-neutral-600 mb-3">Handy non-finite patterns (binyanim-style).</p>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {DERIVATIONS.map(d => (
@@ -58,8 +58,7 @@ export default function RenderDerivations({ root, showCollapse = false }: { root
           </div>
         ))}
       </div>
-      </>
-      )}
+      </Collapse>
     </section>
   );
 }
