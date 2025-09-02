@@ -76,9 +76,14 @@ export default function TalkPad({ roots, nouns, selectedRootId, onSelectRoot }: 
     <div className="space-y-3">
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
         <div className="rounded-2xl border border-neutral-200 p-3">
-          <div className="text-xs uppercase tracking-wide text-neutral-500 mb-1">Who</div>
-          <div className="text-xs text-neutral-500 mb-2">English: I (ɪ), you (su/tu), he·she (se), we (tɪ), they (te)</div>
-          <NiceSelect value={state.pronForm} onChange={v=>setState(s=>({...s, pronForm:v}))} items={PRONOUNS.map(p=>({ value:p.form, label:p.label }))} />
+          <div className="text-xs uppercase tracking-wide text-neutral-500 mb-2">Who</div>
+          {(() => {
+            const EN_WHO: Record<string,string> = { 'ɪ':'I', su:'you (sg)', se:'he/she', 'tɪ':'we', tu:'you (pl)', te:'they' };
+            const items = PRONOUNS.map(p => ({ value: p.form, label: `${p.label} — ${EN_WHO[p.form] || ''}`.trim() }));
+            return (
+              <NiceSelect value={state.pronForm} onChange={v=>setState(s=>({...s, pronForm:v}))} items={items} />
+            );
+          })()}
         </div>
         <div className="rounded-2xl border border-neutral-200 p-3">
           <div className="text-xs uppercase tracking-wide text-neutral-500 mb-2">Verb</div>
