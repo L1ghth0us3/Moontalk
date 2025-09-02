@@ -4,6 +4,10 @@ import { useLocalStorageState, LS_KEYS } from "../../lib/storage";
 
 const uid = () => Math.random().toString(36).slice(2, 10);
 
+/**
+ * CRUD list for nouns with simple creator and detail editor.
+ * Persists to localStorage and notifies parent via onChange.
+ */
 export default function NounEditor({ initial, onChange, selectedId, onSelect, showCollapse = false }: { initial: Noun[]; onChange: (n: Noun[])=>void; selectedId: string|null; onSelect: (id: string|null)=>void; showCollapse?: boolean; }){
   const [nouns, setNouns] = useLocalStorageState<Noun[]>(LS_KEYS.nouns, initial);
   useEffect(()=>{ onChange(nouns); }, [nouns]);
@@ -60,6 +64,7 @@ export default function NounEditor({ initial, onChange, selectedId, onSelect, sh
   );
 }
 
+// Inline creator for a new noun; resets inputs after submit.
 function NounCreator({ onCreate }: { onCreate: (n: Partial<Noun>) => void }){
   const [word, setWord] = useState("");
   const [gloss, setGloss] = useState("");

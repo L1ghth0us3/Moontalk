@@ -2,6 +2,8 @@ import { useMemo } from "react";
 import { useLocalStorageState } from "../lib/storage";
 import type { Root } from "../types";
 
+// Non‑finite/Binyanim‑style derivation patterns from a triliteral root.
+// Each pattern builds a lexical derivative and a short English explanation.
 const DERIVATIONS = [
   { key: "agent", label: "agent (CaCāC)", build: (r: Root) => `${r.c1}a${r.c2}ā${r.c3}` },
   { key: "place", label: "place (miCCaC)", build: (r: Root) => `mi${r.c1}${r.c2}a${r.c3}` },
@@ -14,6 +16,7 @@ const DERIVATIONS = [
 ];
 
 export default function RenderDerivations({ root, showCollapse = false }: { root: Root, showCollapse?: boolean }){
+  // Use the first segment of the gloss as a base for natural‑language explanations.
   const base = useMemo(()=>{
     const head = (root.gloss || "").split(/[;,.]/)[0]?.trim() || "hunt";
     return head.toLowerCase();
@@ -35,7 +38,6 @@ export default function RenderDerivations({ root, showCollapse = false }: { root
   } as const;
 
   const [collapsed, setCollapsed] = useLocalStorageState<boolean>('huntspeak_collapse_derivations', false);
-  // lightweight state without adding storage util here
   return (
     <section className="rounded-3xl border border-neutral-200 p-4 shadow-sm fantasy-card">
       <div className="flex items-center justify-between mb-1">

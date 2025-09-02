@@ -3,15 +3,27 @@ import { useLocalStorageState } from "../lib/storage";
 import type { Noun, Root } from "../types";
 import { findRootByEnglish, withHabitual, withNegation, withProgressive } from "../lib/morphology";
 
+// Helper: best‑effort clipboard copy; ignore failures.
 const clip = async (text: string) => { try { await navigator.clipboard.writeText(text); } catch {} };
 
+/**
+ * Naive English → Huntspeak translator for single‑verb clauses.
+ *
+ * Heuristics:
+ * - Detects subject pronoun (i/we/you/you all/he/she/they) and tense markers (will/did)
+ * - Flags: not/don't/didn't/won't → negation; be + -ing → progressive; "used to" → habitual
+ * - Adpositional chunks: with/ to/ from → fi/ ga/ ʌs
+ * - Looks up verb roots by matching gloss/synonyms; nouns by gloss or word.
+ */
 export default function FreeTranslator({ roots, nouns, showCollapse = false }: { roots: Root[]; nouns: Noun[]; showCollapse?: boolean }){
   const [en, setEn] = useState("");
   const [hs, setHs] = useState("");
   const [collapsed, setCollapsed] = useLocalStorageState<boolean>('huntspeak_collapse_translator', false);
 
+  // Normalize strings for loose matching.
   function norm(s: string) { return s.toLowerCase().replace(/[()]/g, "").replace(/\s+/g, " ").trim(); }
   function stripArticles(s: string) { return s.replace(/^(a|an|the)\s+/, ""); }
+  // Best‑effort noun lex lookup against word/gloss/synonyms; fallback to raw phrase.
   function lex(nouns: Noun[], phrase: string){ const p = norm(stripArticles(phrase)); const p2 = p.replace(/s$/, ""); if (p2!==p) phrase = p2; for (const n of nouns){ const w=norm(n.word), g=norm(n.gloss); if (p===w||p===g||g.includes(p)) return n.word; if (n.synonyms && n.synonyms.some(s=>norm(s)===p)) return n.word; } return phrase.trim(); }
 
   function translate(){
@@ -28,6 +40,7 @@ export default function FreeTranslator({ roots, nouns, showCollapse = false }: {
     rest = rest.trim();
     const words = rest.split(" ");
     let verbToken = words[0] || ""; verbToken = verbToken.replace(/ing$/, "");
+    // Try single‑token verb first, then a two‑word verb phrase.
     let root = findRootByEnglish(roots, verbToken); if (!root && words.length>=2) root = findRootByEnglish(roots, `${words[0]} ${words[1]}`);
     if (!root) { setHs("(Unknown verb—add a root or use Talk Pad)"); return; }
     let verb = `${root.c1}${subj.subjV}${root.c2}${tense}${root.c3}`; if (prog) verb=withProgressive(verb,root); if (hab) verb=withHabitual(verb); if (neg) verb=withNegation(verb);

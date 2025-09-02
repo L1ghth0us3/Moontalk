@@ -6,8 +6,14 @@ import NiceSelect from "./ui/NiceSelect";
 import { LS_KEYS, useLocalStorageState } from "../lib/storage";
 import { buildFinite, withHabitual, withNegation, withProgressive } from "../lib/morphology";
 
+// Helper: best‑effort clipboard copy; ignore failures (e.g., permissions).
 const clip = async (text: string) => { try { await navigator.clipboard.writeText(text); } catch {} };
 
+/**
+ * Guided sentence builder. Users pick pronoun/root/tense and optional toggles,
+ * then optionally fill object and adpositional phrases. Produces a 1‑line
+ * Huntspeak sentence (copyable).
+ */
 export default function TalkPad({ roots, nouns }: { roots: Root[]; nouns: Noun[] }){
   const [state, setState] = useLocalStorageState(LS_KEYS.talk, {
     pronForm: PRONOUNS[0].form,
@@ -18,7 +24,7 @@ export default function TalkPad({ roots, nouns }: { roots: Root[]; nouns: Noun[]
     question: false, register: { attn:false, flank:false, hush:false },
   });
 
-  // keep IDs valid when lists change
+  // Keep selected IDs valid when upstream lists mutate (add/remove).
   useEffect(()=>{
     if (state.rootId && !roots.find(r=>r.id===state.rootId)) setState(s=>({ ...s, rootId: roots[0]?.id || "" }));
     if (state.withNounId && !nouns.find(n=>n.id===state.withNounId)) setState(s=>({ ...s, withNounId: "" }));
@@ -29,6 +35,7 @@ export default function TalkPad({ roots, nouns }: { roots: Root[]; nouns: Noun[]
   const r = useMemo(()=> roots.find(x=>x.id===state.rootId) || roots[0], [roots, state.rootId]);
   const withNoun = nouns.find(n=>n.id===state.withNounId);
 
+  // Build the Huntspeak verb form in stages with optional morphology toggles.
   const hsVerb = useMemo(()=>{
     if (!r) return "";
     let form = buildFinite(r, pron.subjV, tense.vowel);
@@ -38,6 +45,9 @@ export default function TalkPad({ roots, nouns }: { roots: Root[]; nouns: Noun[]
     return form;
   }, [r, pron, tense, state.prog, state.hab, state.neg]);
 
+  // Compose the final sentence. Order:
+  // pronoun • verb • [object] • [fi INSTR] • [ga TO] • [ʌs FROM] • [qa?]
+  // Register marks: ƛ at start (flank), aᵘ before final, ǃ at end (attention).
   const sentence = useMemo(()=>{
     if (!r) return "";
     const bits: string[] = [];

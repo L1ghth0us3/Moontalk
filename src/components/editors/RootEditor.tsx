@@ -4,6 +4,10 @@ import { useLocalStorageState, LS_KEYS } from "../../lib/storage";
 
 const uid = () => Math.random().toString(36).slice(2, 10);
 
+/**
+ * CRUD list for verb roots with a simple in‑panel creator and detail editor.
+ * Persists to localStorage and notifies parent via onChange.
+ */
 export default function RootEditor({ initial, onChange, selectedId, onSelect, showCollapse = false }: { initial: Root[]; onChange: (r: Root[])=>void; selectedId: string|null; onSelect: (id: string|null)=>void; showCollapse?: boolean; }){
   const [roots, setRoots] = useLocalStorageState<Root[]>(LS_KEYS.roots, initial);
   useEffect(()=>{ onChange(roots); }, [roots]);
@@ -66,6 +70,7 @@ export default function RootEditor({ initial, onChange, selectedId, onSelect, sh
   );
 }
 
+// Inline creator for a new root; keeps inputs local until submit.
 function RootCreator({ onCreate }: { onCreate: (r: Partial<Root>) => void }) {
   const [c1, setC1] = useState("");
   const [c2, setC2] = useState("");

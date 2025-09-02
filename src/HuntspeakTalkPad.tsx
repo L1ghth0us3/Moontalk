@@ -9,6 +9,15 @@ import FreeTranslator from "./components/FreeTranslator";
 import { useLocalStorageState, LS_KEYS } from "./lib/storage";
 import FiniteForms from "./components/FiniteForms";
 
+/**
+ * App shell: orchestrates roots/nouns editing, sentence builder (Talk Pad),
+ * finite/derivation views, theme switching, and import/export.
+ *
+ * Data flow:
+ * - Editable data lives in child editors and is persisted via localStorage.
+ * - This shell mirrors that data in top‑level state to pass to other views.
+ * - Theme preference persists and applies a body class.
+ */
 export default function HuntspeakTalkPad(){
   const [roots, setRoots] = useState<Root[]>(DEFAULT_ROOTS);
   const [nouns, setNouns] = useState<Noun[]>(DEFAULT_NOUNS);
@@ -19,10 +28,12 @@ export default function HuntspeakTalkPad(){
   const [menuOpen, setMenuOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
+  // Keep a valid selected root when the roots list changes (e.g. delete).
   useEffect(()=>{
     if (!selectedId && roots[0]) setSelectedId(roots[0].id);
     else if (selectedId && !roots.some(r=>r.id===selectedId)) setSelectedId(roots[0]?.id || null);
   }, [roots, selectedId]);
+  // Keep a valid selected noun when the nouns list changes.
   useEffect(()=>{
     if (!selectedNounId && nouns[0]) setSelectedNounId(nouns[0].id);
     else if (selectedNounId && !nouns.some(n=>n.id===selectedNounId)) setSelectedNounId(nouns[0]?.id || null);
@@ -44,7 +55,7 @@ export default function HuntspeakTalkPad(){
     };
   }, []);
 
-  // Apply effective theme class
+  // Apply effective theme class to <body> whenever theme or system preference changes.
   useEffect(()=>{
     const effective = theme==='auto' ? (systemDark ? 'dark' : 'fantasy') : theme;
     const b = document.body;
@@ -55,6 +66,7 @@ export default function HuntspeakTalkPad(){
   const selected = roots.find(r=>r.id===selectedId) || null;
   const [showCollapse, setShowCollapse] = useLocalStorageState<boolean>('huntspeak_show_collapse', false);
   const [talkCollapsed, setTalkCollapsed] = useLocalStorageState<boolean>('huntspeak_collapse_talk', false);
+  // Small helper UI to allow collapsing the TalkPad area when enabled in settings.
   function TalkPadCollapse(){
     if (!showCollapse) return null;
     return (
@@ -63,6 +75,7 @@ export default function HuntspeakTalkPad(){
       </button>
     );
   }
+  // Show TalkPad only when not collapsed.
   function TalkPadBody(){
     if (talkCollapsed) return null;
     return (
@@ -73,7 +86,7 @@ export default function HuntspeakTalkPad(){
     );
   }
 
-  // Import/Export (roots + nouns)
+  // Import/Export (roots + nouns) as strict JSON with minimal validation.
   function exportData(){
     const payload = { roots, nouns };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
@@ -96,6 +109,7 @@ export default function HuntspeakTalkPad(){
           .map((x:any)=>({ id:String(x.id||Math.random().toString(36).slice(2,10)), word:String(x.word), gloss:String(x.gloss||''), synonyms:Array.isArray(x.synonyms)?x.synonyms.map((s:any)=>String(s)):[] }));
         localStorage.setItem(LS_KEYS.roots, JSON.stringify(cleanRoots));
         localStorage.setItem(LS_KEYS.nouns, JSON.stringify(cleanNouns));
+        // Reload to propagate freshly imported data through the app state.
         location.reload();
       } catch { alert('Import failed: unreadable JSON.'); }
     };

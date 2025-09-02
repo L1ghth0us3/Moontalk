@@ -2,6 +2,8 @@ import type { Root, Noun } from "../types";
 
 const uid = () => Math.random().toString(36).slice(2, 10);
 
+// Seed data to make the app useful on first load and to demonstrate
+// expected shapes for roots and nouns.
 export const DEFAULT_ROOTS: Root[] = [
   { id: uid(), c1: "k", c2: "l", c3: "b", gloss: "track; hunt", synonyms: ["hunt", "track", "stalk"] },
   { id: uid(), c1: "χ", c2: "r", c3: "q", gloss: "smell; catch scent", synonyms: ["smell", "scent"] },

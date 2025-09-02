@@ -1,3 +1,4 @@
+// Centralized localStorage keys for app persistence.
 export const LS_KEYS = {
   roots: "huntspeak_roots",
   nouns: "huntspeak_nouns",
@@ -5,6 +6,7 @@ export const LS_KEYS = {
   talk: "huntspeak_talkpad",
 } as const;
 
+/** Read and JSON‑parse a value from localStorage with a safe fallback. */
 export function lsGet<T>(key: string, fallback: T): T {
   try {
     const raw = window.localStorage.getItem(key);
@@ -15,12 +17,17 @@ export function lsGet<T>(key: string, fallback: T): T {
   }
 }
 
+/** Stringify and write a value to localStorage; ignore quota/permission errors. */
 export function lsSet(key: string, value: unknown) {
   try { window.localStorage.setItem(key, JSON.stringify(value)); } catch {}
 }
 
 import { useEffect, useRef, useState } from "react";
 
+/**
+ * React state hook backed by localStorage. Hydrates from storage on first render,
+ * then writes back whenever the value changes.
+ */
 export function useLocalStorageState<T>(key: string, initial: T) {
   const [state, setState] = useState<T>(() => lsGet<T>(key, initial));
   const first = useRef(true);
@@ -30,4 +37,3 @@ export function useLocalStorageState<T>(key: string, initial: T) {
   }, [key, state]);
   return [state, setState] as const;
 }
-

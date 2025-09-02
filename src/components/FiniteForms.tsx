@@ -5,12 +5,17 @@ import Toggle from "./ui/Toggle";
 import { useState, useMemo } from "react";
 import { useLocalStorageState } from "../lib/storage";
 
+/**
+ * Matrix of finite forms for a single root across all pronouns × tenses,
+ * with optional toggles to apply progressive/habitual/negation uniformly.
+ */
 export default function FiniteForms({ root, showCollapse = false }: { root: Root, showCollapse?: boolean }){
   const [showNeg, setShowNeg] = useState(false);
   const [showProg, setShowProg] = useState(false);
   const [showHab, setShowHab] = useState(false);
   const [collapsed, setCollapsed] = useLocalStorageState<boolean>('huntspeak_collapse_finite', false);
 
+  // Precompute the table rows when inputs/toggles change.
   const rows = useMemo(() => PRONOUNS.map(p => {
     const baseForms = TENSES.map(t => buildFinite(root, p.subjV, t.vowel));
     let forms = baseForms;

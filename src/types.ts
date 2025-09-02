@@ -1,3 +1,4 @@
+/** Triliteral verb root with an English gloss and optional synonyms. */
 export interface Root {
   id: string;
   c1: string;
@@ -7,6 +8,7 @@ export interface Root {
   synonyms?: string[];
 }
 
+/** Noun lexeme with an English gloss and optional synonyms. */
 export interface Noun {
   id: string;
   word: string;
@@ -14,6 +16,7 @@ export interface Noun {
   synonyms?: string[];
 }
 
+// Subject pronouns and the vowel used in finite verb formation for that person.
 export const PRONOUNS = [
   { label: "1sg (ɪ)", form: "ɪ", subjV: "ɪ" },
   { label: "2sg (su)", form: "su", subjV: "u" },
@@ -23,9 +26,9 @@ export const PRONOUNS = [
   { label: "3pl (te)", form: "te", subjV: "e" },
 ];
 
+// Simple tense inventory and their tense vowel.
 export const TENSES = [
   { key: "prs", label: "present", vowel: "a" },
   { key: "pst", label: "past", vowel: "e" },
   { key: "fut", label: "future", vowel: "ʌ" },
 ];
-
