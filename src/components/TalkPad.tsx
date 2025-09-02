@@ -83,7 +83,7 @@ export default function TalkPad({ roots, nouns, selectedRootId, onSelectRoot }: 
     if (state.register.hush) bits.push("aᵘ");
     if (state.register.attn) bits.push("ǃ");
     return bits.join(" ");
-  }, [r, pron, hsVerb, state.obj, withNoun, state.toText, state.fromText, state.question, state.register]);
+  }, [r, pron, hsVerb, objectNoun, withNoun, state.toText, state.fromText, state.question, state.register]);
 
   return (
     <div className="space-y-3">
