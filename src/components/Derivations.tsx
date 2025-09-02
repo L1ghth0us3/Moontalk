@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useLocalStorageState } from "../lib/storage";
 import type { Root } from "../types";
 
 const DERIVATIONS = [
@@ -12,7 +13,7 @@ const DERIVATIONS = [
   { key: "concept", label: "general concept (CaCiC)", build: (r: Root) => `${r.c1}a${r.c2}i${r.c3}` },
 ];
 
-export default function RenderDerivations({ root }: { root: Root }){
+export default function RenderDerivations({ root, showCollapse = false }: { root: Root, showCollapse?: boolean }){
   const base = useMemo(()=>{
     const head = (root.gloss || "").split(/[;,.]/)[0]?.trim() || "hunt";
     return head.toLowerCase();
@@ -33,9 +34,20 @@ export default function RenderDerivations({ root }: { root: Root }){
     concept:  `nominal: the act/idea of ${gerund(base)}`,
   } as const;
 
+  const [collapsed, setCollapsed] = useLocalStorageState<boolean>('huntspeak_collapse_derivations', false);
+  // lightweight state without adding storage util here
   return (
     <section className="rounded-3xl border border-neutral-200 p-4 shadow-sm fantasy-card">
-      <h2 className="text-xl md:text-2xl font-semibold mb-1">Derivations</h2>
+      <div className="flex items-center justify-between mb-1">
+        <h2 className="text-xl md:text-2xl font-semibold">Derivations</h2>
+        {showCollapse && (
+          <button aria-label={collapsed? 'Expand' : 'Collapse'} className="px-2 py-1 text-sm rounded border border-neutral-300 hover:bg-neutral-50" onClick={()=>setCollapsed(c=>!c)}>
+            {collapsed ? '▸' : '▾'}
+          </button>
+        )}
+      </div>
+      {!collapsed && (
+      <>
       <p className="text-sm text-neutral-600 mb-3">Handy non-finite patterns (binyanim-style).</p>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {DERIVATIONS.map(d => (
@@ -46,6 +58,8 @@ export default function RenderDerivations({ root }: { root: Root }){
           </div>
         ))}
       </div>
+      </>
+      )}
     </section>
   );
 }

@@ -53,6 +53,25 @@ export default function HuntspeakTalkPad(){
   }, [theme, systemDark]);
 
   const selected = roots.find(r=>r.id===selectedId) || null;
+  const [showCollapse, setShowCollapse] = useLocalStorageState<boolean>('huntspeak_show_collapse', false);
+  const [talkCollapsed, setTalkCollapsed] = useLocalStorageState<boolean>('huntspeak_collapse_talk', false);
+  function TalkPadCollapse(){
+    if (!showCollapse) return null;
+    return (
+      <button aria-label={talkCollapsed? 'Expand' : 'Collapse'} className="px-2 py-1 text-sm rounded border border-neutral-300 hover:bg-neutral-50" onClick={()=>setTalkCollapsed(c=>!c)}>
+        {talkCollapsed ? '▸' : '▾'}
+      </button>
+    );
+  }
+  function TalkPadBody(){
+    if (talkCollapsed) return null;
+    return (
+      <>
+        <p className="text-sm text-neutral-600 mb-3">Pick who + verb + tense, type object. Copy & paste into chat.</p>
+        <TalkPad roots={roots} nouns={nouns} />
+      </>
+    );
+  }
 
   // Import/Export (roots + nouns)
   function exportData(){
@@ -107,22 +126,24 @@ export default function HuntspeakTalkPad(){
 
       <div className="grid grid-cols-1 lg:grid-cols-4 2xl:grid-cols-5 gap-6">
         <aside className="lg:col-span-1 space-y-6">
-          <RootEditor initial={roots} onChange={setRoots} selectedId={selectedId} onSelect={setSelectedId} />
-          <NounEditor initial={nouns} onChange={setNouns} selectedId={selectedNounId} onSelect={setSelectedNounId} />
+          <RootEditor initial={roots} onChange={setRoots} selectedId={selectedId} onSelect={setSelectedId} showCollapse={showCollapse} />
+          <NounEditor initial={nouns} onChange={setNouns} selectedId={selectedNounId} onSelect={setSelectedNounId} showCollapse={showCollapse} />
         </aside>
         <main className="lg:col-span-3 2xl:col-span-4 space-y-6">
           <section className="rounded-3xl border border-neutral-200 p-4 shadow-sm fantasy-card">
-            <h2 className="text-xl md:text-2xl font-semibold mb-1">Talk Pad</h2>
-            <p className="text-sm text-neutral-600 mb-3">Pick who + verb + tense, type object. Copy & paste into chat.</p>
-            <TalkPad roots={roots} nouns={nouns} />
+            <div className="flex items-center justify-between mb-1">
+              <h2 className="text-xl md:text-2xl font-semibold">Talk Pad</h2>
+              <TalkPadCollapse />
+            </div>
+            <TalkPadBody />
           </section>
           {selected && (
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
-              <FiniteForms root={selected} />
-              <RenderDerivations root={selected} />
+              <FiniteForms root={selected} showCollapse={showCollapse} />
+              <RenderDerivations root={selected} showCollapse={showCollapse} />
             </div>
           )}
-          <FreeTranslator roots={roots} nouns={nouns} />
+          <FreeTranslator roots={roots} nouns={nouns} showCollapse={showCollapse} />
         </main>
       </div>
     </div>
@@ -160,6 +181,14 @@ export default function HuntspeakTalkPad(){
                     onClick={()=>setTheme('dark')}
                   >{theme==='dark' ? '✓ Dark' : 'Dark'}</button>
                 </div>
+              </div>
+              <div className="pt-2 border-t border-neutral-200/70">
+                <div className="text-sm font-medium mb-2">Interface</div>
+                <label className="inline-flex items-center gap-2 select-none">
+                  <input type="checkbox" className="h-4 w-4" checked={showCollapse} onChange={e=>setShowCollapse(e.target.checked)} />
+                  <span>Show collapse controls</span>
+                  <span className="text-xs opacity-70">({showCollapse ? 'On' : 'Off'})</span>
+                </label>
               </div>
               <div className="pt-2 border-t border-neutral-200/70">
                 <div className="text-sm font-medium mb-2">Data</div>

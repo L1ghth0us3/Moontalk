@@ -4,7 +4,7 @@ import { useLocalStorageState, LS_KEYS } from "../../lib/storage";
 
 const uid = () => Math.random().toString(36).slice(2, 10);
 
-export default function NounEditor({ initial, onChange, selectedId, onSelect }: { initial: Noun[]; onChange: (n: Noun[])=>void; selectedId: string|null; onSelect: (id: string|null)=>void; }){
+export default function NounEditor({ initial, onChange, selectedId, onSelect, showCollapse = false }: { initial: Noun[]; onChange: (n: Noun[])=>void; selectedId: string|null; onSelect: (id: string|null)=>void; showCollapse?: boolean; }){
   const [nouns, setNouns] = useLocalStorageState<Noun[]>(LS_KEYS.nouns, initial);
   useEffect(()=>{ onChange(nouns); }, [nouns]);
 
@@ -16,9 +16,20 @@ export default function NounEditor({ initial, onChange, selectedId, onSelect }: 
   const updateNoun = (id: string, patch: Partial<Noun>) => setNouns(prev=> prev.map(n=> n.id===id ? { ...n, ...patch } : n));
   const deleteNoun = (id: string) => { setNouns(prev=> prev.filter(n=> n.id!==id)); if (selectedId===id) onSelect(nouns.find(n=> n.id!==id)?.id ?? null); };
 
+  const [collapsed, setCollapsed] = useLocalStorageState<boolean>('huntspeak_collapse_nouns', false);
+
   return (
     <section className="rounded-3xl border border-neutral-200 p-4 shadow-sm overflow-hidden fantasy-card">
-      <h2 className="text-xl md:text-2xl font-semibold mb-3">Nouns</h2>
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-xl md:text-2xl font-semibold">Nouns</h2>
+        {showCollapse && (
+          <button aria-label={collapsed? 'Expand' : 'Collapse'} className="px-2 py-1 text-sm rounded border border-neutral-300 hover:bg-neutral-50" onClick={()=>setCollapsed(c=>!c)}>
+            {collapsed ? '▸' : '▾'}
+          </button>
+        )}
+      </div>
+      {!collapsed && (
+      <>
       <NounCreator onCreate={addNoun} />
       <div className="mt-3 max-h-[20rem] overflow-y-auto space-y-2 pr-1">
         {nouns.map(n => (
@@ -42,6 +53,8 @@ export default function NounEditor({ initial, onChange, selectedId, onSelect }: 
           </div>
           <input className="w-full px-2 py-1 rounded-lg border border-neutral-300" placeholder="extra English triggers (comma-separated)" value={synText} onChange={e=>setSynText(e.target.value)} onBlur={e=> updateNoun(selected.id, { synonyms: e.target.value.split(",").map(s=>s.trim()).filter(Boolean) })} />
         </div>
+      )}
+      </>
       )}
     </section>
   );

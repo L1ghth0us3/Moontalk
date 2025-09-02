@@ -1,12 +1,14 @@
 import { useState } from "react";
+import { useLocalStorageState } from "../lib/storage";
 import type { Noun, Root } from "../types";
 import { findRootByEnglish, withHabitual, withNegation, withProgressive } from "../lib/morphology";
 
 const clip = async (text: string) => { try { await navigator.clipboard.writeText(text); } catch {} };
 
-export default function FreeTranslator({ roots, nouns }: { roots: Root[]; nouns: Noun[] }){
+export default function FreeTranslator({ roots, nouns, showCollapse = false }: { roots: Root[]; nouns: Noun[]; showCollapse?: boolean }){
   const [en, setEn] = useState("");
   const [hs, setHs] = useState("");
+  const [collapsed, setCollapsed] = useLocalStorageState<boolean>('huntspeak_collapse_translator', false);
 
   function norm(s: string) { return s.toLowerCase().replace(/[()]/g, "").replace(/\s+/g, " ").trim(); }
   function stripArticles(s: string) { return s.replace(/^(a|an|the)\s+/, ""); }
@@ -37,7 +39,16 @@ export default function FreeTranslator({ roots, nouns }: { roots: Root[]; nouns:
 
   return (
     <section className="rounded-3xl border border-neutral-200 p-4 shadow-sm fantasy-card">
-      <h2 className="text-xl md:text-2xl font-semibold mb-1">Free Translator (simple, 1-verb lines)</h2>
+      <div className="flex items-center justify-between mb-1">
+        <h2 className="text-xl md:text-2xl font-semibold">Free Translator (simple, 1-verb lines)</h2>
+        {showCollapse && (
+          <button aria-label={collapsed? 'Expand' : 'Collapse'} className="px-2 py-1 text-sm rounded border border-neutral-300 hover:bg-neutral-50" onClick={()=>setCollapsed(c=>!c)}>
+            {collapsed ? '▸' : '▾'}
+          </button>
+        )}
+      </div>
+      {!collapsed && (
+      <>
       <p className="text-sm text-neutral-600 mb-3">Try: <code>we will hunt with a trap from the Shroud</code>. Recognizes pronouns + will/did/not + with/to/from.</p>
       <div className="space-y-2">
         <textarea className="w-full h-20 px-3 py-2 rounded-xl border border-neutral-300" placeholder="Type: we will hunt with a trap from the Shroud" value={en} onChange={e=>setEn(e.target.value)} />
@@ -51,6 +62,8 @@ export default function FreeTranslator({ roots, nouns }: { roots: Root[]; nouns:
           <div className="text-lg font-semibold break-words mt-1">{hs || "—"}</div>
         </div>
       </div>
+      </>
+      )}
     </section>
   );
 }
