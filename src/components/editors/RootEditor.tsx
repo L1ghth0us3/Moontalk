@@ -4,7 +4,7 @@ import { useLocalStorageState, LS_KEYS } from "../../lib/storage";
 
 const uid = () => Math.random().toString(36).slice(2, 10);
 
-export default function RootEditor({ initial, onChange, selectedId, onSelect }: { initial: Root[]; onChange: (r: Root[])=>void; selectedId: string|null; onSelect: (id: string|null)=>void; }){
+export default function RootEditor({ initial, onChange, selectedId, onSelect, showCollapse = false }: { initial: Root[]; onChange: (r: Root[])=>void; selectedId: string|null; onSelect: (id: string|null)=>void; showCollapse?: boolean; }){
   const [roots, setRoots] = useLocalStorageState<Root[]>(LS_KEYS.roots, initial);
   useEffect(()=>{ onChange(roots); }, [roots]);
 
@@ -21,7 +21,6 @@ export default function RootEditor({ initial, onChange, selectedId, onSelect }: 
   const deleteRoot = (id: string) => { setRoots(prev=> prev.filter(r=> r.id!==id)); if (selectedId===id) onSelect(roots.find(r=> r.id!==id)?.id ?? null); };
 
   const [collapsed, setCollapsed] = useLocalStorageState<boolean>('huntspeak_collapse_roots', false);
-  const [showCollapse] = useLocalStorageState<boolean>('huntspeak_show_collapse', false);
 
   return (
     <section className="rounded-3xl border border-neutral-200 p-4 shadow-sm overflow-hidden fantasy-card">

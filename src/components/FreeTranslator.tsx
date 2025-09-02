@@ -5,11 +5,10 @@ import { findRootByEnglish, withHabitual, withNegation, withProgressive } from "
 
 const clip = async (text: string) => { try { await navigator.clipboard.writeText(text); } catch {} };
 
-export default function FreeTranslator({ roots, nouns }: { roots: Root[]; nouns: Noun[] }){
+export default function FreeTranslator({ roots, nouns, showCollapse = false }: { roots: Root[]; nouns: Noun[]; showCollapse?: boolean }){
   const [en, setEn] = useState("");
   const [hs, setHs] = useState("");
   const [collapsed, setCollapsed] = useLocalStorageState<boolean>('huntspeak_collapse_translator', false);
-  const [showCollapse] = useLocalStorageState<boolean>('huntspeak_show_collapse', false);
 
   function norm(s: string) { return s.toLowerCase().replace(/[()]/g, "").replace(/\s+/g, " ").trim(); }
   function stripArticles(s: string) { return s.replace(/^(a|an|the)\s+/, ""); }

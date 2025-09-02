@@ -5,12 +5,11 @@ import Toggle from "./ui/Toggle";
 import { useState, useMemo } from "react";
 import { useLocalStorageState } from "../lib/storage";
 
-export default function FiniteForms({ root }: { root: Root }){
+export default function FiniteForms({ root, showCollapse = false }: { root: Root, showCollapse?: boolean }){
   const [showNeg, setShowNeg] = useState(false);
   const [showProg, setShowProg] = useState(false);
   const [showHab, setShowHab] = useState(false);
   const [collapsed, setCollapsed] = useLocalStorageState<boolean>('huntspeak_collapse_finite', false);
-  const [showCollapse] = useLocalStorageState<boolean>('huntspeak_show_collapse', false);
 
   const rows = useMemo(() => PRONOUNS.map(p => {
     const baseForms = TENSES.map(t => buildFinite(root, p.subjV, t.vowel));

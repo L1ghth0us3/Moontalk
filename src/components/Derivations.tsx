@@ -13,7 +13,7 @@ const DERIVATIONS = [
   { key: "concept", label: "general concept (CaCiC)", build: (r: Root) => `${r.c1}a${r.c2}i${r.c3}` },
 ];
 
-export default function RenderDerivations({ root }: { root: Root }){
+export default function RenderDerivations({ root, showCollapse = false }: { root: Root, showCollapse?: boolean }){
   const base = useMemo(()=>{
     const head = (root.gloss || "").split(/[;,.]/)[0]?.trim() || "hunt";
     return head.toLowerCase();
@@ -35,7 +35,6 @@ export default function RenderDerivations({ root }: { root: Root }){
   } as const;
 
   const [collapsed, setCollapsed] = useLocalStorageState<boolean>('huntspeak_collapse_derivations', false);
-  const [showCollapse] = useLocalStorageState<boolean>('huntspeak_show_collapse', false);
   // lightweight state without adding storage util here
   return (
     <section className="rounded-3xl border border-neutral-200 p-4 shadow-sm fantasy-card">

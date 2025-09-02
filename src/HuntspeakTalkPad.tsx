@@ -126,8 +126,8 @@ export default function HuntspeakTalkPad(){
 
       <div className="grid grid-cols-1 lg:grid-cols-4 2xl:grid-cols-5 gap-6">
         <aside className="lg:col-span-1 space-y-6">
-          <RootEditor initial={roots} onChange={setRoots} selectedId={selectedId} onSelect={setSelectedId} />
-          <NounEditor initial={nouns} onChange={setNouns} selectedId={selectedNounId} onSelect={setSelectedNounId} />
+          <RootEditor initial={roots} onChange={setRoots} selectedId={selectedId} onSelect={setSelectedId} showCollapse={showCollapse} />
+          <NounEditor initial={nouns} onChange={setNouns} selectedId={selectedNounId} onSelect={setSelectedNounId} showCollapse={showCollapse} />
         </aside>
         <main className="lg:col-span-3 2xl:col-span-4 space-y-6">
           <section className="rounded-3xl border border-neutral-200 p-4 shadow-sm fantasy-card">
@@ -139,11 +139,11 @@ export default function HuntspeakTalkPad(){
           </section>
           {selected && (
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
-              <FiniteForms root={selected} />
-              <RenderDerivations root={selected} />
+              <FiniteForms root={selected} showCollapse={showCollapse} />
+              <RenderDerivations root={selected} showCollapse={showCollapse} />
             </div>
           )}
-          <FreeTranslator roots={roots} nouns={nouns} />
+          <FreeTranslator roots={roots} nouns={nouns} showCollapse={showCollapse} />
         </main>
       </div>
     </div>
