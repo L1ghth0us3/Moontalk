@@ -28,6 +28,7 @@ export default function HuntspeakTalkPad(){
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [dataOpen, setDataOpen] = useState(false);
   const [composerTab, setComposerTab] = useLocalStorageState<'talk'|'translator'>("huntspeak_composer_tab", 'talk');
+  const [confirmResetOpen, setConfirmResetOpen] = useState(false);
 
   // Keep a valid selected root when the roots list changes (e.g. delete).
   useEffect(()=>{
@@ -267,7 +268,38 @@ export default function HuntspeakTalkPad(){
                   </label>
                 </div>
                 <div className="text-xs opacity-70 mt-1">Exports and imports roots and nouns as JSON.</div>
+                <div className="mt-4 pt-3 border-t border-neutral-200/70">
+                  <div className="text-sm font-medium mb-2 text-red-700">Danger Zone</div>
+                  <button
+                    title="Fully Reset Local Storage! Danger!"
+                    className="px-3 py-2 rounded-lg border border-red-300 text-red-700 hover:bg-red-50"
+                    onClick={()=>setConfirmResetOpen(true)}
+                  >Reset</button>
+                </div>
               </div>
+            </div>
+          </div>
+        </div>
+      </>
+    )}
+    {confirmResetOpen && (
+      <>
+        <div className="fixed inset-0 bg-black/50 z-50"></div>
+        <div
+          className="fixed inset-0 flex items-center justify-center z-50 p-4"
+          onClick={(e)=>{ if (e.target === e.currentTarget) setConfirmResetOpen(false); }}
+        >
+          <div className="w-full max-w-md rounded-2xl border border-neutral-200 bg-white fantasy-card p-5">
+            <h3 className="text-xl font-semibold mb-2">Are you sure?</h3>
+            <p className="text-sm text-neutral-700 mb-4">
+              This will remove all Huntspeak data and settings from your browser, including Verb Roots, Nouns, Talk Pad state, and interface preferences. This action cannot be undone.
+            </p>
+            <div className="flex items-center justify-end gap-2">
+              <button className="px-3 py-2 rounded-lg border border-neutral-300 hover:bg-neutral-50" onClick={()=>setConfirmResetOpen(false)}>Cancel</button>
+              <button
+                className="px-3 py-2 rounded-lg border border-red-300 text-red-700 hover:bg-red-50"
+                onClick={()=>{ try { localStorage.clear(); } catch {} finally { location.reload(); } }}
+              >Reset Everything</button>
             </div>
           </div>
         </div>
