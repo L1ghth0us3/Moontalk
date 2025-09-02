@@ -16,6 +16,7 @@ export default function FiniteForms({ root, showCollapse = false }: { root: Root
   const [showHab, setShowHab] = useState(false);
   const [collapsed, setCollapsed] = useLocalStorageState<boolean>('huntspeak_collapse_finite', false);
   const pulse = usePulseOnChange([root.id]);
+  const [pulseEnabled] = useLocalStorageState<boolean>('huntspeak_pulse_enabled', true);
 
   // Precompute the table rows when inputs/toggles change.
   const rows = useMemo(() => PRONOUNS.map(p => {
@@ -28,7 +29,7 @@ export default function FiniteForms({ root, showCollapse = false }: { root: Root
   }), [root, showNeg, showProg, showHab]);
 
   return (
-    <section className={`rounded-3xl border border-neutral-200 p-4 shadow-sm fantasy-card ${pulse? 'pulse-once':''}`}>
+    <section className={`rounded-3xl border border-neutral-200 p-4 shadow-sm fantasy-card ${pulse && pulseEnabled ? 'pulse-once':''}`}>
       <div className="flex items-center justify-between mb-1">
         <h2 className="text-xl md:text-2xl font-semibold">Finite Forms</h2>
         {showCollapse && (

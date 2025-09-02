@@ -46,6 +46,7 @@ export default function TalkPad({ roots, nouns, selectedRootId, onSelectRoot }: 
 
   // Pulse effects when values change
   const pulseVerbPick = usePulseOnChange([state.rootId]);
+  const [pulseEnabled] = useLocalStorageState<boolean>(LS_KEYS.pulse, true);
 
   // Build the Huntspeak verb form in stages with optional morphology toggles.
   const hsVerb = useMemo(()=>{
@@ -75,6 +76,7 @@ export default function TalkPad({ roots, nouns, selectedRootId, onSelectRoot }: 
     if (state.register.attn) bits.push("ǃ");
     return bits.join(" ");
   }, [r, pron, hsVerb, state.obj, withNoun, state.toText, state.fromText, state.question, state.register]);
+  const pulseResult = usePulseOnChange([hsVerb, sentence]);
 
   return (
     <div className="space-y-3">
@@ -83,7 +85,7 @@ export default function TalkPad({ roots, nouns, selectedRootId, onSelectRoot }: 
           <div className="text-xs uppercase tracking-wide text-neutral-500 mb-2">Who</div>
           <NiceSelect value={state.pronForm} onChange={v=>setState(s=>({...s, pronForm:v}))} items={PRONOUNS.map(p=>({ value:p.form, label:p.label }))} />
         </div>
-        <div className={`rounded-2xl border border-neutral-200 p-3 ${pulseVerbPick? 'pulse-once':''}`}>
+        <div className={`rounded-2xl border border-neutral-200 p-3 ${pulseVerbPick && pulseEnabled? 'pulse-once':''}`}>
           <div className="text-xs uppercase tracking-wide text-neutral-500 mb-2">Verb</div>
           <NiceSelect value={state.rootId} onChange={id=>{ setState(s=>({...s, rootId:id})); onSelectRoot?.(id); }} items={roots.map(rt=>({ value:rt.id, label: `${[rt.c1, rt.c2, rt.c3].join("-")} — ${rt.gloss || "(no gloss)"}` }))} />
         </div>
@@ -123,7 +125,7 @@ export default function TalkPad({ roots, nouns, selectedRootId, onSelectRoot }: 
           </div>
         </div>
         {/* Result panel occupies the remaining slot on the second row (at 2xl) */}
-        <div className={`rounded-2xl border p-3 result-card ${usePulseOnChange([hsVerb, sentence])? 'pulse-once':''}`}>
+        <div className={`rounded-2xl border p-3 result-card ${pulseResult && pulseEnabled? 'pulse-once':''}`}>
           <div className="flex items-center justify-between gap-3">
             <div className="flex-1">
               <div className="text-xs uppercase tracking-wide opacity-80">Result (Huntspeak)</div>

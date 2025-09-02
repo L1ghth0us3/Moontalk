@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Noun } from "../../types";
 import { useLocalStorageState, LS_KEYS } from "../../lib/storage";
+import { usePulseOnChange } from "../../lib/usePulse";
 
 const uid = () => Math.random().toString(36).slice(2, 10);
 
@@ -21,6 +22,8 @@ export default function NounEditor({ initial, onChange, selectedId, onSelect, sh
   const deleteNoun = (id: string) => { setNouns(prev=> prev.filter(n=> n.id!==id)); if (selectedId===id) onSelect(nouns.find(n=> n.id!==id)?.id ?? null); };
 
   const [collapsed, setCollapsed] = useLocalStorageState<boolean>('huntspeak_collapse_nouns', false);
+  const pulseSelected = usePulseOnChange([selectedId]);
+  const [pulseEnabled] = useLocalStorageState<boolean>(LS_KEYS.pulse, true);
 
   return (
     <section className="rounded-3xl border border-neutral-200 p-4 shadow-sm overflow-hidden fantasy-card">
@@ -37,7 +40,7 @@ export default function NounEditor({ initial, onChange, selectedId, onSelect, sh
       <NounCreator onCreate={addNoun} />
       <div className="mt-3 max-h-[20rem] overflow-y-auto space-y-2 pr-1">
         {nouns.map(n => (
-          <button key={n.id} onClick={() => onSelect(n.id)} className={`w-full text-left px-3 py-2 rounded-xl border ${selectedId === n.id ? "border-blue-500 bg-blue-50" : "border-neutral-200 hover:bg-neutral-50"}`}>
+          <button key={n.id} onClick={() => onSelect(n.id)} className={`w-full text-left px-3 py-2 rounded-xl border ${selectedId === n.id ? "border-blue-500 bg-blue-50" : "border-neutral-200 hover:bg-neutral-50"} ${pulseEnabled && pulseSelected && selectedId === n.id ? 'pulse-once' : ''}`}>
             <div className="flex items-center justify-between gap-2 min-w-0">
               <div className="font-semibold text-lg truncate max-w-full">{n.word}</div>
               <div className="text-xs text-neutral-500 truncate flex-1 min-w-0 text-right">{n.gloss || "(no gloss)"}</div>

@@ -18,6 +18,7 @@ const DERIVATIONS = [
 
 export default function RenderDerivations({ root, showCollapse = false }: { root: Root, showCollapse?: boolean }){
   const pulse = usePulseOnChange([root.id]);
+  const [pulseEnabled] = useLocalStorageState<boolean>('huntspeak_pulse_enabled', true);
   // Use the first segment of the gloss as a base for natural‑language explanations.
   const base = useMemo(()=>{
     const head = (root.gloss || "").split(/[;,.]/)[0]?.trim() || "hunt";
@@ -41,7 +42,7 @@ export default function RenderDerivations({ root, showCollapse = false }: { root
 
   const [collapsed, setCollapsed] = useLocalStorageState<boolean>('huntspeak_collapse_derivations', false);
   return (
-    <section className={`rounded-3xl border border-neutral-200 p-4 shadow-sm fantasy-card ${pulse? 'pulse-once':''}`}>
+    <section className={`rounded-3xl border border-neutral-200 p-4 shadow-sm fantasy-card ${pulse && pulseEnabled ? 'pulse-once':''}`}>
       <div className="flex items-center justify-between mb-1">
         <h2 className="text-xl md:text-2xl font-semibold">Derivations</h2>
         {showCollapse && (
