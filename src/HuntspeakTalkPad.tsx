@@ -7,7 +7,6 @@ import TalkPad from "./components/TalkPad";
 import RenderDerivations from "./components/Derivations";
 import FreeTranslator from "./components/FreeTranslator";
 import { useLocalStorageState, LS_KEYS } from "./lib/storage";
-import FolderTabs from "./components/ui/FolderTabs";
 import FiniteForms from "./components/FiniteForms";
 
 /**
@@ -136,21 +135,30 @@ export default function HuntspeakTalkPad(){
         </div>
       </header>
 
-      {/* Sticky composer: FolderTabs wraps Talk Pad and Translator */}
+      {/* Sticky composer: simple two-button tabs */}
       <div className="sticky top-2 z-30">
-        <FolderTabs
-          value={composerTab}
-          onChange={setComposerTab}
-          rightActions={composerTab==='talk' ? <TalkPadCollapse /> : null}
-          panelClassName="fantasy-card"
-          className="rounded-3xl border border-neutral-200 shadow-sm fantasy-card p-4"
-        >
+        <section className="rounded-3xl border border-neutral-200 p-4 shadow-sm fantasy-card">
+          <div className="flex items-center justify-between mb-2">
+            <div role="tablist" aria-label="Composer" className="flex items-center gap-2">
+              <button
+                aria-pressed={composerTab==='talk'}
+                className={`px-3 py-2 rounded-xl border transition ${composerTab==='talk' ? 'ring-2 ring-blue-300 border-blue-500 font-semibold' : 'border-neutral-300 hover:bg-neutral-50'}`}
+                onClick={()=>setComposerTab('talk')}
+              >Talk Pad</button>
+              <button
+                aria-pressed={composerTab==='translator'}
+                className={`px-3 py-2 rounded-xl border transition ${composerTab==='translator' ? 'ring-2 ring-blue-300 border-blue-500 font-semibold' : 'border-neutral-300 hover:bg-neutral-50'}`}
+                onClick={()=>setComposerTab('translator')}
+              >Free Translator</button>
+            </div>
+            {composerTab==='talk' && (<TalkPadCollapse />)}
+          </div>
           {composerTab==='talk' ? (
             <TalkPadBody />
           ) : (
             <FreeTranslator roots={roots} nouns={nouns} showCollapse={showCollapse} />
           )}
-        </FolderTabs>
+        </section>
       </div>
 
       {/* Below: Roots, Nouns, Finite Forms, Derivations in one row (responsive) */}
