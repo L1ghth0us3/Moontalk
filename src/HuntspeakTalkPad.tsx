@@ -21,7 +21,7 @@ import FiniteForms from "./components/FiniteForms";
 export default function HuntspeakTalkPad(){
   const [roots, setRoots] = useState<Root[]>(DEFAULT_ROOTS);
   const [nouns, setNouns] = useState<Noun[]>(DEFAULT_NOUNS);
-  const [selectedId, setSelectedId] = useState<string|null>(roots[0]?.id || null);
+  const [selectedId, setSelectedId] = useLocalStorageState<string|null>(LS_KEYS.selectedRoot, roots[0]?.id || null);
   const [selectedNounId, setSelectedNounId] = useState<string|null>(nouns[0]?.id || null);
   const [theme, setTheme] = useLocalStorageState<'fantasy'|'plain'|'dark'|'auto'>("huntspeak_theme", 'fantasy');
   const [systemDark, setSystemDark] = useState<boolean>(false);
@@ -93,7 +93,7 @@ export default function HuntspeakTalkPad(){
     return (
       <>
         <p className="text-sm text-neutral-600 mb-3">Pick who + verb + tense, type object. Copy & paste into chat.</p>
-        <TalkPad roots={roots} nouns={nouns} selectedRootId={selected?.id || undefined} />
+        <TalkPad roots={roots} nouns={nouns} selectedRootId={selected?.id || undefined} onSelectRoot={(id)=>setSelectedId(id)} />
       </>
     );
   }

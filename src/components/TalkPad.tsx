@@ -14,7 +14,7 @@ const clip = async (text: string) => { try { await navigator.clipboard.writeText
  * then optionally fill object and adpositional phrases. Produces a 1‑line
  * Huntspeak sentence (copyable).
  */
-export default function TalkPad({ roots, nouns, selectedRootId }: { roots: Root[]; nouns: Noun[]; selectedRootId?: string }){
+export default function TalkPad({ roots, nouns, selectedRootId, onSelectRoot }: { roots: Root[]; nouns: Noun[]; selectedRootId?: string; onSelectRoot?: (id: string)=>void }){
   const [state, setState] = useLocalStorageState(LS_KEYS.talk, {
     pronForm: PRONOUNS[0].form,
     rootId: roots[0]?.id || "",
@@ -81,7 +81,7 @@ export default function TalkPad({ roots, nouns, selectedRootId }: { roots: Root[
         </div>
         <div className="rounded-2xl border border-neutral-200 p-3">
           <div className="text-xs uppercase tracking-wide text-neutral-500 mb-2">Verb</div>
-          <NiceSelect value={state.rootId} onChange={id=>setState(s=>({...s, rootId:id}))} items={roots.map(rt=>({ value:rt.id, label: `${[rt.c1, rt.c2, rt.c3].join("-")} — ${rt.gloss || "(no gloss)"}` }))} />
+          <NiceSelect value={state.rootId} onChange={id=>{ setState(s=>({...s, rootId:id})); onSelectRoot?.(id); }} items={roots.map(rt=>({ value:rt.id, label: `${[rt.c1, rt.c2, rt.c3].join("-")} — ${rt.gloss || "(no gloss)"}` }))} />
         </div>
         <div className="rounded-2xl border border-neutral-200 p-3">
           <div className="text-xs uppercase tracking-wide text-neutral-500 mb-2">Tense</div>
