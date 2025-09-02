@@ -53,8 +53,7 @@ export default function FreeTranslator({ roots, nouns, showCollapse = false, emb
   if (embedded) {
     return (
       <>
-        <p className="text-sm text-neutral-600 mb-3">Free Translator (simple, 1-verb lines)</p>
-        <p className="text-sm text-neutral-600 mb-3">Try: <code>we will hunt with a trap from the Shroud</code>. Recognizes pronouns + will/did/not + with/to/from.</p>
+        <p className="text-sm text-neutral-600 mb-3">Translate simple one-verb English lines into Huntspeak. Recognizes pronouns, will/did/not, and with/to/from phrases.</p>
         <div className="space-y-2">
           <textarea className="w-full h-20 px-3 py-2 rounded-xl border border-neutral-300" placeholder="Type: we will hunt with a trap from the Shroud" value={en} onChange={e=>setEn(e.target.value)} />
           <div className="flex items-center gap-2">

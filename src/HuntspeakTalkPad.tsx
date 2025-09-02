@@ -69,12 +69,21 @@ export default function HuntspeakTalkPad(){
   const selected = roots.find(r=>r.id===selectedId) || null;
   const [showCollapse, setShowCollapse] = useLocalStorageState<boolean>('huntspeak_show_collapse', false);
   const [talkCollapsed, setTalkCollapsed] = useLocalStorageState<boolean>('huntspeak_collapse_talk', false);
+  const [translatorCollapsed, setTranslatorCollapsed] = useLocalStorageState<boolean>('huntspeak_collapse_translator', false);
   // Small helper UI to allow collapsing the TalkPad area when enabled in settings.
   function TalkPadCollapse(){
     if (!showCollapse) return null;
     return (
       <button aria-label={talkCollapsed? 'Expand' : 'Collapse'} className="px-2 py-1 text-sm rounded border border-neutral-300 hover:bg-neutral-50" onClick={()=>setTalkCollapsed(c=>!c)}>
         {talkCollapsed ? '▸' : '▾'}
+      </button>
+    );
+  }
+  function TranslatorCollapse(){
+    if (!showCollapse) return null;
+    return (
+      <button aria-label={translatorCollapsed? 'Expand' : 'Collapse'} className="px-2 py-1 text-sm rounded border border-neutral-300 hover:bg-neutral-50" onClick={()=>setTranslatorCollapsed(c=>!c)}>
+        {translatorCollapsed ? '▸' : '▾'}
       </button>
     );
   }
@@ -85,6 +94,14 @@ export default function HuntspeakTalkPad(){
       <>
         <p className="text-sm text-neutral-600 mb-3">Pick who + verb + tense, type object. Copy & paste into chat.</p>
         <TalkPad roots={roots} nouns={nouns} />
+      </>
+    );
+  }
+  function TranslatorBody(){
+    if (translatorCollapsed) return null;
+    return (
+      <>
+        <FreeTranslator roots={roots} nouns={nouns} embedded />
       </>
     );
   }
@@ -151,12 +168,12 @@ export default function HuntspeakTalkPad(){
                 onClick={()=>setComposerTab('translator')}
               >Free Translator</button>
             </div>
-            {composerTab==='talk' && (<TalkPadCollapse />)}
+            {composerTab==='talk' ? (<TalkPadCollapse />) : (<TranslatorCollapse />)}
           </div>
           {composerTab==='talk' ? (
             <TalkPadBody />
           ) : (
-            <FreeTranslator roots={roots} nouns={nouns} embedded />
+            <TranslatorBody />
           )}
         </section>
       </div>
