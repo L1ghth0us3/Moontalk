@@ -65,7 +65,7 @@ export default function TalkPad({ roots, nouns, selectedRootId, onSelectRoot }: 
     if (withNoun) bits.push("fi", withNoun.word);
     if (state.toText.trim()) bits.push("ga", state.toText.trim());
     if (state.fromText.trim()) bits.push("ʌs", state.fromText.trim());
-    if (state.question) bits.push("qa");
+    if (state.question) bits.push("qa?");
     if (state.register.flank) bits.unshift("ƛ");
     if (state.register.hush) bits.push("aᵘ");
     if (state.register.attn) bits.push("ǃ");
@@ -115,7 +115,7 @@ export default function TalkPad({ roots, nouns, selectedRootId, onSelectRoot }: 
             <input className="px-2 py-2 rounded-lg border border-neutral-300" placeholder="from (ʌs) — e.g., Shroud" value={state.fromText} onChange={e=>setState(s=>({...s, fromText:e.target.value}))} />
           </div>
           <div className="mt-2 flex flex-wrap gap-3">
-            <Toggle label="Question (qa)" checked={state.question} onChange={v=>setState(s=>({...s, question:v}))} />
+            <Toggle label="Question (qa?)" checked={state.question} onChange={v=>setState(s=>({...s, question:v}))} />
           </div>
         </div>
         <div className="rounded-2xl border border-neutral-200 p-3">
