@@ -6,7 +6,7 @@ import type { Noun, Root } from "../types";
  */
 export default function SelectedSummary({ root, noun }: { root: Root | null; noun: Noun | null }) {
   return (
-    <section className="rounded-3xl border p-5 shadow-lg main-card fantasy-card overflow-hidden mb-6 md:mb-8">
+    <section className="rounded-3xl border p-5 shadow-lg main-card fantasy-card overflow-hidden">
       <div className="accent h-1 w-full rounded-t-3xl -mt-5 mb-4" />
       <div className="flex items-baseline justify-between mb-3">
         <h2 className="text-xl md:text-2xl font-semibold">Current Selection</h2>
