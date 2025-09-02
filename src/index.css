@@ -78,7 +78,6 @@ body.theme-fantasy button:hover {
     0 8px 20px rgba(0,0,0,0.35),
     0 0 0 1px rgba(189,147,249,0.22) inset;
 }
-body.theme-fantasy button:focus,
 body.theme-fantasy button:focus-visible {
   outline: 3px solid rgba(189,147,249,0.45);
   outline-offset: 2px;
@@ -124,9 +123,9 @@ body.theme-fantasy input, body.theme-fantasy textarea, body.theme-fantasy select
 body.theme-fantasy input::placeholder, body.theme-fantasy textarea::placeholder {
   color: #6272a4;
 }
-body.theme-fantasy input:focus,
-body.theme-fantasy textarea:focus,
-body.theme-fantasy select:focus {
+body.theme-fantasy input:focus-visible,
+body.theme-fantasy textarea:focus-visible,
+body.theme-fantasy select:focus-visible {
   outline: 2px solid #bd93f9;
   outline-offset: 2px;
   box-shadow: 0 0 0 3px rgba(189,147,249,0.25), inset 0 1px 2px rgba(0,0,0,0.35);
@@ -190,7 +189,7 @@ body.theme-dark button {
   box-shadow: 0 6px 16px rgba(0,0,0,0.40);
 }
 body.theme-dark button:hover { background-color: #262433; }
-body.theme-dark button:focus, body.theme-dark button:focus-visible {
+body.theme-dark button:focus-visible {
   outline: 3px solid rgba(120,120,200,0.35);
   outline-offset: 2px;
 }
@@ -226,9 +225,9 @@ body.theme-dark .result-card { background: #152019; border-color: #5ea585 !impor
 body.theme-dark .result-card .copy-btn { border-color: #5ea585; }
 
 /* Lighter background for selected root list item across themes */
-body.theme-plain .root-item--selected { background-color: #f3f4f6; }
-body.theme-fantasy .root-item--selected { background-color: #34384e; }
-body.theme-dark .root-item--selected { background-color: #23222b; }
+body.theme-plain .root-item--selected { background-color: #fafafa; }
+body.theme-fantasy .root-item--selected { background-color: #3d4160; }
+body.theme-dark .root-item--selected { background-color: #2b2935; }
 
 /* Composer overlay tabs (full-width split) */
 .composer-tabs { border-radius: 0.75rem; overflow: visible; position: relative; }
