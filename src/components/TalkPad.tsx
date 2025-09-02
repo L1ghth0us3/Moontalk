@@ -14,7 +14,16 @@ const clip = async (text: string) => { try { await navigator.clipboard.writeText
  * then optionally fill object and adpositional phrases. Produces a 1‑line
  * Huntspeak sentence (copyable).
  */
-export default function TalkPad({ roots, nouns, selectedRootId, onSelectRoot }: { roots: Root[]; nouns: Noun[]; selectedRootId?: string; onSelectRoot?: (id: string)=>void }){
+export default function TalkPad({ roots, nouns, selectedRootId, onSelectRoot, syncMorph = false, morph, onMorphChange, onToggleSync }: {
+  roots: Root[];
+  nouns: Noun[];
+  selectedRootId?: string;
+  onSelectRoot?: (id: string)=>void;
+  syncMorph?: boolean;
+  morph?: { neg: boolean; prog: boolean; hab: boolean };
+  onMorphChange?: (m: { neg: boolean; prog: boolean; hab: boolean }) => void;
+  onToggleSync?: () => void;
+}){
   const [state, setState] = useLocalStorageState(LS_KEYS.talk, {
     pronForm: PRONOUNS[0].form,
     rootId: roots[0]?.id || "",
@@ -23,8 +32,6 @@ export default function TalkPad({ roots, nouns, selectedRootId, onSelectRoot }: 
     obj: "", objectNounId: "", withNounId: "", toText: "", fromText: "",
     question: false, register: { attn:false, flank:false, hush:false },
   });
-  const [syncMorph] = useLocalStorageState<boolean>(LS_KEYS.morphSync, true);
-  const [morph, setMorph] = useLocalStorageState<{neg:boolean;prog:boolean;hab:boolean}>(LS_KEYS.morphToggles, {neg:false,prog:false,hab:false});
 
   // Keep selected IDs valid when upstream lists mutate (add/remove).
   useEffect(()=>{
@@ -33,11 +40,7 @@ export default function TalkPad({ roots, nouns, selectedRootId, onSelectRoot }: 
     if (state.objectNounId && !nouns.find(n=>n.id===state.objectNounId)) setState(s=>({ ...s, objectNounId: "" }));
   }, [roots, nouns]);
 
-  // When sync is enabled, mirror shared morph toggles into Talk Pad state
-  useEffect(()=>{
-    if (!syncMorph) return;
-    setState(s=> ({ ...s, neg: morph.neg, prog: morph.prog, hab: morph.hab }));
-  }, [syncMorph, morph.neg, morph.prog, morph.hab]);
+  // When sync is enabled, use shared toggles directly via eff*; no local mirroring needed.
 
   // Follow external selected root from the Verb Root component when provided.
   useEffect(()=>{
@@ -48,6 +51,9 @@ export default function TalkPad({ roots, nouns, selectedRootId, onSelectRoot }: 
   }, [selectedRootId, roots]);
 
   const pron = PRONOUNS.find(p=>p.form===state.pronForm) || PRONOUNS[0];
+  const effNeg = syncMorph ? !!morph?.neg : state.neg;
+  const effProg = syncMorph ? !!morph?.prog : state.prog;
+  const effHab = syncMorph ? !!morph?.hab : state.hab;
   const tense = TENSES.find(t=>t.key===state.tenseKey) || TENSES[0];
   const r = useMemo(()=> roots.find(x=>x.id===state.rootId) || roots[0], [roots, state.rootId]);
   const withNoun = nouns.find(n=>n.id===state.withNounId);
@@ -68,11 +74,11 @@ export default function TalkPad({ roots, nouns, selectedRootId, onSelectRoot }: 
   const hsVerb = useMemo(()=>{
     if (!r) return "";
     let form = buildFinite(r, pron.subjV, tense.vowel);
-    if (state.prog) form = withProgressive(form, r);
-    if (state.hab) form = withHabitual(form);
-    if (state.neg) form = withNegation(form);
+    if (effProg) form = withProgressive(form, r);
+    if (effHab) form = withHabitual(form);
+    if (effNeg) form = withNegation(form);
     return form;
-  }, [r, pron, tense, state.prog, state.hab, state.neg]);
+  }, [r, pron, tense, effProg, effHab, effNeg]);
 
   // Compose the final sentence. Order:
   // pronoun • verb • [object] • [fi INSTR] • [ga TO] • [ʌs FROM] • [qa?]
@@ -113,10 +119,31 @@ export default function TalkPad({ roots, nouns, selectedRootId, onSelectRoot }: 
         <div className="rounded-2xl border border-neutral-200 p-3">
           <div className="text-xs uppercase tracking-wide text-neutral-500 mb-2">Tense</div>
           <NiceSelect value={state.tenseKey} onChange={k=>setState(s=>({...s, tenseKey:k}))} items={TENSES.map(t=>({ value:t.key, label:t.label }))} />
-          <div className="mt-2 flex flex-wrap gap-3">
-            <Toggle label="Negation" info="Adds naaq-; becomes naq- before k/g/q." checked={state.neg} onChange={v=>{ setState(s=>({...s, neg:v})); if (syncMorph) setMorph(m=>({...m, neg:v})); }} />
-            <Toggle label="Progressive" info="Geminate C2 before tense vowel." checked={state.prog} onChange={v=>{ setState(s=>({...s, prog:v})); if (syncMorph) setMorph(m=>({...m, prog:v})); }} />
-            <Toggle label="Habitual" info="Adds -ar for habitual." checked={state.hab} onChange={v=>{ setState(s=>({...s, hab:v})); if (syncMorph) setMorph(m=>({...m, hab:v})); }} />
+          <div className="mt-2 flex items-center justify-between gap-3">
+            <div className="flex flex-wrap gap-3">
+              <Toggle label="Negation" info="Adds naaq-; becomes naq- before k/g/q." checked={effNeg} onChange={v=>{
+                if (syncMorph) onMorphChange?.({ neg: v, prog: effProg, hab: effHab }); else setState(s=>({...s, neg:v}));
+              }} />
+              <Toggle label="Progressive" info="Geminate C2 before tense vowel." checked={effProg} onChange={v=>{
+                if (syncMorph) onMorphChange?.({ neg: effNeg, prog: v, hab: effHab }); else setState(s=>({...s, prog:v}));
+              }} />
+              <Toggle label="Habitual" info="Adds -ar for habitual." checked={effHab} onChange={v=>{
+                if (syncMorph) onMorphChange?.({ neg: effNeg, prog: effProg, hab: v }); else setState(s=>({...s, hab:v}));
+              }} />
+            </div>
+            <div className="relative group ml-3">
+              <button
+                type="button"
+                onClick={onToggleSync}
+                className={`text-xs px-2 py-0.5 rounded-full border select-none ${syncMorph ? 'border-emerald-300 text-emerald-700 bg-emerald-50' : 'border-neutral-300 text-neutral-700 bg-neutral-50 hover:bg-neutral-100'}`}
+                title={syncMorph ? 'Click to turn sync Off' : 'Click to turn sync On'}
+              >
+                {syncMorph ? 'Sync: On' : 'Sync: Off'}
+              </button>
+              <span className="pointer-events-none absolute left-1/2 -translate-x-1/2 top-full mt-2 z-50 hidden rounded-md border border-neutral-200 bg-white px-2.5 py-1.5 text-xs leading-snug text-neutral-900 shadow-xl whitespace-nowrap group-hover:block">
+                Sync Neg/Prog/Hab across panels
+              </span>
+            </div>
           </div>
         </div>
         <div className="rounded-2xl border border-neutral-200 p-3">

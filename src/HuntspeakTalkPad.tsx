@@ -30,6 +30,7 @@ export default function HuntspeakTalkPad(){
   const [composerTab, setComposerTab] = useLocalStorageState<'talk'|'translator'>("huntspeak_composer_tab", 'talk');
   const [confirmResetOpen, setConfirmResetOpen] = useState(false);
   const [syncMorph, setSyncMorph] = useLocalStorageState<boolean>(LS_KEYS.morphSync, true);
+  const [sharedMorph, setSharedMorph] = useLocalStorageState<{neg:boolean;prog:boolean;hab:boolean}>(LS_KEYS.morphToggles, {neg:false,prog:false,hab:false});
 
   // Keep a valid selected root when the roots list changes (e.g. delete).
   useEffect(()=>{
@@ -94,7 +95,16 @@ export default function HuntspeakTalkPad(){
     return (
       <>
         <p className="text-sm text-neutral-600 mb-3">Pick who + verb + tense, type object. Copy & paste into chat.</p>
-        <TalkPad roots={roots} nouns={nouns} selectedRootId={selected?.id || undefined} onSelectRoot={(id)=>setSelectedId(id)} />
+        <TalkPad
+          roots={roots}
+          nouns={nouns}
+          selectedRootId={selected?.id || undefined}
+          onSelectRoot={(id)=>setSelectedId(id)}
+          syncMorph={syncMorph}
+          morph={sharedMorph}
+          onMorphChange={setSharedMorph}
+          onToggleSync={()=>setSyncMorph(v=>!v)}
+        />
       </>
     );
   }
@@ -183,36 +193,53 @@ export default function HuntspeakTalkPad(){
       <div className="mt-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 items-start">
         <RootEditor initial={roots} onChange={setRoots} selectedId={selectedId} onSelect={setSelectedId} showCollapse={showCollapse} />
         <NounEditor initial={nouns} onChange={setNouns} selectedId={selectedNounId} onSelect={setSelectedNounId} showCollapse={showCollapse} />
-        {selected && (<FiniteForms root={selected} showCollapse={showCollapse} />)}
+        {selected && (
+          <FiniteForms
+            root={selected}
+            showCollapse={showCollapse}
+            syncMorph={syncMorph}
+            morph={sharedMorph}
+            onMorphChange={setSharedMorph}
+            onToggleSync={()=>setSyncMorph(v=>!v)}
+          />
+        )}
         {selected && (<RenderDerivations root={selected} showCollapse={showCollapse} />)}
       </div>
     </div>
-    {dataOpen && (
-      <>
-        <div className="fixed inset-0 bg-black/50 z-40"></div>
-        <div
-          className="fixed inset-0 flex items-center justify-center z-50 p-4"
-          onClick={(e)=>{ if (e.target === e.currentTarget) setDataOpen(false); }}
-        >
-          <div className="w-full max-w-lg rounded-2xl border border-neutral-200 bg-white fantasy-card p-5">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-xl font-semibold">Data: Import / Export</h3>
-              <button className="px-3 py-1 rounded-lg border border-neutral-300 hover:bg-neutral-50" onClick={()=>setDataOpen(false)}>Close</button>
-            </div>
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <button className="px-3 py-2 rounded-lg border border-neutral-300 hover:bg-neutral-50" onClick={exportData}>Export</button>
-                <label className="px-3 py-2 rounded-lg border border-neutral-300 hover:bg-neutral-50 cursor-pointer">
-                  Import
-                  <input type="file" accept="application/json" className="hidden" onChange={e=>{ const f=e.target.files?.[0]; if (f) importData(f); }} />
-                </label>
+      {dataOpen && (
+        <>
+          <div className="fixed inset-0 bg-black/50 z-40"></div>
+          <div
+            className="fixed inset-0 flex items-center justify-center z-50 p-4"
+            onClick={(e)=>{ if (e.target === e.currentTarget) setDataOpen(false); }}
+          >
+            <div className="w-full max-w-lg rounded-2xl border border-neutral-200 bg-white fantasy-card p-5">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-xl font-semibold">Data: Import / Export</h3>
+                <button className="px-3 py-1 rounded-lg border border-neutral-300 hover:bg-neutral-50" onClick={()=>setDataOpen(false)}>Close</button>
               </div>
-              <div className="text-xs opacity-70">Exports and imports roots and nouns as JSON.</div>
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <button className="px-3 py-2 rounded-lg border border-neutral-300 hover:bg-neutral-50" onClick={exportData}>Export</button>
+                  <label className="px-3 py-2 rounded-lg border border-neutral-300 hover:bg-neutral-50 cursor-pointer">
+                    Import
+                    <input type="file" accept="application/json" className="hidden" onChange={e=>{ const f=e.target.files?.[0]; if (f) importData(f); }} />
+                  </label>
+                </div>
+                <div className="text-xs opacity-70">Exports and imports roots and nouns as JSON.</div>
+                <div className="pt-3 border-t border-neutral-200/70">
+                  <div className="text-sm font-medium mb-2 text-red-700">Danger Zone</div>
+                  <button
+                    title="Fully Reset Local Storage! Danger!"
+                    className="px-3 py-2 rounded-lg border border-red-300 text-red-700 hover:bg-red-50"
+                    onClick={()=>setConfirmResetOpen(true)}
+                  >Hard Reset</button>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </>
-    )}
+        </>
+      )}
     {settingsOpen && (
       <>
         <div className="fixed inset-0 bg-black/50 z-40"></div>
@@ -266,25 +293,7 @@ export default function HuntspeakTalkPad(){
                   </label>
                 </div>
               </div>
-              <div className="pt-2 border-t border-neutral-200/70">
-                <div className="text-sm font-medium mb-2">Data</div>
-                <div className="flex items-center gap-2">
-                  <button className="px-3 py-2 rounded-lg border border-neutral-300 hover:bg-neutral-50" onClick={exportData}>Export</button>
-                  <label className="px-3 py-2 rounded-lg border border-neutral-300 hover:bg-neutral-50 cursor-pointer">
-                    Import
-                    <input type="file" accept="application/json" className="hidden" onChange={e=>{ const f=e.target.files?.[0]; if (f) importData(f); }} />
-                  </label>
-                </div>
-                <div className="text-xs opacity-70 mt-1">Exports and imports roots and nouns as JSON.</div>
-                <div className="mt-4 pt-3 border-t border-neutral-200/70">
-                  <div className="text-sm font-medium mb-2 text-red-700">Danger Zone</div>
-                  <button
-                    title="Fully Reset Local Storage! Danger!"
-                    className="px-3 py-2 rounded-lg border border-red-300 text-red-700 hover:bg-red-50"
-                    onClick={()=>setConfirmResetOpen(true)}
-                  >Reset</button>
-                </div>
-              </div>
+              {/* Data controls moved to the Data popup */}
             </div>
           </div>
         </div>
