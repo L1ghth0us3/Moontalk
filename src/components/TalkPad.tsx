@@ -14,7 +14,7 @@ const clip = async (text: string) => { try { await navigator.clipboard.writeText
  * then optionally fill object and adpositional phrases. Produces a 1‑line
  * Huntspeak sentence (copyable).
  */
-export default function TalkPad({ roots, nouns }: { roots: Root[]; nouns: Noun[] }){
+export default function TalkPad({ roots, nouns, selectedRootId }: { roots: Root[]; nouns: Noun[]; selectedRootId?: string }){
   const [state, setState] = useLocalStorageState(LS_KEYS.talk, {
     pronForm: PRONOUNS[0].form,
     rootId: roots[0]?.id || "",
@@ -29,6 +29,14 @@ export default function TalkPad({ roots, nouns }: { roots: Root[]; nouns: Noun[]
     if (state.rootId && !roots.find(r=>r.id===state.rootId)) setState(s=>({ ...s, rootId: roots[0]?.id || "" }));
     if (state.withNounId && !nouns.find(n=>n.id===state.withNounId)) setState(s=>({ ...s, withNounId: "" }));
   }, [roots, nouns]);
+
+  // Follow external selected root from the Verb Root component when provided.
+  useEffect(()=>{
+    if (!selectedRootId) return;
+    const exists = roots.some(r=>r.id===selectedRootId);
+    if (!exists) return;
+    if (state.rootId !== selectedRootId) setState(s=>({ ...s, rootId: selectedRootId }));
+  }, [selectedRootId, roots]);
 
   const pron = PRONOUNS.find(p=>p.form===state.pronForm) || PRONOUNS[0];
   const tense = TENSES.find(t=>t.key===state.tenseKey) || TENSES[0];

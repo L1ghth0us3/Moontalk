@@ -93,7 +93,7 @@ export default function HuntspeakTalkPad(){
     return (
       <>
         <p className="text-sm text-neutral-600 mb-3">Pick who + verb + tense, type object. Copy & paste into chat.</p>
-        <TalkPad roots={roots} nouns={nouns} />
+        <TalkPad roots={roots} nouns={nouns} selectedRootId={selected?.id || undefined} />
       </>
     );
   }
