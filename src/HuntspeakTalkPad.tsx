@@ -6,7 +6,7 @@ import NounEditor from "./components/editors/NounEditor";
 import TalkPad from "./components/TalkPad";
 import RenderDerivations from "./components/Derivations";
 import FreeTranslator from "./components/FreeTranslator";
-import { useLocalStorageState } from "./lib/storage";
+import { useLocalStorageState, LS_KEYS } from "./lib/storage";
 import FiniteForms from "./components/FiniteForms";
 
 export default function HuntspeakTalkPad(){
@@ -53,6 +53,35 @@ export default function HuntspeakTalkPad(){
   }, [theme, systemDark]);
 
   const selected = roots.find(r=>r.id===selectedId) || null;
+
+  // Import/Export (roots + nouns)
+  function exportData(){
+    const payload = { roots, nouns };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'huntspeak_data.json'; a.click();
+    URL.revokeObjectURL(url);
+  }
+  function importData(file: File){
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(String(reader.result));
+        if (!data || !Array.isArray(data.roots) || !Array.isArray(data.nouns)) { alert('Import failed: invalid JSON format.'); return; }
+        const cleanRoots = data.roots
+          .filter((x:any)=>x && x.c1 && x.c2 && x.c3)
+          .map((x:any)=>({ id: String(x.id||Math.random().toString(36).slice(2,10)), c1:String(x.c1), c2:String(x.c2), c3:String(x.c3), gloss:String(x.gloss||''), synonyms:Array.isArray(x.synonyms)?x.synonyms.map((s:any)=>String(s)):[] }));
+        const cleanNouns = data.nouns
+          .filter((x:any)=>x && x.word)
+          .map((x:any)=>({ id:String(x.id||Math.random().toString(36).slice(2,10)), word:String(x.word), gloss:String(x.gloss||''), synonyms:Array.isArray(x.synonyms)?x.synonyms.map((s:any)=>String(s)):[] }));
+        localStorage.setItem(LS_KEYS.roots, JSON.stringify(cleanRoots));
+        localStorage.setItem(LS_KEYS.nouns, JSON.stringify(cleanNouns));
+        location.reload();
+      } catch { alert('Import failed: unreadable JSON.'); }
+    };
+    reader.readAsText(file);
+  }
 
   return (
     <>
@@ -131,6 +160,17 @@ export default function HuntspeakTalkPad(){
                     onClick={()=>setTheme('dark')}
                   >{theme==='dark' ? '✓ Dark' : 'Dark'}</button>
                 </div>
+              </div>
+              <div className="pt-2 border-t border-neutral-200/70">
+                <div className="text-sm font-medium mb-2">Data</div>
+                <div className="flex items-center gap-2">
+                  <button className="px-3 py-2 rounded-lg border border-neutral-300 hover:bg-neutral-50" onClick={exportData}>Export</button>
+                  <label className="px-3 py-2 rounded-lg border border-neutral-300 hover:bg-neutral-50 cursor-pointer">
+                    Import
+                    <input type="file" accept="application/json" className="hidden" onChange={e=>{ const f=e.target.files?.[0]; if (f) importData(f); }} />
+                  </label>
+                </div>
+                <div className="text-xs opacity-70 mt-1">Exports and imports roots and nouns as JSON.</div>
               </div>
             </div>
           </div>
