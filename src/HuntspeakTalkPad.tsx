@@ -132,12 +132,9 @@ export default function HuntspeakTalkPad(){
         </div>
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 2xl:grid-cols-5 gap-6">
-        <aside className="lg:col-span-1 space-y-6">
-          <RootEditor initial={roots} onChange={setRoots} selectedId={selectedId} onSelect={setSelectedId} showCollapse={showCollapse} />
-          <NounEditor initial={nouns} onChange={setNouns} selectedId={selectedNounId} onSelect={setSelectedNounId} showCollapse={showCollapse} />
-        </aside>
-        <main className="lg:col-span-3 2xl:col-span-4 space-y-6">
+      {/* Sticky composer: Talk Pad + Translator stay visible while scrolling */}
+      <div className="sticky top-2 z-30">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
           <section className="rounded-3xl border border-neutral-200 p-4 shadow-sm fantasy-card">
             <div className="flex items-center justify-between mb-1">
               <h2 className="text-xl md:text-2xl font-semibold">Talk Pad</h2>
@@ -145,14 +142,20 @@ export default function HuntspeakTalkPad(){
             </div>
             <TalkPadBody />
           </section>
-          {selected && (
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
-              <FiniteForms root={selected} showCollapse={showCollapse} />
-              <RenderDerivations root={selected} showCollapse={showCollapse} />
-            </div>
-          )}
           <FreeTranslator roots={roots} nouns={nouns} showCollapse={showCollapse} />
-        </main>
+        </div>
+      </div>
+
+      {/* Below: Roots, Nouns, Finite Forms, Derivations */}
+      <div className="mt-6 space-y-6">
+        <RootEditor initial={roots} onChange={setRoots} selectedId={selectedId} onSelect={setSelectedId} showCollapse={showCollapse} />
+        <NounEditor initial={nouns} onChange={setNouns} selectedId={selectedNounId} onSelect={setSelectedNounId} showCollapse={showCollapse} />
+        {selected && (
+          <FiniteForms root={selected} showCollapse={showCollapse} />
+        )}
+        {selected && (
+          <RenderDerivations root={selected} showCollapse={showCollapse} />
+        )}
       </div>
     </div>
     {dataOpen && (
