@@ -92,7 +92,7 @@ export default function NounEditor({ initial, onChange, selectedId, onSelect, sh
       <>
         <div className="fixed inset-0 bg-black/50 z-50" onClick={()=>setExpanded(false)}></div>
         <div className="fixed inset-0 z-50 p-4 flex items-center justify-center" onClick={(e)=>{ if (e.target === e.currentTarget) setExpanded(false); }}>
-          <div className="w-full max-w-4xl rounded-2xl border border-neutral-200 bg-white fantasy-card p-5 expand-card">
+          <div className="w-full max-w-[92vw] xl:max-w-[1200px] 2xl:max-w-[1400px] max-h-[90vh] overflow-auto rounded-2xl border border-neutral-200 bg-white fantasy-card p-5 expand-card">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-xl md:text-2xl font-semibold">Nouns — Expanded</h3>
               <button className="px-3 py-1 rounded-lg border border-neutral-300 hover:bg-neutral-50" onClick={()=>setExpanded(false)}>Close</button>

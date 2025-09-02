@@ -51,7 +51,7 @@ export default function RenderDerivations({ root, showCollapse = false }: { root
       {!collapsed && (
       <>
       <p className="text-sm text-neutral-600 mb-3">Handy non-finite patterns (binyanim-style).</p>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {DERIVATIONS.map(d => (
           <div key={d.key} className="rounded-2xl border border-neutral-200 p-3">
             <div className="text-xs uppercase tracking-wide text-neutral-500">{d.label}</div>

@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Root } from "../../types";
 import { useLocalStorageState, LS_KEYS } from "../../lib/storage";
+import FiniteForms from "../FiniteForms";
+import RenderDerivations from "../Derivations";
 
 const uid = () => Math.random().toString(36).slice(2, 10);
 
@@ -113,7 +115,7 @@ export default function RootEditor({ initial, onChange, selectedId, onSelect, sh
       <>
         <div className="fixed inset-0 bg-black/50 z-50" onClick={()=>setExpanded(false)}></div>
         <div className="fixed inset-0 z-50 p-4 flex items-center justify-center" onClick={(e)=>{ if (e.target === e.currentTarget) setExpanded(false); }}>
-          <div className="w-full max-w-4xl rounded-2xl border border-neutral-200 bg-white fantasy-card p-5 expand-card">
+          <div className="w-full max-w-[92vw] xl:max-w-[1200px] 2xl:max-w-[1400px] max-h-[90vh] overflow-auto rounded-2xl border border-neutral-200 bg-white fantasy-card p-5 expand-card">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-xl md:text-2xl font-semibold">Verb Roots — Expanded</h3>
               <button className="px-3 py-1 rounded-lg border border-neutral-300 hover:bg-neutral-50" onClick={()=>setExpanded(false)}>Close</button>
@@ -142,16 +144,26 @@ export default function RootEditor({ initial, onChange, selectedId, onSelect, sh
                 </div>
               </div>
               {selected && (
-                <div className="space-y-2">
-                  <h4 className="text-sm font-semibold">Edit selected</h4>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                    <input className="w-full min-w-0 px-2 py-1 rounded-lg border border-neutral-300" value={selected.c1} onChange={e=>updateRoot(selected.id,{c1:e.target.value})} />
-                    <input className="w-full min-w-0 px-2 py-1 rounded-lg border border-neutral-300" value={selected.c2} onChange={e=>updateRoot(selected.id,{c2:e.target.value})} />
-                    <input className="w-full min-w-0 px-2 py-1 rounded-lg border border-neutral-300" value={selected.c3} onChange={e=>updateRoot(selected.id,{c3:e.target.value})} />
-                    <button onClick={()=>deleteRoot(selected.id)} className="w-full md:w-auto px-2 py-1 rounded-lg border border-red-300 text-red-600 hover:bg-red-50">Delete</button>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-semibold">Edit selected</h4>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                      <input className="w-full min-w-0 px-2 py-1 rounded-lg border border-neutral-300" value={selected.c1} onChange={e=>updateRoot(selected.id,{c1:e.target.value})} />
+                      <input className="w-full min-w-0 px-2 py-1 rounded-lg border border-neutral-300" value={selected.c2} onChange={e=>updateRoot(selected.id,{c2:e.target.value})} />
+                      <input className="w-full min-w-0 px-2 py-1 rounded-lg border border-neutral-300" value={selected.c3} onChange={e=>updateRoot(selected.id,{c3:e.target.value})} />
+                      <button onClick={()=>deleteRoot(selected.id)} className="w-full md:w-auto px-2 py-1 rounded-lg border border-red-300 text-red-600 hover:bg-red-50">Delete</button>
+                    </div>
+                    <input className="w-full px-2 py-1 rounded-lg border border-neutral-300" placeholder="gloss" value={selected.gloss} onChange={e=>updateRoot(selected.id,{gloss:e.target.value})} />
+                    <input className="w-full px-2 py-1 rounded-lg border border-neutral-300" placeholder="extra English triggers (comma-separated)" value={synonymsText} onChange={e=>setSynonymsText(e.target.value)} onBlur={e=> updateRoot(selected.id, { synonyms: e.target.value.split(",").map(s=>s.trim()).filter(Boolean) })} />
                   </div>
-                  <input className="w-full px-2 py-1 rounded-lg border border-neutral-300" placeholder="gloss" value={selected.gloss} onChange={e=>updateRoot(selected.id,{gloss:e.target.value})} />
-                  <input className="w-full px-2 py-1 rounded-lg border border-neutral-300" placeholder="extra English triggers (comma-separated)" value={synonymsText} onChange={e=>setSynonymsText(e.target.value)} onBlur={e=> updateRoot(selected.id, { synonyms: e.target.value.split(",").map(s=>s.trim()).filter(Boolean) })} />
+                  <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 items-start">
+                    <div className="xl:col-span-7 2xl:col-span-8">
+                      <FiniteForms root={selected} />
+                    </div>
+                    <div className="xl:col-span-5 2xl:col-span-4">
+                      <RenderDerivations root={selected} />
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
