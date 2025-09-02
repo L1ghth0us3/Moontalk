@@ -4,7 +4,6 @@ import { PRONOUNS, TENSES } from "../types";
 import Toggle from "./ui/Toggle";
 import NiceSelect from "./ui/NiceSelect";
 import { LS_KEYS, useLocalStorageState } from "../lib/storage";
-import { usePulseOnChange } from "../lib/usePulse";
 import { buildFinite, withHabitual, withNegation, withProgressive } from "../lib/morphology";
 
 // Helper: best‑effort clipboard copy; ignore failures (e.g., permissions).
@@ -44,9 +43,6 @@ export default function TalkPad({ roots, nouns, selectedRootId, onSelectRoot }: 
   const r = useMemo(()=> roots.find(x=>x.id===state.rootId) || roots[0], [roots, state.rootId]);
   const withNoun = nouns.find(n=>n.id===state.withNounId);
 
-  // Pulse effects when values change
-  const pulseVerbPick = usePulseOnChange([state.rootId]);
-
   // Build the Huntspeak verb form in stages with optional morphology toggles.
   const hsVerb = useMemo(()=>{
     if (!r) return "";
@@ -83,7 +79,7 @@ export default function TalkPad({ roots, nouns, selectedRootId, onSelectRoot }: 
           <div className="text-xs uppercase tracking-wide text-neutral-500 mb-2">Who</div>
           <NiceSelect value={state.pronForm} onChange={v=>setState(s=>({...s, pronForm:v}))} items={PRONOUNS.map(p=>({ value:p.form, label:p.label }))} />
         </div>
-        <div className={`rounded-2xl border border-neutral-200 p-3 ${pulseVerbPick? 'pulse-once':''}`}>
+        <div className="rounded-2xl border border-neutral-200 p-3">
           <div className="text-xs uppercase tracking-wide text-neutral-500 mb-2">Verb</div>
           <NiceSelect value={state.rootId} onChange={id=>{ setState(s=>({...s, rootId:id})); onSelectRoot?.(id); }} items={roots.map(rt=>({ value:rt.id, label: `${[rt.c1, rt.c2, rt.c3].join("-")} — ${rt.gloss || "(no gloss)"}` }))} />
         </div>
@@ -123,7 +119,7 @@ export default function TalkPad({ roots, nouns, selectedRootId, onSelectRoot }: 
           </div>
         </div>
         {/* Result panel occupies the remaining slot on the second row (at 2xl) */}
-        <div className={`rounded-2xl border p-3 result-card ${usePulseOnChange([hsVerb, sentence])? 'pulse-once':''}`}>
+        <div className="rounded-2xl border p-3 result-card">
           <div className="flex items-center justify-between gap-3">
             <div className="flex-1">
               <div className="text-xs uppercase tracking-wide opacity-80">Result (Huntspeak)</div>
