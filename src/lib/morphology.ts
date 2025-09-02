@@ -19,7 +19,10 @@ export function buildFinite(r: Root, subjV: string, tenseV: string) {
 export function withProgressive(form: string, r: Root) {
   const lastTwo = form.slice(-2);
   const stem = form.slice(0, -2);
-  return `${stem}${r.c2}${lastTwo}`;
+  // Replace the original C2 (right before the final vowel+C3) with C2' (geminated with apostrophe)
+  // Avoid producing triple consonants by removing that original C2 from the stem first.
+  const stemWithoutC2 = stem.slice(0, -1);
+  return `${stemWithoutC2}${r.c2}'${r.c2}${lastTwo}`;
 }
 /** Habitual: add -ar suffix. */
 export function withHabitual(form: string) { return `${form}ar`; }

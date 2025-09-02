@@ -201,6 +201,28 @@ body.theme-dark input, body.theme-dark textarea, body.theme-dark select {
 }
 body.theme-dark input::placeholder, body.theme-dark textarea::placeholder { color: #8b8595; }
 
+/* Danger button variant that overrides theme button styles */
+body.theme-plain .btn-danger {
+  background-color: #dc2626; /* red-600 */
+  color: #ffffff;
+  border: 1px solid #b91c1c; /* red-700 */
+}
+body.theme-plain .btn-danger:hover { background-color: #b91c1c; }
+
+body.theme-fantasy .btn-danger {
+  background-color: #b91c1c; /* red-700 */
+  color: #ffffff;
+  border: 1px solid #7f1d1d; /* red-800 */
+}
+body.theme-fantasy .btn-danger:hover { background-color: #991b1b; }
+
+body.theme-dark .btn-danger {
+  background-color: #b91c1c; /* red-700 */
+  color: #ffffff;
+  border: 1px solid #7f1d1d; /* red-800 */
+}
+body.theme-dark .btn-danger:hover { background-color: #991b1b; }
+
 @media (prefers-color-scheme: light) {
   :root {
     color: #213547;
@@ -223,6 +245,13 @@ body.theme-fantasy .result-card .copy-btn { border-color: #7ccaa1; }
 
 body.theme-dark .result-card { background: #152019; border-color: #5ea585 !important; }
 body.theme-dark .result-card .copy-btn { border-color: #5ea585; }
+
+/* Simple modal pop-in animation for expanded panels */
+@keyframes modalPopIn {
+  0% { opacity: 0; transform: scale(0.96) translateY(6px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+.expand-card { animation: modalPopIn 160ms ease-out both; }
 
 /* Lighter background for selected root list item across themes */
 body.theme-plain .root-item--selected { background-color: #f3f4f6; }

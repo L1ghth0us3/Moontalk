@@ -25,25 +25,74 @@ export default function RootEditor({ initial, onChange, selectedId, onSelect, sh
   const deleteRoot = (id: string) => { setRoots(prev=> prev.filter(r=> r.id!==id)); if (selectedId===id) onSelect(roots.find(r=> r.id!==id)?.id ?? null); };
 
   const [collapsed, setCollapsed] = useLocalStorageState<boolean>('huntspeak_collapse_roots', false);
+  const [expanded, setExpanded] = useState(false);
+  const [query, setQuery] = useState("");
+  const [showSearch, setShowSearch] = useLocalStorageState<boolean>(LS_KEYS.rootsSearchOpen, false);
+
+  function fuzzySubsequence(needle: string, hay: string){
+    needle = needle.toLowerCase();
+    hay = hay.toLowerCase();
+    let j = 0;
+    for (let i = 0; i < hay.length && j < needle.length; i++) {
+      if (hay[i] === needle[j]) j++;
+    }
+    return j === needle.length;
+  }
+
+  const filtered = useMemo(()=>{
+    const q = query.trim().toLowerCase();
+    if (!q) return roots;
+    const wantRoot = q.includes('-');
+    return roots.filter(r => {
+      const glossStr = `${r.gloss || ''} ${(r.synonyms||[]).join(' ')}`.toLowerCase();
+      const a = fuzzySubsequence(q, glossStr);
+      if (a) return true;
+      if (wantRoot) {
+        const rootStr = `${r.c1}-${r.c2}-${r.c3}`.toLowerCase();
+        return fuzzySubsequence(q, rootStr);
+      }
+      return false;
+    });
+  }, [roots, query]);
 
   return (
+    <>
     <section className="rounded-3xl border border-neutral-200 p-4 shadow-sm overflow-hidden fantasy-card">
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-xl md:text-2xl font-semibold">Verb Roots</h2>
-        {showCollapse && (
-          <button aria-label={collapsed? 'Expand' : 'Collapse'} className="px-2 py-1 text-sm rounded border border-neutral-300 hover:bg-neutral-50" onClick={()=>setCollapsed(c=>!c)}>
-            {collapsed ? '▸' : '▾'}
+        <div className="flex items-center gap-2">
+          <button aria-label="Search" title="Search" className="px-2 py-1 text-sm rounded border border-neutral-300 hover:bg-neutral-50" onClick={()=>setShowSearch(s=>!s)}>
+            🔎
           </button>
-        )}
+          {showCollapse && (
+            <button aria-label={collapsed? 'Expand' : 'Collapse'} className="px-2 py-1 text-sm rounded border border-neutral-300 hover:bg-neutral-50" onClick={()=>setCollapsed(c=>!c)}>
+              {collapsed ? '▸' : '▾'}
+            </button>
+          )}
+          <button aria-label="Expand" title="Expand" className="px-2 py-1 text-sm rounded border border-neutral-300 hover:bg-neutral-50" onClick={()=>setExpanded(true)}>
+            ⛶
+          </button>
+        </div>
       </div>
       {!collapsed && (
       <>
       <RootCreator onCreate={addRoot} />
+      {showSearch && (
+        <div className="mt-3">
+          <input
+            className="w-full px-3 py-2 rounded-lg border border-neutral-300"
+            placeholder="Search English or use C1-C2-C3 (e.g., k-l-b)"
+            value={query}
+            onChange={e=>setQuery(e.target.value)}
+          />
+        </div>
+      )}
       <div className="mt-3 max-h-[20rem] overflow-y-auto space-y-2 pr-1">
-        {roots.map(r => (
+        {(showSearch && query ? filtered : roots).map(r => (
           <button
             key={r.id}
             onClick={() => onSelect(r.id)}
+            onDoubleClick={()=>setExpanded(true)}
             className={`w-full text-left px-3 py-2 rounded-xl border ${selectedId === r.id ? "border-blue-500 root-item--selected" : "border-neutral-200 hover:bg-neutral-50"}`}
           >
             <div className="flex items-center justify-between gap-2 min-w-0">
@@ -52,25 +101,65 @@ export default function RootEditor({ initial, onChange, selectedId, onSelect, sh
             </div>
           </button>
         ))}
-        {!roots.length && <div className="text-neutral-500 text-sm">No roots yet. Add one above.</div>}
+        {!(showSearch && query ? filtered.length : roots.length) && (
+          <div className="text-neutral-500 text-sm">{showSearch && query ? 'No matching roots.' : 'No roots yet. Add one above.'}</div>
+        )}
       </div>
-
-      {selected && (
-        <div className="mt-4 space-y-2">
-          <h3 className="text-sm font-semibold">Edit selected</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-            <input className="w-full min-w-0 px-2 py-1 rounded-lg border border-neutral-300" value={selected.c1} onChange={e=>updateRoot(selected.id,{c1:e.target.value})} />
-            <input className="w-full min-w-0 px-2 py-1 rounded-lg border border-neutral-300" value={selected.c2} onChange={e=>updateRoot(selected.id,{c2:e.target.value})} />
-            <input className="w-full min-w-0 px-2 py-1 rounded-lg border border-neutral-300" value={selected.c3} onChange={e=>updateRoot(selected.id,{c3:e.target.value})} />
-            <button onClick={()=>deleteRoot(selected.id)} className="w-full md:w-auto px-2 py-1 rounded-lg border border-red-300 text-red-600 hover:bg-red-50">Delete</button>
-          </div>
-          <input className="w-full px-2 py-1 rounded-lg border border-neutral-300" placeholder="gloss" value={selected.gloss} onChange={e=>updateRoot(selected.id,{gloss:e.target.value})} />
-          <input className="w-full px-2 py-1 rounded-lg border border-neutral-300" placeholder="extra English triggers (comma-separated)" value={synonymsText} onChange={e=>setSynonymsText(e.target.value)} onBlur={e=> updateRoot(selected.id, { synonyms: e.target.value.split(",").map(s=>s.trim()).filter(Boolean) })} />
-        </div>
-      )}
       </>
       )}
     </section>
+
+    {expanded && (
+      <>
+        <div className="fixed inset-0 bg-black/50 z-50" onClick={()=>setExpanded(false)}></div>
+        <div className="fixed inset-0 z-50 p-4 flex items-center justify-center" onClick={(e)=>{ if (e.target === e.currentTarget) setExpanded(false); }}>
+          <div className="w-full max-w-4xl rounded-2xl border border-neutral-200 bg-white fantasy-card p-5 expand-card">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xl md:text-2xl font-semibold">Verb Roots — Expanded</h3>
+              <button className="px-3 py-1 rounded-lg border border-neutral-300 hover:bg-neutral-50" onClick={()=>setExpanded(false)}>Close</button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <RootCreator onCreate={addRoot} />
+                <div className="mt-3">
+                  <input
+                    className="w-full px-3 py-2 rounded-lg border border-neutral-300"
+                    placeholder="Search English or use C1-C2-C3 (e.g., k-l-b)"
+                    value={query}
+                    onChange={e=>setQuery(e.target.value)}
+                  />
+                </div>
+                <div className="mt-3 max-h-[24rem] overflow-y-auto space-y-2 pr-1">
+                  {filtered.map(r => (
+                    <button key={r.id} onClick={() => onSelect(r.id)} className={`w-full text-left px-3 py-2 rounded-xl border ${selectedId === r.id ? "border-blue-500 root-item--selected" : "border-neutral-200 hover:bg-neutral-50"}`}>
+                      <div className="flex items-center justify-between gap-2 min-w-0">
+                        <div className="font-semibold text-lg shrink-0">{[r.c1, r.c2, r.c3].join("-")}</div>
+                        <div className="text-xs text-neutral-500 truncate flex-1 min-w-0 text-right">{r.gloss || "(no gloss)"}</div>
+                      </div>
+                    </button>
+                  ))}
+                  {!filtered.length && <div className="text-neutral-500 text-sm">No matching roots.</div>}
+                </div>
+              </div>
+              {selected && (
+                <div className="space-y-2">
+                  <h4 className="text-sm font-semibold">Edit selected</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                    <input className="w-full min-w-0 px-2 py-1 rounded-lg border border-neutral-300" value={selected.c1} onChange={e=>updateRoot(selected.id,{c1:e.target.value})} />
+                    <input className="w-full min-w-0 px-2 py-1 rounded-lg border border-neutral-300" value={selected.c2} onChange={e=>updateRoot(selected.id,{c2:e.target.value})} />
+                    <input className="w-full min-w-0 px-2 py-1 rounded-lg border border-neutral-300" value={selected.c3} onChange={e=>updateRoot(selected.id,{c3:e.target.value})} />
+                    <button onClick={()=>deleteRoot(selected.id)} className="w-full md:w-auto px-2 py-1 rounded-lg border border-red-300 text-red-600 hover:bg-red-50">Delete</button>
+                  </div>
+                  <input className="w-full px-2 py-1 rounded-lg border border-neutral-300" placeholder="gloss" value={selected.gloss} onChange={e=>updateRoot(selected.id,{gloss:e.target.value})} />
+                  <input className="w-full px-2 py-1 rounded-lg border border-neutral-300" placeholder="extra English triggers (comma-separated)" value={synonymsText} onChange={e=>setSynonymsText(e.target.value)} onBlur={e=> updateRoot(selected.id, { synonyms: e.target.value.split(",").map(s=>s.trim()).filter(Boolean) })} />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </>
+    )}
+    </>
   );
 }
 

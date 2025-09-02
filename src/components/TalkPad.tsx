@@ -14,13 +14,22 @@ const clip = async (text: string) => { try { await navigator.clipboard.writeText
  * then optionally fill object and adpositional phrases. Produces a 1‑line
  * Huntspeak sentence (copyable).
  */
-export default function TalkPad({ roots, nouns, selectedRootId, onSelectRoot }: { roots: Root[]; nouns: Noun[]; selectedRootId?: string; onSelectRoot?: (id: string)=>void }){
+export default function TalkPad({ roots, nouns, selectedRootId, onSelectRoot, syncMorph = false, morph, onMorphChange, onToggleSync }: {
+  roots: Root[];
+  nouns: Noun[];
+  selectedRootId?: string;
+  onSelectRoot?: (id: string)=>void;
+  syncMorph?: boolean;
+  morph?: { neg: boolean; prog: boolean; hab: boolean };
+  onMorphChange?: (m: { neg: boolean; prog: boolean; hab: boolean }) => void;
+  onToggleSync?: () => void;
+}){
   const [state, setState] = useLocalStorageState(LS_KEYS.talk, {
     pronForm: PRONOUNS[0].form,
     rootId: roots[0]?.id || "",
     tenseKey: TENSES[0].key,
     neg: false, prog: false, hab: false,
-    obj: "", withNounId: "", toText: "", fromText: "",
+    obj: "", objectNounId: "", withNounId: "", toText: "", fromText: "",
     question: false, register: { attn:false, flank:false, hush:false },
   });
 
@@ -28,7 +37,10 @@ export default function TalkPad({ roots, nouns, selectedRootId, onSelectRoot }: 
   useEffect(()=>{
     if (state.rootId && !roots.find(r=>r.id===state.rootId)) setState(s=>({ ...s, rootId: roots[0]?.id || "" }));
     if (state.withNounId && !nouns.find(n=>n.id===state.withNounId)) setState(s=>({ ...s, withNounId: "" }));
+    if (state.objectNounId && !nouns.find(n=>n.id===state.objectNounId)) setState(s=>({ ...s, objectNounId: "" }));
   }, [roots, nouns]);
+
+  // When sync is enabled, use shared toggles directly via eff*; no local mirroring needed.
 
   // Follow external selected root from the Verb Root component when provided.
   useEffect(()=>{
@@ -39,19 +51,34 @@ export default function TalkPad({ roots, nouns, selectedRootId, onSelectRoot }: 
   }, [selectedRootId, roots]);
 
   const pron = PRONOUNS.find(p=>p.form===state.pronForm) || PRONOUNS[0];
+  const effNeg = syncMorph ? !!morph?.neg : state.neg;
+  const effProg = syncMorph ? !!morph?.prog : state.prog;
+  const effHab = syncMorph ? !!morph?.hab : state.hab;
   const tense = TENSES.find(t=>t.key===state.tenseKey) || TENSES[0];
   const r = useMemo(()=> roots.find(x=>x.id===state.rootId) || roots[0], [roots, state.rootId]);
   const withNoun = nouns.find(n=>n.id===state.withNounId);
+  const objectNoun = nouns.find(n=>n.id===state.objectNounId);
+
+  // Migrate legacy free-text obj to objectNounId when possible
+  useEffect(()=>{
+    if (!state.obj || state.objectNounId) return;
+    const needle = state.obj.toLowerCase().trim();
+    if (!needle) return;
+    const match = nouns.find(n => n.word.toLowerCase() === needle
+      || n.gloss.toLowerCase() === needle
+      || (n.synonyms || []).some(s => s.toLowerCase() === needle));
+    if (match) setState(s=>({ ...s, objectNounId: match.id }));
+  }, [state.obj, state.objectNounId, nouns]);
 
   // Build the Huntspeak verb form in stages with optional morphology toggles.
   const hsVerb = useMemo(()=>{
     if (!r) return "";
     let form = buildFinite(r, pron.subjV, tense.vowel);
-    if (state.prog) form = withProgressive(form, r);
-    if (state.hab) form = withHabitual(form);
-    if (state.neg) form = withNegation(form);
+    if (effProg) form = withProgressive(form, r);
+    if (effHab) form = withHabitual(form);
+    if (effNeg) form = withNegation(form);
     return form;
-  }, [r, pron, tense, state.prog, state.hab, state.neg]);
+  }, [r, pron, tense, effProg, effHab, effNeg]);
 
   // Compose the final sentence. Order:
   // pronoun • verb • [object] • [fi INSTR] • [ga TO] • [ʌs FROM] • [qa?]
@@ -61,23 +88,29 @@ export default function TalkPad({ roots, nouns, selectedRootId, onSelectRoot }: 
     const bits: string[] = [];
     bits.push(pron.form);
     bits.push(hsVerb);
-    if (state.obj.trim()) bits.push(state.obj.trim());
+    if (objectNoun) bits.push(objectNoun.word);
     if (withNoun) bits.push("fi", withNoun.word);
     if (state.toText.trim()) bits.push("ga", state.toText.trim());
     if (state.fromText.trim()) bits.push("ʌs", state.fromText.trim());
-    if (state.question) bits.push("qa");
+    if (state.question) bits.push("qa?");
     if (state.register.flank) bits.unshift("ƛ");
     if (state.register.hush) bits.push("aᵘ");
     if (state.register.attn) bits.push("ǃ");
     return bits.join(" ");
-  }, [r, pron, hsVerb, state.obj, withNoun, state.toText, state.fromText, state.question, state.register]);
+  }, [r, pron, hsVerb, objectNoun, withNoun, state.toText, state.fromText, state.question, state.register]);
 
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
         <div className="rounded-2xl border border-neutral-200 p-3">
           <div className="text-xs uppercase tracking-wide text-neutral-500 mb-2">Who</div>
-          <NiceSelect value={state.pronForm} onChange={v=>setState(s=>({...s, pronForm:v}))} items={PRONOUNS.map(p=>({ value:p.form, label:p.label }))} />
+          {(() => {
+            const EN_WHO: Record<string,string> = { 'ɪ':'I', su:'you (sg)', se:'he/she', 'tɪ':'we', tu:'you (pl)', te:'they' };
+            const items = PRONOUNS.map(p => ({ value: p.form, label: `${p.label} — ${EN_WHO[p.form] || ''}`.trim() }));
+            return (
+              <NiceSelect value={state.pronForm} onChange={v=>setState(s=>({...s, pronForm:v}))} items={items} />
+            );
+          })()}
         </div>
         <div className="rounded-2xl border border-neutral-200 p-3">
           <div className="text-xs uppercase tracking-wide text-neutral-500 mb-2">Verb</div>
@@ -86,28 +119,55 @@ export default function TalkPad({ roots, nouns, selectedRootId, onSelectRoot }: 
         <div className="rounded-2xl border border-neutral-200 p-3">
           <div className="text-xs uppercase tracking-wide text-neutral-500 mb-2">Tense</div>
           <NiceSelect value={state.tenseKey} onChange={k=>setState(s=>({...s, tenseKey:k}))} items={TENSES.map(t=>({ value:t.key, label:t.label }))} />
-          <div className="mt-2 flex flex-wrap gap-3">
-            <Toggle label="Negation" info="Adds naaq-; becomes naq- before k/g/q." checked={state.neg} onChange={v=>setState(s=>({...s, neg:v}))} />
-            <Toggle label="Progressive" info="Geminate C2 before tense vowel." checked={state.prog} onChange={v=>setState(s=>({...s, prog:v}))} />
-            <Toggle label="Habitual" info="Adds -ar for habitual." checked={state.hab} onChange={v=>setState(s=>({...s, hab:v}))} />
+          <div className="mt-2 flex items-center justify-between gap-3">
+            <div className="flex flex-wrap gap-3">
+              <Toggle label="Negation" info="Adds naaq-; becomes naq- before k/g/q." checked={effNeg} onChange={v=>{
+                if (syncMorph) onMorphChange?.({ neg: v, prog: effProg, hab: effHab }); else setState(s=>({...s, neg:v}));
+              }} />
+              <Toggle label="Progressive" info="Geminate C2 before tense vowel." checked={effProg} onChange={v=>{
+                if (syncMorph) onMorphChange?.({ neg: effNeg, prog: v, hab: effHab }); else setState(s=>({...s, prog:v}));
+              }} />
+              <Toggle label="Habitual" info="Adds -ar for habitual." checked={effHab} onChange={v=>{
+                if (syncMorph) onMorphChange?.({ neg: effNeg, prog: effProg, hab: v }); else setState(s=>({...s, hab:v}));
+              }} />
+            </div>
+            <div className="relative group ml-3">
+              <button
+                type="button"
+                onClick={onToggleSync}
+                className={`text-xs px-2 py-0.5 rounded-full border select-none ${syncMorph ? 'border-emerald-300 text-emerald-700 bg-emerald-50' : 'border-neutral-300 text-neutral-700 bg-neutral-50 hover:bg-neutral-100'}`}
+                title={syncMorph ? 'Click to turn sync Off' : 'Click to turn sync On'}
+              >
+                {syncMorph ? 'Sync: On' : 'Sync: Off'}
+              </button>
+              <span className="pointer-events-none absolute left-1/2 -translate-x-1/2 top-full mt-2 z-50 hidden rounded-md border border-neutral-200 bg-white px-2.5 py-1.5 text-xs leading-snug text-neutral-900 shadow-xl whitespace-nowrap group-hover:block">
+                Sync Neg/Prog/Hab across panels
+              </span>
+            </div>
           </div>
         </div>
         <div className="rounded-2xl border border-neutral-200 p-3">
           <div className="text-xs uppercase tracking-wide text-neutral-500 mb-2">Object (what)</div>
-          <input className="w-full px-2 py-2 rounded-lg border border-neutral-300" placeholder="prey / stag / mark…" value={state.obj} onChange={e=>setState(s=>({...s, obj:e.target.value}))} />
+          <NiceSelect
+            value={state.objectNounId}
+            onChange={v=>setState(s=>({...s, objectNounId:v}))}
+            items={[{value:"", label:"— none —"}, ...nouns.map(n=>({ value:n.id, label:`${n.word} — ${n.gloss || ""}` }))]}
+          />
         </div>
         <div className="rounded-2xl border border-neutral-200 p-3">
-          <div className="text-xs uppercase tracking-wide text-neutral-500 mb-2">With (instrument)</div>
+          <div className="text-xs uppercase tracking-wide text-neutral-500 mb-1">With (instrument)</div>
+          <div className="text-xs text-neutral-500 mb-2">Instrument marked with <code>fi</code> (e.g., fi trap).</div>
           <NiceSelect value={state.withNounId} onChange={v=>setState(s=>({...s, withNounId:v}))} items={[{value:"", label:"— none —"}, ...nouns.map(n=>({ value:n.id, label:`${n.word} — ${n.gloss || ""}` }))]} />
         </div>
         <div className="rounded-2xl border border-neutral-200 p-3">
-          <div className="text-xs uppercase tracking-wide text-neutral-500 mb-2">To / From</div>
+          <div className="text-xs uppercase tracking-wide text-neutral-500 mb-1">To / From</div>
+          <div className="text-xs text-neutral-500 mb-2">Use <code>ga</code> for “to” and <code>ʌs</code> for “from” (e.g., <code>ga</code> prey; <code>ʌs</code> Shroud).</div>
           <div className="grid grid-cols-2 gap-2">
             <input className="px-2 py-2 rounded-lg border border-neutral-300" placeholder="to (ga) — e.g., prey" value={state.toText} onChange={e=>setState(s=>({...s, toText:e.target.value}))} />
             <input className="px-2 py-2 rounded-lg border border-neutral-300" placeholder="from (ʌs) — e.g., Shroud" value={state.fromText} onChange={e=>setState(s=>({...s, fromText:e.target.value}))} />
           </div>
           <div className="mt-2 flex flex-wrap gap-3">
-            <Toggle label="Question (qa)" checked={state.question} onChange={v=>setState(s=>({...s, question:v}))} />
+            <Toggle label="Question (qa?)" checked={state.question} onChange={v=>setState(s=>({...s, question:v}))} />
           </div>
         </div>
         <div className="rounded-2xl border border-neutral-200 p-3">

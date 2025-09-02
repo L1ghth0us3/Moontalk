@@ -9,21 +9,31 @@ import { useLocalStorageState } from "../lib/storage";
  * Matrix of finite forms for a single root across all pronouns × tenses,
  * with optional toggles to apply progressive/habitual/negation uniformly.
  */
-export default function FiniteForms({ root, showCollapse = false }: { root: Root, showCollapse?: boolean }){
+export default function FiniteForms({ root, showCollapse = false, syncMorph = false, morph, onMorphChange, onToggleSync }: {
+  root: Root;
+  showCollapse?: boolean;
+  syncMorph?: boolean;
+  morph?: { neg: boolean; prog: boolean; hab: boolean };
+  onMorphChange?: (m: { neg: boolean; prog: boolean; hab: boolean }) => void;
+  onToggleSync?: () => void;
+}){
   const [showNeg, setShowNeg] = useState(false);
   const [showProg, setShowProg] = useState(false);
   const [showHab, setShowHab] = useState(false);
   const [collapsed, setCollapsed] = useLocalStorageState<boolean>('huntspeak_collapse_finite', false);
+  const effNeg = syncMorph ? !!morph?.neg : showNeg;
+  const effProg = syncMorph ? !!morph?.prog : showProg;
+  const effHab = syncMorph ? !!morph?.hab : showHab;
 
   // Precompute the table rows when inputs/toggles change.
   const rows = useMemo(() => PRONOUNS.map(p => {
     const baseForms = TENSES.map(t => buildFinite(root, p.subjV, t.vowel));
     let forms = baseForms;
-    if (showProg) forms = forms.map(f => withProgressive(f, root));
-    if (showHab) forms = forms.map(f => withHabitual(f));
-    if (showNeg) forms = forms.map(f => withNegation(f));
+    if (effProg) forms = forms.map(f => withProgressive(f, root));
+    if (effHab) forms = forms.map(f => withHabitual(f));
+    if (effNeg) forms = forms.map(f => withNegation(f));
     return { p, items: forms };
-  }), [root, showNeg, showProg, showHab]);
+  }), [root, effNeg, effProg, effHab]);
 
   // Dynamic spacing based on the longest visible cell (approximate by character length)
   const maxFormLen = useMemo(() => {
@@ -60,10 +70,25 @@ export default function FiniteForms({ root, showCollapse = false }: { root: Root
       {!collapsed && (
       <>
       <p className="text-sm text-neutral-600 mb-3">Template: <code>C1 + (SUBJ V) + C2 + (TENSE V) + C3</code></p>
-      <div className="flex flex-wrap items-center gap-3 mb-3">
-        <Toggle label="Negation" info="Adds naaq-; naq- before k/g/q." checked={showNeg} onChange={setShowNeg} />
-        <Toggle label="Progressive" info="Geminate C2 before tense vowel." checked={showProg} onChange={setShowProg} />
-        <Toggle label="Habitual" info="Adds -ar for habitual." checked={showHab} onChange={setShowHab} />
+      <div className="flex items-center justify-between gap-3 mb-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <Toggle label="Negation" info="Adds naaq-; naq- before k/g/q." checked={effNeg} onChange={(v)=> syncMorph ? onMorphChange?.({ neg:v, prog: effProg, hab: effHab }) : setShowNeg(v)} />
+          <Toggle label="Progressive" info="Geminate C2 before tense vowel." checked={effProg} onChange={(v)=> syncMorph ? onMorphChange?.({ neg: effNeg, prog: v, hab: effHab }) : setShowProg(v)} />
+          <Toggle label="Habitual" info="Adds -ar for habitual." checked={effHab} onChange={(v)=> syncMorph ? onMorphChange?.({ neg: effNeg, prog: effProg, hab: v }) : setShowHab(v)} />
+        </div>
+        <div className="relative group ml-3">
+          <button
+            type="button"
+            onClick={onToggleSync}
+            className={`text-xs px-2 py-0.5 rounded-full border select-none ${syncMorph ? 'border-emerald-300 text-emerald-700 bg-emerald-50' : 'border-neutral-300 text-neutral-700 bg-neutral-50 hover:bg-neutral-100'}`}
+            title={syncMorph ? 'Click to turn sync Off' : 'Click to turn sync On'}
+          >
+            {syncMorph ? 'Sync: On' : 'Sync: Off'}
+          </button>
+          <span className="pointer-events-none absolute left-1/2 -translate-x-1/2 top-full mt-2 z-50 hidden rounded-md border border-neutral-200 bg-white px-2.5 py-1.5 text-xs leading-snug text-neutral-900 shadow-xl whitespace-nowrap group-hover:block">
+            Sync Neg/Prog/Hab across panels
+          </span>
+        </div>
       </div>
       <div className="overflow-x-auto rounded-2xl shadow-sm border border-neutral-200">
         <table className="table-fixed w-full text-sm 2xl:text-base finite-table">
