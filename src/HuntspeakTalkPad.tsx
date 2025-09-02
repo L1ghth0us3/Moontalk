@@ -26,6 +26,7 @@ export default function HuntspeakTalkPad(){
   const [theme, setTheme] = useLocalStorageState<'fantasy'|'plain'|'dark'|'auto'>("huntspeak_theme", 'fantasy');
   const [systemDark, setSystemDark] = useState<boolean>(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [dataOpen, setDataOpen] = useState(false);
 
   // Keep a valid selected root when the roots list changes (e.g. delete).
   useEffect(()=>{
@@ -125,11 +126,7 @@ export default function HuntspeakTalkPad(){
             <p className="text-neutral-600 mt-1">RP-ready: create words and get instant Huntspeak lines.</p>
           </div>
           <nav aria-label="Main" className="flex items-center gap-2">
-            <label className="px-3 py-2 rounded-xl border border-neutral-300 hover:bg-neutral-50 cursor-pointer">
-              Import
-              <input type="file" accept="application/json" className="hidden" onChange={e=>{ const f=e.target.files?.[0]; if (f) importData(f); }} />
-            </label>
-            <button className="px-3 py-2 rounded-xl border border-neutral-300 hover:bg-neutral-50" onClick={exportData}>Export</button>
+            <button className="px-3 py-2 rounded-xl border border-neutral-300 hover:bg-neutral-50" onClick={()=>setDataOpen(true)}>Data</button>
             <button className="px-3 py-2 rounded-xl border border-neutral-300 hover:bg-neutral-50" onClick={()=>setSettingsOpen(true)}>Settings</button>
           </nav>
         </div>
@@ -158,10 +155,39 @@ export default function HuntspeakTalkPad(){
         </main>
       </div>
     </div>
+    {dataOpen && (
+      <>
+        <div className="fixed inset-0 bg-black/50 z-40"></div>
+        <div
+          className="fixed inset-0 flex items-center justify-center z-50 p-4"
+          onClick={(e)=>{ if (e.target === e.currentTarget) setDataOpen(false); }}
+        >
+          <div className="w-full max-w-lg rounded-2xl border border-neutral-200 bg-white fantasy-card p-5">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xl font-semibold">Data: Import / Export</h3>
+              <button className="px-3 py-1 rounded-lg border border-neutral-300 hover:bg-neutral-50" onClick={()=>setDataOpen(false)}>Close</button>
+            </div>
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <button className="px-3 py-2 rounded-lg border border-neutral-300 hover:bg-neutral-50" onClick={exportData}>Export</button>
+                <label className="px-3 py-2 rounded-lg border border-neutral-300 hover:bg-neutral-50 cursor-pointer">
+                  Import
+                  <input type="file" accept="application/json" className="hidden" onChange={e=>{ const f=e.target.files?.[0]; if (f) importData(f); }} />
+                </label>
+              </div>
+              <div className="text-xs opacity-70">Exports and imports roots and nouns as JSON.</div>
+            </div>
+          </div>
+        </div>
+      </>
+    )}
     {settingsOpen && (
       <>
-        <div className="fixed inset-0 bg-black/50 z-40" onClick={()=>setSettingsOpen(false)}></div>
-        <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 z-40"></div>
+        <div
+          className="fixed inset-0 flex items-center justify-center z-50 p-4"
+          onClick={(e)=>{ if (e.target === e.currentTarget) setSettingsOpen(false); }}
+        >
           <div className="w-full max-w-lg rounded-2xl border border-neutral-200 bg-white fantasy-card p-5">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-xl font-semibold">Settings</h3>
