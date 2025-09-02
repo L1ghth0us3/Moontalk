@@ -228,6 +228,9 @@ body.theme-dark .result-card .copy-btn { border-color: #5ea585; }
 body.theme-plain .root-item--selected { background-color: #fafafa; }
 body.theme-fantasy .root-item--selected { background-color: #3d4160; }
 body.theme-dark .root-item--selected { background-color: #2b2935; }
+body.theme-plain .noun-item--selected { background-color: #fafafa; }
+body.theme-fantasy .noun-item--selected { background-color: #3d4160; }
+body.theme-dark .noun-item--selected { background-color: #2b2935; }
 
 /* Composer overlay tabs (full-width split) */
 .composer-tabs { border-radius: 0.75rem; overflow: visible; position: relative; }
