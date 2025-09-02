@@ -76,7 +76,8 @@ export default function TalkPad({ roots, nouns, selectedRootId, onSelectRoot }: 
     <div className="space-y-3">
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
         <div className="rounded-2xl border border-neutral-200 p-3">
-          <div className="text-xs uppercase tracking-wide text-neutral-500 mb-2">Who</div>
+          <div className="text-xs uppercase tracking-wide text-neutral-500 mb-1">Who</div>
+          <div className="text-xs text-neutral-500 mb-2">English: I (ɪ), you (su/tu), he·she (se), we (tɪ), they (te)</div>
           <NiceSelect value={state.pronForm} onChange={v=>setState(s=>({...s, pronForm:v}))} items={PRONOUNS.map(p=>({ value:p.form, label:p.label }))} />
         </div>
         <div className="rounded-2xl border border-neutral-200 p-3">
@@ -97,7 +98,8 @@ export default function TalkPad({ roots, nouns, selectedRootId, onSelectRoot }: 
           <input className="w-full px-2 py-2 rounded-lg border border-neutral-300" placeholder="prey / stag / mark…" value={state.obj} onChange={e=>setState(s=>({...s, obj:e.target.value}))} />
         </div>
         <div className="rounded-2xl border border-neutral-200 p-3">
-          <div className="text-xs uppercase tracking-wide text-neutral-500 mb-2">With (instrument)</div>
+          <div className="text-xs uppercase tracking-wide text-neutral-500 mb-1">With (instrument)</div>
+          <div className="text-xs text-neutral-500 mb-2">Instrument marked with <code>fi</code> (e.g., fi trap).</div>
           <NiceSelect value={state.withNounId} onChange={v=>setState(s=>({...s, withNounId:v}))} items={[{value:"", label:"— none —"}, ...nouns.map(n=>({ value:n.id, label:`${n.word} — ${n.gloss || ""}` }))]} />
         </div>
         <div className="rounded-2xl border border-neutral-200 p-3">
