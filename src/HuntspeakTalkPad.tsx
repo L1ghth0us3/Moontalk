@@ -28,7 +28,6 @@ export default function HuntspeakTalkPad(){
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [dataOpen, setDataOpen] = useState(false);
   const [composerTab, setComposerTab] = useLocalStorageState<'talk'|'translator'>("huntspeak_composer_tab", 'talk');
-  const [pulseEnabled, setPulseEnabled] = useLocalStorageState<boolean>(LS_KEYS.pulse, true);
 
   // Keep a valid selected root when the roots list changes (e.g. delete).
   useEffect(()=>{
@@ -257,13 +256,6 @@ export default function HuntspeakTalkPad(){
                   <span>Show collapse controls</span>
                   <span className="text-xs opacity-70">({showCollapse ? 'On' : 'Off'})</span>
                 </label>
-                <div className="mt-2">
-                  <label className="inline-flex items-center gap-2 select-none">
-                    <input type="checkbox" className="h-4 w-4" checked={pulseEnabled} onChange={e=>setPulseEnabled(e.target.checked)} />
-                    <span>Highlight updates (pulse)</span>
-                    <span className="text-xs opacity-70">({pulseEnabled ? 'On' : 'Off'})</span>
-                  </label>
-                </div>
               </div>
               <div className="pt-2 border-t border-neutral-200/70">
                 <div className="text-sm font-medium mb-2">Data</div>

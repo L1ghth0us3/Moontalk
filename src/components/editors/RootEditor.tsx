@@ -27,7 +27,6 @@ export default function RootEditor({ initial, onChange, selectedId, onSelect, sh
 
   const [collapsed, setCollapsed] = useLocalStorageState<boolean>('huntspeak_collapse_roots', false);
   const pulseSelected = usePulseOnChange([selectedId]);
-  const [pulseEnabled] = useLocalStorageState<boolean>(LS_KEYS.pulse, true);
 
   return (
     <section className="rounded-3xl border border-neutral-200 p-4 shadow-sm overflow-hidden fantasy-card">
@@ -44,7 +43,7 @@ export default function RootEditor({ initial, onChange, selectedId, onSelect, sh
       <RootCreator onCreate={addRoot} />
       <div className="mt-3 max-h-[20rem] overflow-y-auto space-y-2 pr-1">
         {roots.map(r => (
-          <button key={r.id} onClick={() => onSelect(r.id)} className={`w-full text-left px-3 py-2 rounded-xl border ${selectedId === r.id ? "border-blue-500 bg-blue-50" : "border-neutral-200 hover:bg-neutral-50"} ${pulseEnabled && pulseSelected && selectedId === r.id ? 'pulse-once' : ''}`}>
+          <button key={r.id} onClick={() => onSelect(r.id)} className={`w-full text-left px-3 py-2 rounded-xl border ${selectedId === r.id ? "border-blue-500 bg-blue-50" : "border-neutral-200 hover:bg-neutral-50"} ${pulseSelected && selectedId === r.id ? 'pulse-once' : ''}`}>
             <div className="flex items-center justify-between gap-2 min-w-0">
               <div className="font-semibold text-lg shrink-0">{[r.c1, r.c2, r.c3].join("-")}</div>
               <div className="text-xs text-neutral-500 truncate flex-1 min-w-0 text-right">{r.gloss || "(no gloss)"}</div>
