@@ -692,7 +692,15 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
     // Prefer building from English intake if provided; fallback to UI state
     let clauseSplit = englishInput.trim() ? detectClauseCoordination(intakeTokens) : null;
     const built = (!clauseSplit && englishInput.trim()) ? buildFrameFromEnglish(intakeTokens) : null;
-    const frame: SemanticFrame = built?.frame ?? { subject, verbRootId, tense, neg, prog, hab, question, objects, particles };
+    // Prefer built frame; if verb unresolved, backfill from first detected verb
+    let frame: SemanticFrame = built?.frame ?? { subject, verbRootId, tense, neg, prog, hab, question, objects, particles };
+    if (built) {
+      const vAll = detectAllVerbs(intakeTokens);
+      if (!frame.verbRootId && vAll[0]) {
+        frame = { ...frame, verbRootId: vAll[0].id };
+        built.resolutionLog.push(`backfill verb from first detected: ${vAll[0].c1}${vAll[0].c2}${vAll[0].c3}`);
+      }
+    }
     const verb = verbsLex.find(v => v.id === frame.verbRootId) || null;
     const objWords = frame.objects.map(oid => nounsLex.find(n => n.id === oid)?.word || "?");
     const warnings: string[] = [];
