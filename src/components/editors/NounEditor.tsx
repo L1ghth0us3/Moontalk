@@ -266,14 +266,14 @@ export default function NounEditor({ initial, onChange, selectedId, onSelect, sh
         {(showSearch && query ? filtered : nouns).map(n => (
           <div
             key={n.id}
-            className={`list-item px-3 py-2 rounded-xl flex items-center gap-2 ${selectedId === n.id ? "border-blue-500 noun-item--selected" : (colliding.has(n.id) ? 'border-amber-300 bg-amber-50' : '')}`}
+            className={`list-item px-3 py-2 rounded-xl flex items-center gap-2 whitespace-nowrap ${selectedId === n.id ? "border-blue-500 noun-item--selected" : (colliding.has(n.id) ? 'border-amber-300 bg-amber-50' : '')}`}
             onClick={() => onSelect(n.id)}
             onDoubleClick={()=>setExpanded(true)}
             role="button"
             tabIndex={0}
           >
-            <div className="font-semibold text-lg truncate max-w-full">{n.word}</div>
-            <div className="text-xs text-neutral-500 truncate ml-auto">{n.gloss || "(no gloss)"}</div>
+            <div className="font-semibold text-lg shrink-0">{n.word}</div>
+            <div className="text-xs text-neutral-500 truncate text-right flex-1">{n.gloss || "(no gloss)"}</div>
             <button
               className="ml-2 p-1.5 rounded text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 shrink-0"
               title="Copy noun"
@@ -363,13 +363,13 @@ export default function NounEditor({ initial, onChange, selectedId, onSelect, sh
                   {filtered.map(n => (
                     <div
                       key={n.id}
-                      className={`list-item px-3 py-2 rounded-xl flex items-center gap-2 ${selectedId === n.id ? "border-blue-500 noun-item--selected" : ''}`}
+                      className={`list-item px-3 py-2 rounded-xl flex items-center gap-2 whitespace-nowrap ${selectedId === n.id ? "border-blue-500 noun-item--selected" : ''}`}
                       onClick={() => onSelect(n.id)}
                       role="button"
                       tabIndex={0}
                     >
-                      <div className="font-semibold text-lg truncate max-w-full">{n.word}</div>
-                      <div className="text-xs text-neutral-500 truncate ml-auto">{n.gloss || "(no gloss)"}</div>
+                      <div className="font-semibold text-lg shrink-0">{n.word}</div>
+                      <div className="text-xs text-neutral-500 truncate text-right flex-1">{n.gloss || "(no gloss)"}</div>
                       <button
                         className="ml-2 p-1.5 rounded text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 shrink-0"
                         title="Copy noun"

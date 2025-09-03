@@ -179,14 +179,14 @@ export default function RootEditor({ initial, onChange, selectedId, onSelect, sh
         {(showSearch && query ? filtered : roots).map(r => (
           <div
             key={r.id}
-            className={`list-item px-3 py-2 rounded-xl flex items-center gap-2 ${selectedId === r.id ? "border-blue-500 root-item--selected" : (dupSigs.has(`${(r.c1||'').toLowerCase()}-${(r.c2||'').toLowerCase()}-${(r.c3||'').toLowerCase()}`) ? 'border-red-300 bg-red-50' : '')}`}
+            className={`list-item px-3 py-2 rounded-xl flex items-center gap-2 whitespace-nowrap ${selectedId === r.id ? "border-blue-500 root-item--selected" : (dupSigs.has(`${(r.c1||'').toLowerCase()}-${(r.c2||'').toLowerCase()}-${(r.c3||'').toLowerCase()}`) ? 'border-red-300 bg-red-50' : '')}`}
             onClick={() => onSelect(r.id)}
             onDoubleClick={()=>setExpanded(true)}
             role="button"
             tabIndex={0}
           >
             <div className="font-semibold text-lg shrink-0">{[r.c1, r.c2, r.c3].join("-")}</div>
-            <div className="text-xs text-neutral-500 truncate ml-auto">{r.gloss || "(no gloss)"}</div>
+            <div className="text-xs text-neutral-500 truncate text-right flex-1">{r.gloss || "(no gloss)"}</div>
             <button
               className="ml-2 p-1.5 rounded text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 shrink-0"
               title="Copy root"
@@ -261,13 +261,13 @@ export default function RootEditor({ initial, onChange, selectedId, onSelect, sh
                   {filtered.map(r => (
                     <div
                       key={r.id}
-                      className={`list-item px-3 py-2 rounded-xl flex items-center gap-2 ${selectedId === r.id ? "border-blue-500 root-item--selected" : (dupSigs.has(`${(r.c1||'').toLowerCase()}-${(r.c2||'').toLowerCase()}-${(r.c3||'').toLowerCase()}`) ? 'border-red-300 bg-red-50' : '')}`}
+                      className={`list-item px-3 py-2 rounded-xl flex items-center gap-2 whitespace-nowrap ${selectedId === r.id ? "border-blue-500 root-item--selected" : (dupSigs.has(`${(r.c1||'').toLowerCase()}-${(r.c2||'').toLowerCase()}-${(r.c3||'').toLowerCase()}`) ? 'border-red-300 bg-red-50' : '')}`}
                       onClick={() => onSelect(r.id)}
                       role="button"
                       tabIndex={0}
                     >
                       <div className="font-semibold text-lg shrink-0">{[r.c1, r.c2, r.c3].join("-")}</div>
-                      <div className="text-xs text-neutral-500 truncate ml-auto">{r.gloss || "(no gloss)"}</div>
+                      <div className="text-xs text-neutral-500 truncate text-right flex-1">{r.gloss || "(no gloss)"}</div>
                       <button
                         className="ml-2 p-1.5 rounded text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 shrink-0"
                         title="Copy root"
