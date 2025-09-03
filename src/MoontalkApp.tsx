@@ -6,7 +6,6 @@ import NounEditor from "./components/editors/NounEditor";
 import TalkPad from "./components/TalkPad";
 import RenderDerivations from "./components/Derivations";
 import FreeTranslator from "./components/FreeTranslator";
-import Translator2 from "./components/Translator2";
 import { useLocalStorageState, LS_KEYS, lsGet, lsSet } from "./lib/storage";
 import FiniteForms from "./components/FiniteForms";
 
@@ -37,7 +36,7 @@ export default function MoontalkApp(){
   const [systemDark, setSystemDark] = useState<boolean>(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [dataOpen, setDataOpen] = useState(false);
-  const [composerTab, setComposerTab] = useLocalStorageState<'talk'|'translator'|'translator2'>("huntspeak_composer_tab", 'talk');
+  const [composerTab, setComposerTab] = useLocalStorageState<'talk'|'translator'>("huntspeak_composer_tab", 'talk');
   const [confirmResetOpen, setConfirmResetOpen] = useState(false);
   const [syncMorph, setSyncMorph] = useLocalStorageState<boolean>(LS_KEYS.morphSync, true);
   const [sharedMorph, setSharedMorph] = useLocalStorageState<{neg:boolean;prog:boolean;hab:boolean}>(LS_KEYS.morphToggles, {neg:false,prog:false,hab:false});
@@ -158,14 +157,7 @@ export default function MoontalkApp(){
       </>
     );
   }
-  function Translator2Body(){
-    if (composerCollapsed) return null;
-    return (
-      <>
-        <Translator2 roots={roots} nouns={nouns} onCreateNoun={addNounQuick} onCreateRoot={addRootQuick} />
-      </>
-    );
-  }
+  // Translator 2.0 moved to its own page
 
   // Import/Export (roots + nouns) as strict JSON with minimal validation.
   // Export writes a file; Import sanitizes structure and reloads to hydrate app state.
@@ -249,11 +241,11 @@ export default function MoontalkApp(){
                 className={`px-3 py-2 rounded-xl border transition ${composerTab==='translator' ? 'ring-2 ring-blue-300 border-blue-500 font-semibold' : 'border-neutral-300 hover:bg-neutral-50'}`}
                 onClick={()=>setComposerTab('translator')}
               >Free Translator</button>
-              <button
-                aria-pressed={composerTab==='translator2'}
-                className={`px-3 py-2 rounded-xl border transition ${composerTab==='translator2' ? 'ring-2 ring-blue-300 border-blue-500 font-semibold' : 'border-neutral-300 hover:bg-neutral-50'}`}
-                onClick={()=>setComposerTab('translator2')}
-              >Translator 2.0</button>
+              <span className="hidden md:inline-block h-6 w-px bg-neutral-300 mx-1" aria-hidden="true"></span>
+              <a
+                className="px-3 py-2 rounded-xl border border-neutral-300 hover:bg-neutral-50"
+                href="/translator2"
+              >Translator 2.0 →</a>
             </div>
             {composerTab==='talk' ? (<TalkPadCollapse />) : (<TranslatorCollapse />)}
           </div>
@@ -261,9 +253,7 @@ export default function MoontalkApp(){
             <TalkPadBody />
           ) : composerTab==='translator' ? (
             <TranslatorBody />
-          ) : (
-            <Translator2Body />
-          )}
+          ) : null}
         </section>
       </div>
 
