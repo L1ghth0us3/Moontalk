@@ -690,7 +690,7 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
 
   function onTranslate(){
     // Prefer building from English intake if provided; fallback to UI state
-    const clauseSplit = englishInput.trim() ? detectClauseCoordination(intakeTokens) : null;
+    let clauseSplit = englishInput.trim() ? detectClauseCoordination(intakeTokens) : null;
     const built = (!clauseSplit && englishInput.trim()) ? buildFrameFromEnglish(intakeTokens) : null;
     const frame: SemanticFrame = built?.frame ?? { subject, verbRootId, tense, neg, prog, hab, question, objects, particles };
     const verb = verbsLex.find(v => v.id === frame.verbRootId) || null;
@@ -712,11 +712,16 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
     if (clauseSplit){
       const leftBuilt = buildFrameFromEnglish(clauseSplit.left);
       const rightBuilt = buildFrameFromEnglish(clauseSplit.right);
-      const leftGen = generateHuntspeak(leftBuilt.frame, leftBuilt.clauseType, clauseSplit.left);
-      const rightGen = generateHuntspeak(rightBuilt.frame, rightBuilt.clauseType, clauseSplit.right);
-      const COORD_JOIN: Record<'AND'|'OR'|'NOR'|'BUT', string> = { AND:'ʋa', OR:'ra', NOR:'ra', BUT:'ma' };
-      surface = [leftGen.surface, COORD_JOIN[clauseSplit.type], rightGen.surface].join(' ');
-      gen = { surface, variants: [] };
+      // Only treat as clause coordination if both sides have a resolved verb
+      if (leftBuilt.frame.verbRootId && rightBuilt.frame.verbRootId){
+        const leftGen = generateHuntspeak(leftBuilt.frame, leftBuilt.clauseType, clauseSplit.left);
+        const rightGen = generateHuntspeak(rightBuilt.frame, rightBuilt.clauseType, clauseSplit.right);
+        const COORD_JOIN: Record<'AND'|'OR'|'NOR'|'BUT', string> = { AND:'ʋa', OR:'ra', NOR:'ra', BUT:'ma' };
+        surface = [leftGen.surface, COORD_JOIN[clauseSplit.type], rightGen.surface].join(' ');
+        gen = { surface, variants: [] };
+      } else {
+        clauseSplit = null; // fall back to single-clause path
+      }
     }
 
     const res: Result = {
