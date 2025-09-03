@@ -31,6 +31,22 @@ export default function NounEditor({ initial, onChange, selectedId, onSelect, sh
   const [query, setQuery] = useState("");
   const [colliding, setColliding] = useState<Set<string>>(new Set());
   const [scanned, setScanned] = useState<boolean>(false);
+  const [dupWords, setDupWords] = useState<string[]>([]);
+  const [dupGlossGroups, setDupGlossGroups] = useState<Array<{ gloss: string; ids: string[] }>>([]);
+
+  // Focus bridge: open noun on request from other components
+  useEffect(() => {
+    function onStorage(e: StorageEvent){
+      if (e.key !== LS_KEYS.nounsFocus || !e.newValue) return;
+      try {
+        const { id } = JSON.parse(e.newValue);
+        if (id){ onSelect(id); setExpanded(true); }
+        localStorage.removeItem(LS_KEYS.nounsFocus);
+      } catch {}
+    }
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, [onSelect]);
 
   // Simple subsequence matcher for forgiving/fuzzy filtering
   function fuzzySubsequence(needle: string, hay: string){
@@ -45,6 +61,29 @@ export default function NounEditor({ initial, onChange, selectedId, onSelect, sh
       return fuzzySubsequence(q, bag);
     });
   }, [nouns, query]);
+
+  // Duplicate noun words
+  useEffect(() => {
+    const map = new Map<string, number>();
+    for (const n of nouns){
+      const w = (n.word||'').trim().toLowerCase(); if (!w) continue;
+      map.set(w, (map.get(w)||0)+1);
+    }
+    const d: string[] = []; for (const [w,c] of map){ if (c>1) d.push(w); }
+    setDupWords(d);
+  }, [nouns]);
+
+  // Duplicate gloss groups
+  useEffect(() => {
+    const map = new Map<string, string[]>();
+    for (const n of nouns){
+      const g = (n.gloss||'').trim().toLowerCase(); if (!g) continue;
+      map.set(g, [ ...(map.get(g)||[]), n.id ]);
+    }
+    const groups: Array<{ gloss:string; ids:string[] }> = [];
+    for (const [g,ids] of map){ if (ids.length>1) groups.push({ gloss: g, ids }); }
+    setDupGlossGroups(groups);
+  }, [nouns]);
 
   function scanVerbCollisions(){
     try {
@@ -81,6 +120,36 @@ export default function NounEditor({ initial, onChange, selectedId, onSelect, sh
       </div>
       {!collapsed && (
       <>
+      {/* Duplicate errors: words */}
+      {dupWords.length>0 && (
+        <div className="mt-2 text-sm rounded-lg border border-red-300 text-red-700 bg-red-50 px-3 py-2">
+          <div className="font-semibold mb-1">Errors: duplicate nouns</div>
+          <div className="flex flex-wrap gap-2">
+            {dupWords.map(w => (
+              <span key={w} className="px-2 py-1 rounded border border-red-300 text-red-700 text-xs">{w}</span>
+            ))}
+          </div>
+        </div>
+      )}
+      {/* Duplicate errors: gloss */}
+      {dupGlossGroups.length>0 && (
+        <div className="mt-2 text-sm rounded-lg border border-red-300 text-red-700 bg-red-50 px-3 py-2">
+          <div className="font-semibold mb-1">Errors: duplicate noun gloss</div>
+          {dupGlossGroups.map((g,i)=> (
+            <div key={i} className="mb-1">
+              <div className="opacity-80">“{g.gloss}”</div>
+              <div className="flex flex-wrap gap-2 mt-1">
+                {g.ids.map(id => {
+                  const n = nouns.find(x=>x.id===id)!;
+                  return (
+                    <button key={id} className="px-2 py-1 rounded border border-red-300 text-red-700 hover:bg-red-100 text-xs" onClick={()=>{ onSelect(id); setExpanded(true); }}>{n.word}</button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
       {scanned && (
         <div className={`mt-2 text-sm rounded-lg px-3 py-2 ${colliding.size>0 ? 'border border-amber-300 text-amber-700 bg-amber-50' : 'border border-neutral-200 text-neutral-700 bg-neutral-50'}`}>
           {colliding.size>0 ? (
