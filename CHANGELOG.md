@@ -2,6 +2,8 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.0-next] - Unreleased
+
 ## [1.3.0] - 2025-09-03
 
 - Rebrand: app shell renamed to Night‑tongue; added top‑nav “What is this” page with TL;DR, basics, copula/existential/possession patterns, derivations, examples, and notes.
