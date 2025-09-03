@@ -423,7 +423,8 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
       const m2 = matchNounByToken(pv[i].text, pv[i+1]?.text, englishInput);
       if (m2.noun) { preNounCount++; if (m2.span===2) i++; }
     }
-    if (hasCoord && ((hasIorWe?1:0)+(hasYou?1:0) >= 2 || (!pron && preNounCount >= 2))){
+    // Trigger when at least two distinct person categories are present, or when two+ nouns form a coordinated subject with no pronoun detected
+    if (hasCoord && ((hasIorWe && (hasYou || pws.has('he') || pws.has('she') || pws.has('they'))) || (hasYou && (pws.has('he') || pws.has('she') || pws.has('they'))) || (!pron && preNounCount >= 2))){
       const prev = subj;
       if (hasIorWe) subj = 'we';
       else if (hasYou) subj = 'you(pl)';
