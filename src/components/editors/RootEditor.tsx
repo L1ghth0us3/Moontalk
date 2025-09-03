@@ -188,7 +188,7 @@ export default function RootEditor({ initial, onChange, selectedId, onSelect, sh
             <div className="font-semibold text-lg shrink-0">{[r.c1, r.c2, r.c3].join("-")}</div>
             <div className="text-xs text-neutral-500 truncate ml-auto">{r.gloss || "(no gloss)"}</div>
             <button
-              className="ml-2 px-2 py-1 rounded border border-neutral-300 hover:bg-neutral-50 text-xs shrink-0"
+              className="ml-2 p-1.5 rounded text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 shrink-0"
               title="Copy root"
               aria-label="Copy root"
               onClick={(e)=>{ e.stopPropagation(); try { navigator.clipboard.writeText([r.c1,r.c2,r.c3].join('-')); } catch {} }}
@@ -261,7 +261,7 @@ export default function RootEditor({ initial, onChange, selectedId, onSelect, sh
                   {filtered.map(r => (
                     <div
                       key={r.id}
-                      className={`px-3 py-2 rounded-xl border flex items-center gap-2 ${selectedId === r.id ? "border-blue-500 root-item--selected" : (dupSigs.has(`${(r.c1||'').toLowerCase()}-${(r.c2||'').toLowerCase()}-${(r.c3||'').toLowerCase()}`) ? 'border-red-300 bg-red-50' : 'border-neutral-200 hover:bg-neutral-50')}`}
+                      className={`px-3 py-2 rounded-xl flex items-center gap-2 ${selectedId === r.id ? "border border-blue-500 root-item--selected" : (dupSigs.has(`${(r.c1||'').toLowerCase()}-${(r.c2||'').toLowerCase()}-${(r.c3||'').toLowerCase()}`) ? 'border border-red-300 bg-red-50' : 'hover:bg-neutral-50')}`}
                       onClick={() => onSelect(r.id)}
                       role="button"
                       tabIndex={0}
@@ -269,7 +269,7 @@ export default function RootEditor({ initial, onChange, selectedId, onSelect, sh
                       <div className="font-semibold text-lg shrink-0">{[r.c1, r.c2, r.c3].join("-")}</div>
                       <div className="text-xs text-neutral-500 truncate ml-auto">{r.gloss || "(no gloss)"}</div>
                       <button
-                        className="ml-2 px-2 py-1 rounded border border-neutral-300 hover:bg-neutral-50 text-xs shrink-0"
+                        className="ml-2 p-1.5 rounded text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 shrink-0"
                         title="Copy root"
                         aria-label="Copy root"
                         onClick={(e)=>{ e.stopPropagation(); try { navigator.clipboard.writeText([r.c1,r.c2,r.c3].join('-')); } catch {} }}

@@ -275,7 +275,7 @@ export default function NounEditor({ initial, onChange, selectedId, onSelect, sh
             <div className="font-semibold text-lg truncate max-w-full">{n.word}</div>
             <div className="text-xs text-neutral-500 truncate ml-auto">{n.gloss || "(no gloss)"}</div>
             <button
-              className="ml-2 px-2 py-1 rounded border border-neutral-300 hover:bg-neutral-50 text-xs shrink-0"
+              className="ml-2 p-1.5 rounded text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 shrink-0"
               title="Copy noun"
               aria-label="Copy noun"
               onClick={(e)=>{ e.stopPropagation(); try { navigator.clipboard.writeText(n.word); } catch {} }}
@@ -371,7 +371,7 @@ export default function NounEditor({ initial, onChange, selectedId, onSelect, sh
                       <div className="font-semibold text-lg truncate max-w-full">{n.word}</div>
                       <div className="text-xs text-neutral-500 truncate ml-auto">{n.gloss || "(no gloss)"}</div>
                       <button
-                        className="ml-2 px-2 py-1 rounded border border-neutral-300 hover:bg-neutral-50 text-xs shrink-0"
+                        className="ml-2 p-1.5 rounded text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 shrink-0"
                         title="Copy noun"
                         aria-label="Copy noun"
                         onClick={(e)=>{ e.stopPropagation(); try { navigator.clipboard.writeText(n.word); } catch {} }}
