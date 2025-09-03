@@ -532,7 +532,23 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
     } else {
       // Transitive
       if (subjHS.form) parts.push(subjHS.form);
-      if (verbLex) parts.push(conjFinite(verbLex, subjHS, frame.tense, { prog:frame.prog, hab:frame.hab, neg:frame.neg }));
+      // VP coordination: build multiple verbs with shared flags
+      const vpList = coord.lists.find(l => l.role === 'VP' && l.items.length >= 2);
+      if (vpList){
+        const conjWord = COORD_WORD[vpList.type] || 'ʋa';
+        const forms: string[] = [];
+        for (const it of vpList.items){
+          const v = it.verbId ? verbsLex.find(x=>x.id===it.verbId) : null;
+          if (v) forms.push(conjFinite(v, subjHS, frame.tense, { prog:frame.prog, hab:frame.hab, neg:frame.neg }));
+        }
+        if (forms.length){
+          parts.push(forms.map((f,i)=> i===0 ? f : `${conjWord} ${f}`).join(' '));
+        } else if (verbLex){
+          parts.push(conjFinite(verbLex, subjHS, frame.tense, { prog:frame.prog, hab:frame.hab, neg:frame.neg }));
+        }
+      } else {
+        if (verbLex) parts.push(conjFinite(verbLex, subjHS, frame.tense, { prog:frame.prog, hab:frame.hab, neg:frame.neg }));
+      }
       // Direct object: support NP coordination
       if (frame.objects[0]){
         const baseObjId = frame.objects[0];
