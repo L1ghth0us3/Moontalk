@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Noun, Root } from "../../types";
 import { useLocalStorageState, LS_KEYS, lsGet } from "../../lib/storage";
 import { PRONOUNS, TENSES } from "../../types";
@@ -35,6 +35,8 @@ export default function NounEditor({ initial, onChange, selectedId, onSelect, sh
   const [colliding, setColliding] = useState<Set<string>>(new Set());
   const [collisions, setCollisions] = useState<Record<string, Array<{ form: string; root: string; gloss: string; pron: string; tense: string }>>>({});
   const [scanned, setScanned] = useState<boolean>(false);
+  const [scanToast, setScanToast] = useState<string | null>(null);
+  const toastTimer = useRef<number | null>(null);
   const [dupWords, setDupWords] = useState<string[]>([]);
   const [dupGlossGroups, setDupGlossGroups] = useState<Array<{ gloss: string; ids: string[] }>>([]);
 
@@ -119,7 +121,15 @@ export default function NounEditor({ initial, onChange, selectedId, onSelect, sh
       }
       setColliding(col);
       setCollisions(colDetail);
-      setScanned(true);
+      if (col.size > 0) {
+        setScanned(true);
+      } else {
+        // Show ephemeral toast instead of a persistent banner when no collisions
+        setScanned(false);
+        setScanToast('No noun ↔ verb-form collisions');
+        if (toastTimer.current) { clearTimeout(toastTimer.current); toastTimer.current = null; }
+        toastTimer.current = window.setTimeout(() => setScanToast(null), 2200);
+      }
     } catch { setColliding(new Set()); setScanned(true); }
   }
 
@@ -130,7 +140,14 @@ export default function NounEditor({ initial, onChange, selectedId, onSelect, sh
         <h2 className="text-xl md:text-2xl font-semibold">Nouns</h2>
       <div className="flex items-center gap-2">
           <button aria-label="Search" title="Search" className="px-2 py-1 text-sm rounded border border-neutral-300 hover:bg-neutral-50" onClick={()=>setShowSearch(s=>!s)}>🔎</button>
-          <button aria-label="Scan verb collisions" title="Scan verb collisions (on-demand)" className="px-2 py-1 text-sm rounded border border-amber-300 text-amber-700 hover:bg-amber-50" onClick={scanVerbCollisions}>Scan</button>
+          <div className="relative">
+            <button aria-label="Scan verb collisions" title="Scan verb collisions (on-demand)" className="px-2 py-1 text-sm rounded border border-amber-300 text-amber-700 hover:bg-amber-50" onClick={scanVerbCollisions}>Scan</button>
+            {scanToast && (
+              <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 rounded-md border border-amber-300 bg-amber-50 text-amber-700 text-xs px-2.5 py-1.5 shadow-lg transition-opacity duration-500 opacity-100">
+                {scanToast}
+              </div>
+            )}
+          </div>
           {showCollapse && (
             <button aria-label={collapsed? 'Expand' : 'Collapse'} className="px-2 py-1 text-sm rounded border border-neutral-300 hover:bg-neutral-50" onClick={()=>setCollapsed(c=>!c)}>
               {collapsed ? '▸' : '▾'}
@@ -172,9 +189,9 @@ export default function NounEditor({ initial, onChange, selectedId, onSelect, sh
           ))}
         </div>
       )}
-      {scanned && (
+      {scanned && colliding.size>0 && (
         <div className={`mt-2 text-sm rounded-lg px-3 py-2 ${colliding.size>0 ? 'border border-amber-300 text-amber-700 bg-amber-50' : 'border border-neutral-200 text-neutral-700 bg-neutral-50'}`}>
-          {colliding.size>0 ? (
+          {(
             <div>
               <div className="font-semibold mb-1">Warnings: {colliding.size} noun{colliding.size===1?'':'s'} collide with verb forms</div>
               <div className="space-y-1">
@@ -198,7 +215,7 @@ export default function NounEditor({ initial, onChange, selectedId, onSelect, sh
                 })}
               </div>
             </div>
-          ) : 'No noun ↔ verb-form collisions found.'}
+          )}
         </div>
       )}
       <NounCreator onCreate={addNoun} />
