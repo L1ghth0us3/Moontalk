@@ -237,6 +237,25 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
     return { lists, markers: Array.from(markersSet) };
   }
 
+  // Collect all detected verbs in token order (phrase-first, then token), de-duplicated by id
+  function detectAllVerbs(tokens: IntakeToken[]): LexiconEntryVerb[] {
+    const out: LexiconEntryVerb[] = [];
+    const seen = new Set<string>();
+    for (let i=0;i<tokens.length;i++){
+      const w = tokens[i].text;
+      if (w==='?' || PREPS.has(w) || SPECIAL.has(w) || PRONOUNS.has(w)) continue;
+      const two = tokens[i+1]?.text ? `${w} ${tokens[i+1].text}` : '';
+      let vHit: LexiconEntryVerb | null = null;
+      if (two){
+        const exact = verbsLex.find(v => splitGlossItems(v.gloss).includes(normPhrase(two)) || (v.synonyms||[]).map(normPhrase).includes(normPhrase(two)));
+        if (exact) { vHit = exact; i++; }
+      }
+      if (!vHit) vHit = matchVerbByToken(w) as LexiconEntryVerb | null;
+      if (vHit && !seen.has(vHit.id)) { out.push(vHit); seen.add(vHit.id); }
+    }
+    return out;
+  }
+
   // ===== Minimal English → SemanticFrame builder =====
   function findCopulaRootId(): string | null {
     // Heuristic: look for a verb whose gloss or synonyms include "be" (or "exist").
@@ -630,6 +649,7 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
         clause: built?.clauseType ?? 'manual',
         resolutionLog: built?.resolutionLog || [],
         coordination: detectCoordination(intakeTokens),
+        verbsAll: detectAllVerbs(intakeTokens).map(v=>({ id:v.id, root:`${v.c1}${v.c2}${v.c3}`, gloss:v.gloss })),
       },
       warnings: [...warnings, ...(built?.warnings || [])],
     };
@@ -945,6 +965,7 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
           const particles = pairParticlesWithNounsFromTokens(intakeTokens).map(p => `${p.part} ${wordOfNounId(p.nounId)}`).join(' • ') || '—';
           const flags = [frm.prog?'Prog':null, frm.hab?'Hab':null, frm.neg?'Neg':null].filter(Boolean).join(', ') || '—';
           const coord = detectCoordination(intakeTokens);
+          const verbsAll = detectAllVerbs(intakeTokens);
           const coordSummary = coord.lists.length ? coord.lists.map(l => `${l.role}:${l.type} [${l.items.map(it=>it.text).join(', ')}]`).join(' • ') : '—';
           const usedFuzzy = (built?.resolutionLog || []).some(line => /fuzzy/.test(line));
           return (
@@ -952,6 +973,7 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
               <div className="grid grid-cols-[10rem_1fr] gap-x-4 gap-y-1 text-sm">
                 <div className="opacity-70">Subject</div><div>{subjHS.form} <span className="opacity-60">({frm.subject})</span></div>
                 <div className="opacity-70">Verb</div><div>{verb ? `${verb.c1}${verb.c2}${verb.c3} — ${verb.gloss}` : '—'}</div>
+                <div className="opacity-70">Verbs (all)</div><div>{verbsAll.length ? verbsAll.map(v=>`${v.c1}${v.c2}${v.c3} — ${v.gloss}`).join(' • ') : '—'}</div>
                 <div className="opacity-70">Form</div><div>{verbForm}</div>
                 <div className="opacity-70">Tense</div><div>{frm.tense}</div>
                 <div className="opacity-70">Flags</div><div>{flags}</div>
