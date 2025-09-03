@@ -256,6 +256,27 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
     return out;
   }
 
+  // Clause-level coordination: detect a coordinator with subjects on both sides
+  function detectClauseCoordination(tokens: IntakeToken[]): { left: IntakeToken[]; right: IntakeToken[]; type: 'AND'|'OR'|'NOR'|'BUT' } | null {
+    const wordTypes: Record<string,'AND'|'OR'|'NOR'|'BUT'> = { and:'AND', or:'OR', nor:'NOR', but:'BUT' } as const;
+    for (let i=0;i<tokens.length;i++){
+      const w = tokens[i].text;
+      const typ = wordTypes[w as keyof typeof wordTypes];
+      if (!typ) continue;
+      const left = tokens.slice(0,i);
+      const right = tokens.slice(i+1);
+      const leftPron = detectPronoun(left);
+      const rightPron = detectPronoun(right);
+      // Also consider existential 'there' as subject
+      const leftHasThere = left.some(t=>t.text==='there');
+      const rightHasThere = right.some(t=>t.text==='there');
+      if ((leftPron || leftHasThere) && (rightPron || rightHasThere)){
+        return { left, right, type: typ };
+      }
+    }
+    return null;
+  }
+
   // Collect all detected nouns (unique, phrase-first), in token order
   function detectAllNouns(tokens: IntakeToken[]): LexiconEntryNoun[] {
     const out: LexiconEntryNoun[] = [];
@@ -631,7 +652,8 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
 
   function onTranslate(){
     // Prefer building from English intake if provided; fallback to UI state
-    const built = englishInput.trim() ? buildFrameFromEnglish(intakeTokens) : null;
+    const clauseSplit = englishInput.trim() ? detectClauseCoordination(intakeTokens) : null;
+    const built = (!clauseSplit && englishInput.trim()) ? buildFrameFromEnglish(intakeTokens) : null;
     const frame: SemanticFrame = built?.frame ?? { subject, verbRootId, tense, neg, prog, hab, question, objects, particles };
     const verb = verbsLex.find(v => v.id === frame.verbRootId) || null;
     const objWords = frame.objects.map(oid => nounsLex.find(n => n.id === oid)?.word || "?");
@@ -639,14 +661,25 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
     if (!frame.subject) warnings.push("Missing subject");
     if (!verb) warnings.push("No verb selected");
 
-    const gen = generateHuntspeak(frame, built?.clauseType ?? 'transitive', intakeTokens);
-    const surface = gen.surface || [
+    let gen = generateHuntspeak(frame, built?.clauseType ?? 'transitive', intakeTokens);
+    let surface = gen.surface || [
       "[Experimental]",
       frame.subject,
       verb ? `(${verb.c1}${verb.c2}${verb.c3} • ${verb.gloss||"verb"})` : "(no‑verb)",
       objWords.length ? `→ ${objWords.join(", ")}` : "",
       frame.question ? "?" : "",
     ].filter(Boolean).join(" ");
+
+    // Clause coordination: translate each side independently and join with coordinator
+    if (clauseSplit){
+      const leftBuilt = buildFrameFromEnglish(clauseSplit.left);
+      const rightBuilt = buildFrameFromEnglish(clauseSplit.right);
+      const leftGen = generateHuntspeak(leftBuilt.frame, leftBuilt.clauseType, clauseSplit.left);
+      const rightGen = generateHuntspeak(rightBuilt.frame, rightBuilt.clauseType, clauseSplit.right);
+      const COORD_JOIN: Record<'AND'|'OR'|'NOR'|'BUT', string> = { AND:'ʋa', OR:'ra', NOR:'ra', BUT:'ma' };
+      surface = [leftGen.surface, COORD_JOIN[clauseSplit.type], rightGen.surface].join(' ');
+      gen = { surface, variants: [] };
+    }
 
     const res: Result = {
       surface,
@@ -663,6 +696,7 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
         clause: built?.clauseType ?? 'manual',
         resolutionLog: built?.resolutionLog || [],
         coordination: detectCoordination(intakeTokens),
+        clauseCoordination: clauseSplit ? { type: clauseSplit.type, left: clauseSplit.left.map(t=>t.text), right: clauseSplit.right.map(t=>t.text) } : null,
         verbsAll: detectAllVerbs(intakeTokens).map(v=>({ id:v.id, root:`${v.c1}${v.c2}${v.c3}`, gloss:v.gloss })),
       },
       warnings: [...warnings, ...(built?.warnings || [])],
