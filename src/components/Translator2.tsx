@@ -278,6 +278,8 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
   function detectClauseCoordination(tokens: IntakeToken[]): { left: IntakeToken[]; right: IntakeToken[]; type: 'AND'|'OR'|'NOR'|'BUT' } | null {
     const wordTypes: Record<string,'AND'|'OR'|'NOR'|'BUT'> = { and:'AND', or:'OR', nor:'NOR', but:'BUT' } as const;
     function hasVerb(side: IntakeToken[]): boolean {
+      // Treat copular 'be' as a valid verb for clause splitting (e.g., "I was hunter")
+      if (side.some(t => isBe(t.text))) return true;
       for (let i=0;i<side.length;i++){
         const w = side[i].text;
         if (w==='?' || PREPS.has(w) || SPECIAL.has(w)) continue;
