@@ -1,4 +1,4 @@
-# Agent Onboarding — Night‑tongue
+# Agent Onboarding — Moontalk
 
 Use this file to get productive fast. It summarizes the architecture, where to make changes, and how to verify work. Keep this close when adding features or refactoring.
 
@@ -8,8 +8,14 @@ Use this file to get productive fast. It summarizes the architecture, where to m
 - `npm run preview`: Preview the production build.
 - `npm run lint`: ESLint across the project.
 
+> Mandatory workflow for Codex agents (do not skip):
+> 1) Run `npm run build` (and optionally `npm run lint`).
+> 2) Fix all errors/warnings relevant to your change.
+> 3) Only then `git add -A` + `git commit -m "..."`.
+> Repeat this cycle for every step/commit.
+
 ## Architecture
-- Entry: `src/main.tsx` → `src/App.tsx` (simple pathname switch) → `src/NightTongueApp.tsx` (app shell)
+- Entry: `src/main.tsx` → `src/App.tsx` (simple pathname switch) → `src/MoontalkApp.tsx` (app shell)
 - UI Panels:
   - `components/TalkPad.tsx`: guided sentence builder.
   - `components/FreeTranslator.tsx`: simple English→Huntspeak (1‑verb lines) with copula/existential handling.
@@ -64,6 +70,60 @@ Use this file to get productive fast. It summarizes the architecture, where to m
 - Tags mark releases (e.g., `v1.2.0`).
 - Keep changes focused; use Conventional Commit prefixes (feat/fix/chore/docs...).
 
+### Commit Discipline (imperative)
+- Always work on the current `*-dev` branch (e.g., `1.4-dev`). If unsure, create/switch to the latest `*-dev` branch.
+- Commit after every instruction/task step with a clear, Conventional Commit message. Keep commits small and logically scoped to enable easy reverts.
+- Include any file moves/renames in the same commit (use `git add -A`).
+- Treat this as a professional local dev workflow: no uncommitted work between steps; prefer incremental, revertible commits.
+
+#### Pre-commit Gate (must pass before every commit)
+- Run: `npm run build` to type-check and build. Fix all errors before committing.
+- Recommended: `npm run lint` and a quick `npm run dev` smoke (open app, quick clickthrough).
+- Only after a clean build: `git add -A && git commit -m "<type(scope): message>"`.
+
+### Example Local Git Workflow (professional)
+1) Sync and branch
+   - `git fetch --all --tags`
+   - `git switch 1.4-dev` (or the current `*-dev` branch). If missing, create it from `main`: `git switch -c 1.4-dev origin/main`.
+2) Implement a small, focused change
+   - Edit code.
+   - Run `npm run build` (and optionally `npm run lint`). Fix issues until green.
+   - Validate behavior quickly in `npm run dev` if UI/logic changed.
+3) Stage and commit immediately when the step is complete
+   - `git add -A`
+   - `git commit -m "feat: add Translator 2.0 intake tokenizer"`
+4) Iterate in small steps
+   - Repeat implement → validate → commit after each instruction/tasklet.
+5) Push dev branch as needed (optional for collaboration/review)
+   - `git push -u origin 1.4-dev`
+6) Release flow (never work directly on `main`)
+   - Ensure `1.4-dev` is green and ready.
+   - `git switch main && git pull`
+   - `git merge --no-ff 1.4-dev -m "chore(release): merge 1.4-dev"`
+   - Tag release if applicable: `git tag -a v1.4.0 -m "v1.4.0" && git push --tags`
+   - Immediately create the next dev branch from `main` and switch to it (keep continuous dev unblocked):
+     - `git switch -c 1.5-dev`
+     - `git push -u origin 1.5-dev`
+   - Continue new work only on the latest `*-dev` branch.
+
+### Commit Message Rules
+- Use Conventional Commit prefixes:
+  - `feat:` new feature; `fix:` bug fix; `chore:` tooling/infra; `docs:` documentation; `refactor:` non‑behavioral code changes; `perf:` performance.
+- Scope (optional) in parentheses: `feat(translator2): ...`.
+- Present tense, imperative mood; keep subject concise; body optional but helpful for rationale.
+- One logical change per commit; avoid mixing unrelated changes.
+
+### Branching Rules
+- Never work directly on `main`.
+- All active work happens on the latest `*-dev` branch.
+- After merging `*-dev` into `main`, immediately create the next `*-dev` branch with the incremented version and switch to it.
+- Keep branches focused; prefer short‑lived feature branches off `*-dev` when needed, then merge back into `*-dev`.
+
+### Reverting and Safety
+- Because commits are small and per‑instruction, reverts are easy: `git revert <sha>`.
+- If an instruction causes regressions, revert that commit and re‑attempt with a new commit.
+- When moving/renaming files, commit moves atomically to preserve history.
+
 ## Validation
 - No test runner configured yet. Prefer adding Vitest + React Testing Library.
 - Until tests: `npm run build` for type safety and spin `npm run dev` for a smoke run.
@@ -74,7 +134,7 @@ Use this file to get productive fast. It summarizes the architecture, where to m
 - i18n/UX: favor short labels; keep forms and cards light; support keyboard nav where feasible.
 
 ## Quick Orientation (15 min)
-1) Skim `NightTongueApp.tsx` for wiring, modals, and theme handling.
+1) Skim `MoontalkApp.tsx` for wiring, modals, and theme handling.
 2) Open `components/TalkPad.tsx` to see sentence composition and toggles.
 3) Open `lib/morphology.ts` to understand how forms are built.
 4) Explore `editors/` for how Roots/Nouns persist and filter.
@@ -87,7 +147,7 @@ Use this file to get productive fast. It summarizes the architecture, where to m
 - Add simple render tests for Talk Pad and Finite Forms’ toggle interactions.
 
 ## Contact Points in Code
-- Theme key: `LS_KEYS.theme` used by `NightTongueApp`.
+- Theme key: `LS_KEYS.theme` used by `MoontalkApp`.
 - Shared morph state: `LS_KEYS.morphToggles`/`LS_KEYS.morphSync`.
 - Translator: see copula and mapping logic in `FreeTranslator.tsx`.
 

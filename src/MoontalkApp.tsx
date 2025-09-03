@@ -6,6 +6,7 @@ import NounEditor from "./components/editors/NounEditor";
 import TalkPad from "./components/TalkPad";
 import RenderDerivations from "./components/Derivations";
 import FreeTranslator from "./components/FreeTranslator";
+import Translator2 from "./components/Translator2";
 import { useLocalStorageState, LS_KEYS, lsGet, lsSet } from "./lib/storage";
 import FiniteForms from "./components/FiniteForms";
 
@@ -26,7 +27,7 @@ import FiniteForms from "./components/FiniteForms";
  * - “Expanded” modals (⛶) use a centered fixed overlay with click‑off‑to‑close.
  * - All modals and popovers avoid global state; they are local to their components.
  */
-export default function NightTongueApp(){
+export default function MoontalkApp(){
   const [roots, setRoots] = useState<Root[]>(DEFAULT_ROOTS);
   const [nouns, setNouns] = useState<Noun[]>(DEFAULT_NOUNS);
   const [selectedId, setSelectedId] = useLocalStorageState<string|null>(LS_KEYS.selectedRoot, roots[0]?.id || null);
@@ -36,10 +37,11 @@ export default function NightTongueApp(){
   const [systemDark, setSystemDark] = useState<boolean>(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [dataOpen, setDataOpen] = useState(false);
-  const [composerTab, setComposerTab] = useLocalStorageState<'talk'|'translator'>("huntspeak_composer_tab", 'talk');
+  const [composerTab, setComposerTab] = useLocalStorageState<'talk'|'translator'|'translator2'>("huntspeak_composer_tab", 'talk');
   const [confirmResetOpen, setConfirmResetOpen] = useState(false);
   const [syncMorph, setSyncMorph] = useLocalStorageState<boolean>(LS_KEYS.morphSync, true);
   const [sharedMorph, setSharedMorph] = useLocalStorageState<{neg:boolean;prog:boolean;hab:boolean}>(LS_KEYS.morphToggles, {neg:false,prog:false,hab:false});
+  // Translator 2.0 settings managed within Translator2 component
   const [nounsKey, setNounsKey] = useState(0);
 
   // One-time migration: ensure new default roots (e.g., "to be") are present
@@ -153,6 +155,14 @@ export default function NightTongueApp(){
       </>
     );
   }
+  function Translator2Body(){
+    if (composerCollapsed) return null;
+    return (
+      <>
+        <Translator2 roots={roots} nouns={nouns} onCreateNoun={addNounQuick} onCreateRoot={addRootQuick} />
+      </>
+    );
+  }
 
   // Import/Export (roots + nouns) as strict JSON with minimal validation.
   // Export writes a file; Import sanitizes structure and reloads to hydrate app state.
@@ -210,8 +220,8 @@ export default function NightTongueApp(){
       <header className="mb-6">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold">Night‑tongue</h1>
-            <p className="text-neutral-600 mt-1">RP-ready: create words and get instant Night‑tongue lines.</p>
+            <h1 className="text-2xl md:text-3xl font-bold">Moontalk</h1>
+            <p className="text-neutral-600 mt-1">RP-ready: create words and get instant Huntspeak lines.</p>
           </div>
           <nav aria-label="Main" className="flex items-center gap-2">
             <a className="px-3 py-2 rounded-xl border border-neutral-300 hover:bg-neutral-50" href="/what-is-this">What is this</a>
@@ -236,33 +246,42 @@ export default function NightTongueApp(){
                 className={`px-3 py-2 rounded-xl border transition ${composerTab==='translator' ? 'ring-2 ring-blue-300 border-blue-500 font-semibold' : 'border-neutral-300 hover:bg-neutral-50'}`}
                 onClick={()=>setComposerTab('translator')}
               >Free Translator</button>
+              <button
+                aria-pressed={composerTab==='translator2'}
+                className={`px-3 py-2 rounded-xl border transition ${composerTab==='translator2' ? 'ring-2 ring-blue-300 border-blue-500 font-semibold' : 'border-neutral-300 hover:bg-neutral-50'}`}
+                onClick={()=>setComposerTab('translator2')}
+              >Translator 2.0</button>
             </div>
             {composerTab==='talk' ? (<TalkPadCollapse />) : (<TranslatorCollapse />)}
           </div>
           {composerTab==='talk' ? (
             <TalkPadBody />
-          ) : (
+          ) : composerTab==='translator' ? (
             <TranslatorBody />
-          )}
+          ) : composerTab==='translator2' ? (
+            <Translator2Body />
+          ) : null}
         </section>
       </div>
 
-      {/* Below: Roots, Nouns, Finite Forms, Derivations in one row (responsive) */}
-      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 items-start">
-        <RootEditor initial={roots} onChange={setRoots} selectedId={selectedId} onSelect={setSelectedId} showCollapse={showCollapse} onCreateNoun={addNounQuick} />
-        <NounEditor key={nounsKey} initial={nouns} onChange={setNouns} selectedId={selectedNounId} onSelect={setSelectedNounId} showCollapse={showCollapse} />
-        {selected && (
-          <FiniteForms
-            root={selected}
-            showCollapse={showCollapse}
-            syncMorph={syncMorph}
-            morph={sharedMorph}
-            onMorphChange={setSharedMorph}
-            onToggleSync={()=>setSyncMorph(v=>!v)}
-          />
-        )}
-        {selected && (<RenderDerivations root={selected} showCollapse={showCollapse} onCreateNoun={addNounQuick} />)}
-      </div>
+      {/* Below: Roots, Nouns, Finite Forms, Derivations — hidden when Translator 2.0 is active */}
+      {composerTab!=='translator2' && (
+        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 items-start">
+          <RootEditor initial={roots} onChange={setRoots} selectedId={selectedId} onSelect={setSelectedId} showCollapse={showCollapse} onCreateNoun={addNounQuick} />
+          <NounEditor key={nounsKey} initial={nouns} onChange={setNouns} selectedId={selectedNounId} onSelect={setSelectedNounId} showCollapse={showCollapse} />
+          {selected && (
+            <FiniteForms
+              root={selected}
+              showCollapse={showCollapse}
+              syncMorph={syncMorph}
+              morph={sharedMorph}
+              onMorphChange={setSharedMorph}
+              onToggleSync={()=>setSyncMorph(v=>!v)}
+            />
+          )}
+          {selected && (<RenderDerivations root={selected} showCollapse={showCollapse} onCreateNoun={addNounQuick} />)}
+        </div>
+      )}
     </div>
       {dataOpen && (
         <>
@@ -350,6 +369,7 @@ export default function NightTongueApp(){
                   </label>
                 </div>
               </div>
+              {/* Translator 2.0 settings moved to Translator 2.0 UI */}
               {/* Data controls moved to the Data popup */}
             </div>
           </div>
@@ -366,7 +386,7 @@ export default function NightTongueApp(){
           <div className="w-full max-w-md rounded-2xl border border-neutral-200 bg-white fantasy-card p-5">
             <h3 className="text-xl font-semibold mb-2">Are you sure?</h3>
             <p className="text-sm text-neutral-700 mb-4">
-              This will remove all Night‑tongue data and settings from your browser, including Verb Roots, Nouns, Talk Pad state, and interface preferences. This action cannot be undone.
+              This will remove all Moontalk data and settings from your browser, including Verb Roots, Nouns, Talk Pad state, and interface preferences. This action cannot be undone.
             </p>
             <div className="flex items-center justify-end gap-2">
               <button className="px-3 py-2 rounded-lg border border-neutral-300 hover:bg-neutral-50" onClick={()=>setConfirmResetOpen(false)}>Cancel</button>

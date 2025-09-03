@@ -79,19 +79,21 @@ export default function FiniteForms({ root, showCollapse = false, syncMorph = fa
           <Toggle label="Progressive" info="Geminate C2 before tense vowel." checked={effProg} onChange={(v)=> syncMorph ? onMorphChange?.({ neg: effNeg, prog: v, hab: effHab }) : setShowProg(v)} />
           <Toggle label="Habitual" info="Adds -ar for habitual." checked={effHab} onChange={(v)=> syncMorph ? onMorphChange?.({ neg: effNeg, prog: effProg, hab: v }) : setShowHab(v)} />
         </div>
-        <div className="relative group ml-3">
-          <button
-            type="button"
-            onClick={onToggleSync}
-            className={`text-xs px-2 py-0.5 rounded-full border select-none ${syncMorph ? 'border-emerald-300 text-emerald-700 bg-emerald-50' : 'border-neutral-300 text-neutral-700 bg-neutral-50 hover:bg-neutral-100'}`}
-            title={syncMorph ? 'Click to turn sync Off' : 'Click to turn sync On'}
-          >
-            {syncMorph ? 'Sync: On' : 'Sync: Off'}
-          </button>
-          <span className="pointer-events-none absolute left-1/2 -translate-x-1/2 top-full mt-2 z-50 hidden rounded-md border border-neutral-200 bg-white px-2.5 py-1.5 text-xs leading-snug text-neutral-900 shadow-xl whitespace-nowrap group-hover:block">
-            Sync Neg/Prog/Hab across panels
-          </span>
-        </div>
+        {onToggleSync && (
+          <div className="relative group ml-3">
+            <button
+              type="button"
+              onClick={onToggleSync}
+              className={`text-xs px-2 py-0.5 rounded-full border select-none ${syncMorph ? 'border-emerald-300 text-emerald-700 bg-emerald-50' : 'border-neutral-300 text-neutral-700 bg-neutral-50 hover:bg-neutral-100'}`}
+              title={syncMorph ? 'Click to turn sync Off' : 'Click to turn sync On'}
+            >
+              {syncMorph ? 'Sync: On' : 'Sync: Off'}
+            </button>
+            <span className="pointer-events-none absolute left-1/2 -translate-x-1/2 top-full mt-2 z-50 hidden rounded-md border border-neutral-200 bg-white px-2.5 py-1.5 text-xs leading-snug text-neutral-900 shadow-xl whitespace-nowrap group-hover:block">
+              Sync Neg/Prog/Hab across panels
+            </span>
+          </div>
+        )}
       </div>
       <div className="overflow-x-auto rounded-2xl shadow-sm border border-neutral-200">
         <table className="table-fixed w-full text-sm 2xl:text-base finite-table">

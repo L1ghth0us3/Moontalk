@@ -16,6 +16,17 @@ const uid = () => Math.random().toString(36).slice(2, 10);
 export default function RootEditor({ initial, onChange, selectedId, onSelect, showCollapse = false, onCreateNoun }: { initial: Root[]; onChange: (r: Root[])=>void; selectedId: string|null; onSelect: (id: string|null)=>void; showCollapse?: boolean; onCreateNoun?: (n: { word: string; gloss?: string; synonyms?: string[] }) => void; }){
   const [roots, setRoots] = useLocalStorageState<Root[]>(LS_KEYS.roots, initial);
   useEffect(()=>{ onChange(roots); }, [roots]);
+  // Duplicate detection by signature
+  const dupSigs = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const r of roots){
+      const sig = `${(r.c1||'').toLowerCase()}-${(r.c2||'').toLowerCase()}-${(r.c3||'').toLowerCase()}`;
+      counts.set(sig, (counts.get(sig)||0)+1);
+    }
+    const d = new Set<string>();
+    for (const [k,v] of counts){ if (v>1) d.add(k); }
+    return d;
+  }, [roots]);
 
   const selected = useMemo(()=> roots.find(r=>r.id===selectedId) ?? null, [roots, selectedId]);
   const [synonymsText, setSynonymsText] = useState("");
@@ -33,6 +44,24 @@ export default function RootEditor({ initial, onChange, selectedId, onSelect, sh
   const [expanded, setExpanded] = useState(false);
   const [query, setQuery] = useState("");
   const [showSearch, setShowSearch] = useLocalStorageState<boolean>(LS_KEYS.rootsSearchOpen, false);
+  const [dupGlossGroups, setDupGlossGroups] = useState<Array<{ term: string; ids: string[] }>>([]);
+  function normalizeGlossTerms(raw: string): string[] {
+    if (!raw) return [];
+    let s = raw.replace(/\([^)]*\)/g, '');
+    const parts = s.split(/[;,]/);
+    const STOP = new Set(['the','a','an','to']);
+    const out: string[] = [];
+    for (let part of parts){
+      part = part.toLowerCase();
+      part = part.replace(/[^a-z\s]/g, ' ').replace(/\s+/g, ' ').trim();
+      if (!part) continue;
+      const words = part.split(' ').filter(w => w && !STOP.has(w));
+      const term = words.join(' ').trim();
+      if (term) out.push(term);
+    }
+    return Array.from(new Set(out));
+  }
+  // no scan toast in RootEditor (scan lives in NounEditor)
 
   // Simple subsequence matcher for forgiving/fuzzy filtering
   function fuzzySubsequence(needle: string, hay: string){
@@ -61,6 +90,24 @@ export default function RootEditor({ initial, onChange, selectedId, onSelect, sh
     });
   }, [roots, query]);
 
+  // Duplicate gloss detection (fuzzy terms, non-empty)
+  useEffect(() => {
+    const map = new Map<string, string[]>();
+    for (const r of roots){
+      const terms = normalizeGlossTerms(r.gloss||'');
+      for (const t of terms){
+        const arr = map.get(t) || [];
+        if (!arr.includes(r.id)) arr.push(r.id);
+        map.set(t, arr);
+      }
+    }
+    const groups: Array<{ term:string; ids:string[] }> = [];
+    for (const [t,ids] of map){ if (ids.length>1) groups.push({ term: t, ids }); }
+    setDupGlossGroups(groups);
+  }, [roots]);
+
+  // removed scan function
+
   return (
     <>
     <section className="rounded-3xl border border-neutral-200 p-4 shadow-sm overflow-hidden fantasy-card">
@@ -82,7 +129,42 @@ export default function RootEditor({ initial, onChange, selectedId, onSelect, sh
       </div>
       {!collapsed && (
       <>
-      <RootCreator onCreate={addRoot} />
+      <div className="flex items-center gap-2">
+        <RootCreator onCreate={addRoot} />
+      </div>
+      {dupSigs.size>0 && (
+        <div className="mt-2 text-sm rounded-lg border border-red-300 text-red-700 bg-red-50 px-3 py-2">
+          <div className="font-semibold mb-1">Errors: duplicate verb roots</div>
+          <div className="flex flex-wrap gap-2">
+            {roots.map(r => {
+              const sig = `${(r.c1||'').toLowerCase()}-${(r.c2||'').toLowerCase()}-${(r.c3||'').toLowerCase()}`;
+              if (!dupSigs.has(sig)) return null;
+              return (
+                <button key={r.id} className="px-2 py-1 rounded border border-red-300 text-red-700 hover:bg-red-100 text-xs" onClick={()=>{ onSelect(r.id); setExpanded(true); }}>{[r.c1,r.c2,r.c3].join('-')} — {r.gloss||'(no gloss)'}</button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+      {dupGlossGroups.length>0 && (
+        <div className="mt-2 text-sm rounded-lg border border-red-300 text-red-700 bg-red-50 px-3 py-2">
+          <div className="font-semibold mb-1">Errors: duplicate verb gloss terms</div>
+          {dupGlossGroups.map((g,i)=> (
+            <div key={i} className="mb-1">
+              <div className="opacity-80">“{g.term}”</div>
+              <div className="flex flex-wrap gap-2 mt-1">
+                {g.ids.map(id => {
+                  const r = roots.find(x=>x.id===id);
+                  if (!r) return null;
+                  return (
+                    <button key={id} className="px-2 py-1 rounded border border-red-300 text-red-700 hover:bg-red-100 text-xs" onClick={()=>{ onSelect(id); setExpanded(true); }}>{[r.c1,r.c2,r.c3].join('-')}</button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
       {showSearch && (
         <div className="mt-3">
           <input
@@ -99,7 +181,7 @@ export default function RootEditor({ initial, onChange, selectedId, onSelect, sh
             key={r.id}
             onClick={() => onSelect(r.id)}
             onDoubleClick={()=>setExpanded(true)}
-            className={`w-full text-left px-3 py-2 rounded-xl border ${selectedId === r.id ? "border-blue-500 root-item--selected" : "border-neutral-200 hover:bg-neutral-50"}`}
+            className={`w-full text-left px-3 py-2 rounded-xl border ${selectedId === r.id ? "border-blue-500 root-item--selected" : (dupSigs.has(`${(r.c1||'').toLowerCase()}-${(r.c2||'').toLowerCase()}-${(r.c3||'').toLowerCase()}`) ? 'border-red-300 bg-red-50' : 'border-neutral-200 hover:bg-neutral-50')}`}
           >
             <div className="flex items-center justify-between gap-2 min-w-0">
               <div className="font-semibold text-lg shrink-0">{[r.c1, r.c2, r.c3].join("-")}</div>
@@ -135,9 +217,43 @@ export default function RootEditor({ initial, onChange, selectedId, onSelect, sh
                     onChange={e=>setQuery(e.target.value)}
                   />
                 </div>
+                {dupSigs.size>0 && (
+                  <div className="mt-2 text-sm rounded-lg border border-red-300 text-red-700 bg-red-50 px-3 py-2">
+                    <div className="font-semibold mb-1">Errors: duplicate verb roots</div>
+                    <div className="flex flex-wrap gap-2">
+                      {roots.map(r => {
+                        const sig = `${(r.c1||'').toLowerCase()}-${(r.c2||'').toLowerCase()}-${(r.c3||'').toLowerCase()}`;
+                        if (!dupSigs.has(sig)) return null;
+                        return (
+                          <button key={r.id} className="px-2 py-1 rounded border border-red-300 text-red-700 hover:bg-red-100 text-xs" onClick={()=>{ onSelect(r.id); }}>[{[r.c1,r.c2,r.c3].join('-')}] {r.gloss||'(no gloss)'}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+                {dupGlossGroups.length>0 && (
+                  <div className="mt-2 text-sm rounded-lg border border-red-300 text-red-700 bg-red-50 px-3 py-2">
+                    <div className="font-semibold mb-1">Errors: duplicate verb gloss terms</div>
+                    {dupGlossGroups.map((g,i)=> (
+                      <div key={i} className="mb-1">
+                        <div className="opacity-80">“{g.term}”</div>
+                        <div className="flex flex-wrap gap-2 mt-1">
+                          {g.ids.map(id => {
+                            const r = roots.find(x=>x.id===id);
+                            if (!r) return null;
+                            return (
+                              <button key={id} className="px-2 py-1 rounded border border-red-300 text-red-700 hover:bg-red-100 text-xs" onClick={()=>{ onSelect(id); }}>{[r.c1,r.c2,r.c3].join('-')}</button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 <div className="mt-3 max-h-[24rem] overflow-y-auto space-y-2 pr-1">
                   {filtered.map(r => (
-                    <button key={r.id} onClick={() => onSelect(r.id)} className={`w-full text-left px-3 py-2 rounded-xl border ${selectedId === r.id ? "border-blue-500 root-item--selected" : "border-neutral-200 hover:bg-neutral-50"}`}>
+                    <button key={r.id} onClick={() => onSelect(r.id)} className={`w-full text-left px-3 py-2 rounded-xl border ${selectedId === r.id ? "border-blue-500 root-item--selected" : (dupSigs.has(`${(r.c1||'').toLowerCase()}-${(r.c2||'').toLowerCase()}-${(r.c3||'').toLowerCase()}`) ? 'border-red-300 bg-red-50' : 'border-neutral-200 hover:bg-neutral-50')}`}>
                       <div className="flex items-center justify-between gap-2 min-w-0">
                         <div className="font-semibold text-lg shrink-0">{[r.c1, r.c2, r.c3].join("-")}</div>
                         <div className="text-xs text-neutral-500 truncate flex-1 min-w-0 text-right">{r.gloss || "(no gloss)"}</div>

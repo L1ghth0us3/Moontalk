@@ -13,7 +13,13 @@ export const LS_KEYS = {
   morphSync: "huntspeak_morph_sync",
   rootsSearchOpen: "huntspeak_roots_search_open",
   nounsSearchOpen: "huntspeak_nouns_search_open",
+  nounsFocus: "huntspeak_focus_noun",
   translator: "huntspeak_translator",
+  translator2UI: "huntspeak_translator2_ui",
+  translator2History: "huntspeak_translator2_history",
+  translator2Faves: "huntspeak_translator2_faves",
+  // Translator 2.0 configurable settings (e.g., coordinator word mapping)
+  translator2Settings: "huntspeak_translator2_settings",
   // Theme selection; value is one of: 'auto' | 'fantasy' | 'plain' | 'dark'
   theme: "huntspeak_theme",
 } as const;

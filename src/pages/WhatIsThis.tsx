@@ -1,9 +1,9 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { LS_KEYS } from "../lib/storage";
 
 export default function WhatIsThis(){
   useEffect(()=>{
-    document.title = "Night‑tongue — What is this";
+    document.title = "Moontalk — What is this";
     // Apply same theme class as the app (auto → fantasy/dark)
     try {
       const raw = localStorage.getItem(LS_KEYS.theme) || '"auto"';
@@ -50,7 +50,7 @@ export default function WhatIsThis(){
 
             <section id="purpose" className="mb-6">
               <h2 className="text-xl font-semibold mb-2">1) Purpose</h2>
-              <p>This is a gamer‑friendly Night‑tongue workbench. Make words (verbs/nouns), see handy forms/derivations, and compose quick RP lines you can drop in chat. It’s deliberately simple and fast—no deep linguistics degree required.</p>
+              <p>This is a gamer‑friendly Moontalk workbench. Make words (verbs/nouns), see handy forms/derivations, and compose quick RP lines you can drop in chat. It’s deliberately simple and fast—no deep linguistics degree required.</p>
             </section>
 
             <section id="core" className="mb-6">
@@ -136,7 +136,7 @@ export default function WhatIsThis(){
               <h2 className="text-xl font-semibold mb-2">7) Translator notes</h2>
               <ul className="list-disc ml-5 space-y-1">
                 <li>English “be / am / is / are / was / were / been / being” maps to the copula above; present equatives may drop the verb.</li>
-                <li>Noun matching is friendly: it looks at gloss and synonyms. English plurals are fine—Night‑tongue nouns don’t change.</li>
+                <li>Noun matching is friendly: it looks at gloss and synonyms. English plurals are fine—Huntspeak nouns don’t change.</li>
               </ul>
             </section>
 
