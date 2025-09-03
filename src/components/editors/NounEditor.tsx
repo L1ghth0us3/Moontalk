@@ -91,34 +91,38 @@ export default function NounEditor({ initial, onChange, selectedId, onSelect, sh
     setDupGlossGroups(groups);
   }, [nouns]);
 
+  function buildCollisions(currentNouns: Noun[]): { col: Set<string>; colDetail: Record<string, Array<{ form: string; root: string; gloss: string; pron: string; tense: string }>> }{
+    const roots: Root[] = lsGet<Root[]>(LS_KEYS.roots, [] as any);
+    const formMap = new Map<string, Array<{ form: string; root: string; gloss: string; pron: string; tense: string }>>();
+    for (const r of roots){
+      const rootSig = `${r.c1}${r.c2}${r.c3}`;
+      const gloss = r.gloss || '';
+      for (const p of PRONOUNS){
+        for (const t of TENSES){
+          const f = buildFinite(r as any, p.subjV, t.vowel);
+          const key = f.toLowerCase();
+          const arr = formMap.get(key) || [];
+          arr.push({ form: f, root: rootSig, gloss, pron: p.form, tense: t.label });
+          formMap.set(key, arr);
+        }
+      }
+    }
+    const col = new Set<string>();
+    const colDetail: Record<string, Array<{ form: string; root: string; gloss: string; pron: string; tense: string }>> = {};
+    for (const n of currentNouns){
+      const key = (n.word||'').toLowerCase();
+      const hits = formMap.get(key);
+      if (hits && hits.length){
+        col.add(n.id);
+        colDetail[n.id] = hits;
+      }
+    }
+    return { col, colDetail };
+  }
+
   function scanVerbCollisions(){
     try {
-      const roots: Root[] = lsGet<Root[]>(LS_KEYS.roots, [] as any);
-      // Build form -> details map
-      const formMap = new Map<string, Array<{ form: string; root: string; gloss: string; pron: string; tense: string }>>();
-      for (const r of roots){
-        const rootSig = `${r.c1}${r.c2}${r.c3}`;
-        const gloss = r.gloss || '';
-        for (const p of PRONOUNS){
-          for (const t of TENSES){
-            const f = buildFinite(r as any, p.subjV, t.vowel);
-            const key = f.toLowerCase();
-            const arr = formMap.get(key) || [];
-            arr.push({ form: f, root: rootSig, gloss, pron: p.form, tense: t.label });
-            formMap.set(key, arr);
-          }
-        }
-      }
-      const col = new Set<string>();
-      const colDetail: Record<string, Array<{ form: string; root: string; gloss: string; pron: string; tense: string }>> = {};
-      for (const n of nouns){
-        const key = (n.word||'').toLowerCase();
-        const hits = formMap.get(key);
-        if (hits && hits.length){
-          col.add(n.id);
-          colDetail[n.id] = hits;
-        }
-      }
+      const { col, colDetail } = buildCollisions(nouns);
       setColliding(col);
       setCollisions(colDetail);
       if (col.size > 0) {
@@ -132,6 +136,15 @@ export default function NounEditor({ initial, onChange, selectedId, onSelect, sh
       }
     } catch { setColliding(new Set()); setScanned(true); }
   }
+
+  // Auto-update collisions while panel is visible (e.g., after deletions)
+  useEffect(() => {
+    if (!scanned) return;
+    const { col, colDetail } = buildCollisions(nouns);
+    setColliding(col);
+    setCollisions(colDetail);
+    if (col.size === 0) setScanned(false);
+  }, [nouns, scanned]);
 
   return (
     <>
@@ -256,6 +269,31 @@ export default function NounEditor({ initial, onChange, selectedId, onSelect, sh
                 <div className="mt-3">
                   <input className="w-full px-3 py-2 rounded-lg border border-neutral-300" placeholder="Search nouns (word, gloss, synonyms)" value={query} onChange={e=>setQuery(e.target.value)} />
                 </div>
+                {scanned && colliding.size>0 && (
+                  <div className="mt-2 text-sm rounded-lg border border-amber-300 text-amber-700 bg-amber-50 px-3 py-2">
+                    <div className="font-semibold mb-1">Warnings: {colliding.size} noun{colliding.size===1?'':'s'} collide with verb forms</div>
+                    <div className="space-y-1 max-h-40 overflow-auto pr-1">
+                      {Array.from(colliding).map(id => {
+                        const n = nouns.find(x=>x.id===id);
+                        if (!n) return null;
+                        const hits = collisions[id] || [];
+                        return (
+                          <div key={id} className="border border-amber-200 rounded-md px-2 py-1 bg-amber-50/50">
+                            <button className="font-medium underline underline-offset-2" onClick={()=>{ onSelect(id); }}>{n.word}</button>
+                            <div className="text-xs mt-1">
+                              {hits.slice(0,6).map((h,idx)=> (
+                                <span key={idx} className="inline-block mr-2 mb-1 px-1.5 py-0.5 rounded border border-amber-200 bg-white text-amber-700">
+                                  {h.form} <span className="opacity-70">({h.pron}, {h.tense}; {h.root}{h.gloss?` — ${h.gloss}`:''})</span>
+                                </span>
+                              ))}
+                              {hits.length>6 && <span className="opacity-70">(+{hits.length-6} more)</span>}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
                 <div className="mt-3 max-h-[24rem] overflow-y-auto space-y-2 pr-1">
                   {filtered.map(n => (
                     <button key={n.id} onClick={() => onSelect(n.id)} className={`w-full text-left px-3 py-2 rounded-xl border ${selectedId === n.id ? "border-blue-500 noun-item--selected" : "border-neutral-200 hover:bg-neutral-50"}`}>
