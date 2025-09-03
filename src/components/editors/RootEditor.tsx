@@ -177,17 +177,23 @@ export default function RootEditor({ initial, onChange, selectedId, onSelect, sh
       )}
       <div className="mt-3 max-h-[20rem] overflow-y-auto space-y-2 pr-1">
         {(showSearch && query ? filtered : roots).map(r => (
-          <button
-            key={r.id}
-            onClick={() => onSelect(r.id)}
-            onDoubleClick={()=>setExpanded(true)}
-            className={`w-full text-left px-3 py-2 rounded-xl border ${selectedId === r.id ? "border-blue-500 root-item--selected" : (dupSigs.has(`${(r.c1||'').toLowerCase()}-${(r.c2||'').toLowerCase()}-${(r.c3||'').toLowerCase()}`) ? 'border-red-300 bg-red-50' : 'border-neutral-200 hover:bg-neutral-50')}`}
-          >
-            <div className="flex items-center justify-between gap-2 min-w-0">
-              <div className="font-semibold text-lg shrink-0">{[r.c1, r.c2, r.c3].join("-")}</div>
-              <div className="text-xs text-neutral-500 truncate flex-1 min-w-0 text-right">{r.gloss || "(no gloss)"}</div>
-            </div>
-          </button>
+          <div key={r.id} className="flex items-center gap-2">
+            <button
+              onClick={() => onSelect(r.id)}
+              onDoubleClick={()=>setExpanded(true)}
+              className={`flex-1 text-left px-3 py-2 rounded-xl border ${selectedId === r.id ? "border-blue-500 root-item--selected" : (dupSigs.has(`${(r.c1||'').toLowerCase()}-${(r.c2||'').toLowerCase()}-${(r.c3||'').toLowerCase()}`) ? 'border-red-300 bg-red-50' : 'border-neutral-200 hover:bg-neutral-50')}`}
+            >
+              <div className="flex items-center justify-between gap-2 min-w-0">
+                <div className="font-semibold text-lg shrink-0">{[r.c1, r.c2, r.c3].join("-")}</div>
+                <div className="text-xs text-neutral-500 truncate flex-1 min-w-0 text-right">{r.gloss || "(no gloss)"}</div>
+              </div>
+            </button>
+            <button
+              className="px-2 py-1 rounded border border-neutral-300 hover:bg-neutral-50 text-xs shrink-0"
+              title="Copy root"
+              onClick={(e)=>{ e.stopPropagation(); try { navigator.clipboard.writeText([r.c1,r.c2,r.c3].join('-')); } catch {} }}
+            >Copy</button>
+          </div>
         ))}
         {!(showSearch && query ? filtered.length : roots.length) && (
           <div className="text-neutral-500 text-sm">{showSearch && query ? 'No matching roots.' : 'No roots yet. Add one above.'}</div>
