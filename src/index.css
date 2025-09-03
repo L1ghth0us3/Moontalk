@@ -246,6 +246,32 @@ body.theme-fantasy .result-card .copy-btn { border-color: #7ccaa1; }
 body.theme-dark .result-card { background: #152019; border-color: #5ea585 !important; }
 body.theme-dark .result-card .copy-btn { border-color: #5ea585; }
 
+/* Badges for analysis status */
+.badge { border-width: 1px; border-radius: 9999px; padding: 0.125rem 0.5rem; font-weight: 600; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 0.25rem; }
+body.theme-plain .badge-fuzzy { background: #FEF3C7; color: #92400E; border-color: #FDE68A; }
+body.theme-fantasy .badge-fuzzy { background: #3a321c; color: #f8f8f2; border-color: #a5812a; }
+body.theme-dark .badge-fuzzy { background: #2a2413; color: #eae6df; border-color: #a5812a; }
+body.theme-plain .badge-exact { background: #DCFCE7; color: #065F46; border-color: #86EFAC; }
+body.theme-fantasy .badge-exact { background: #1e2c24; color: #a7f3d0; border-color: #34d399; }
+body.theme-dark .badge-exact { background: #17241d; color: #ccebdc; border-color: #34d399; }
+
+/* Analysis panel (Translator 2.0) */
+body.theme-plain .analysis-panel {
+  background: #f8fafc; /* slate-50 */
+  color: #111827;      /* gray-900 */
+  border-color: #e5e7eb; /* neutral-200 */
+}
+body.theme-fantasy .analysis-panel {
+  background: #1e2030; /* matches inputs */
+  color: #f8f8f2;
+  border-color: #44475a;
+}
+body.theme-dark .analysis-panel {
+  background: #191823; /* matches inputs */
+  color: #eae6df;
+  border-color: #3a3345;
+}
+
 /* Simple modal pop-in animation for expanded panels */
 @keyframes modalPopIn {
   0% { opacity: 0; transform: scale(0.96) translateY(6px); }

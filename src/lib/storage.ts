@@ -14,6 +14,9 @@ export const LS_KEYS = {
   rootsSearchOpen: "huntspeak_roots_search_open",
   nounsSearchOpen: "huntspeak_nouns_search_open",
   translator: "huntspeak_translator",
+  translator2UI: "huntspeak_translator2_ui",
+  translator2History: "huntspeak_translator2_history",
+  translator2Faves: "huntspeak_translator2_faves",
   // Theme selection; value is one of: 'auto' | 'fantasy' | 'plain' | 'dark'
   theme: "huntspeak_theme",
 } as const;

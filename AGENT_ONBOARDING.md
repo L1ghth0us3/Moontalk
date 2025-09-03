@@ -1,4 +1,4 @@
-# Agent Onboarding — Night‑tongue
+# Agent Onboarding — Moontalk
 
 Use this file to get productive fast. It summarizes the architecture, where to make changes, and how to verify work. Keep this close when adding features or refactoring.
 
@@ -9,7 +9,7 @@ Use this file to get productive fast. It summarizes the architecture, where to m
 - `npm run lint`: ESLint across the project.
 
 ## Architecture
-- Entry: `src/main.tsx` → `src/App.tsx` (simple pathname switch) → `src/NightTongueApp.tsx` (app shell)
+- Entry: `src/main.tsx` → `src/App.tsx` (simple pathname switch) → `src/MoontalkApp.tsx` (app shell)
 - UI Panels:
   - `components/TalkPad.tsx`: guided sentence builder.
   - `components/FreeTranslator.tsx`: simple English→Huntspeak (1‑verb lines) with copula/existential handling.
@@ -64,6 +64,12 @@ Use this file to get productive fast. It summarizes the architecture, where to m
 - Tags mark releases (e.g., `v1.2.0`).
 - Keep changes focused; use Conventional Commit prefixes (feat/fix/chore/docs...).
 
+### Commit Discipline (imperative)
+- Always work on the current `*-dev` branch (e.g., `1.4-dev`). If unsure, create/switch to the latest `*-dev` branch.
+- Commit after every instruction/task step with a clear, Conventional Commit message. Keep commits small and logically scoped to enable easy reverts.
+- Include any file moves/renames in the same commit (use `git add -A`).
+- Treat this as a professional local dev workflow: no uncommitted work between steps; prefer incremental, revertible commits.
+
 ## Validation
 - No test runner configured yet. Prefer adding Vitest + React Testing Library.
 - Until tests: `npm run build` for type safety and spin `npm run dev` for a smoke run.
@@ -74,7 +80,7 @@ Use this file to get productive fast. It summarizes the architecture, where to m
 - i18n/UX: favor short labels; keep forms and cards light; support keyboard nav where feasible.
 
 ## Quick Orientation (15 min)
-1) Skim `NightTongueApp.tsx` for wiring, modals, and theme handling.
+1) Skim `MoontalkApp.tsx` for wiring, modals, and theme handling.
 2) Open `components/TalkPad.tsx` to see sentence composition and toggles.
 3) Open `lib/morphology.ts` to understand how forms are built.
 4) Explore `editors/` for how Roots/Nouns persist and filter.
@@ -87,7 +93,7 @@ Use this file to get productive fast. It summarizes the architecture, where to m
 - Add simple render tests for Talk Pad and Finite Forms’ toggle interactions.
 
 ## Contact Points in Code
-- Theme key: `LS_KEYS.theme` used by `NightTongueApp`.
+- Theme key: `LS_KEYS.theme` used by `MoontalkApp`.
 - Shared morph state: `LS_KEYS.morphToggles`/`LS_KEYS.morphSync`.
 - Translator: see copula and mapping logic in `FreeTranslator.tsx`.
 

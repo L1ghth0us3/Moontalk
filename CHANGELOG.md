@@ -3,6 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [1.4.0-next] - Unreleased
+ - Rebrand: app name is now Moontalk (the language remains Huntspeak). Updated titles, header, info page, and docs; reverted any language mentions that were incorrectly changed to Night‑tongue back to Huntspeak.
+ - Experimental: Translator 2.0 — added third tab with a fresh translator surface. Defines internal contracts (LexiconEntryVerb/Noun, SemanticFrame, Result), two‑panel layout, and a stub Translate action that echoes inputs and shows a JSON analysis.
 
 ## [1.3.0] - 2025-09-03
 

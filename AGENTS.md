@@ -2,7 +2,7 @@
 
 ## Project Structure & Module Organization
 - Source: `src/` (entry `src/main.tsx`, app shell `src/App.tsx`).
-- UI: `src/NightTongueApp.tsx` (core logic + subcomponents), styles in `src/index.css` (Tailwind v4 via `@tailwindcss/vite`).
+- UI: `src/MoontalkApp.tsx` (core logic + subcomponents), styles in `src/index.css` (Tailwind v4 via `@tailwindcss/vite`).
 - Assets: `src/assets/`.
 - Build config: `vite.config.ts`, TypeScript configs: `tsconfig.*.json`.
 
