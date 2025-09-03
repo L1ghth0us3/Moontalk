@@ -756,7 +756,7 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
       {/* Left: English input + Favorites + Guide */}
       <div>
         <label className="block mb-3">
-          <div className="text-xs uppercase tracking-wide text-neutral-500 mb-1">English line (experimental)</div>
+          <div className="text-xs uppercase tracking-wide text-neutral-500 mb-1">English line</div>
           <input
             className="w-full border rounded-lg px-2 py-2"
             placeholder="Type an English line..."
@@ -776,6 +776,47 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
         {/* Controls removed: particles */}
 
         <button className="px-3 py-2 rounded-lg border border-neutral-300 hover:bg-neutral-50" onClick={onTranslate}>Translate</button>
+
+        {/* Favorites list */}
+        <div className="mt-4">
+          <div className="flex items-center justify-between mb-1">
+            <div className="text-xs uppercase tracking-wide text-neutral-500">My Phrases</div>
+            {faves.length>0 && (
+              <button className="text-xs px-2 py-1 rounded border border-neutral-300 hover:bg-neutral-50" onClick={()=>setFaves([])}>Clear</button>
+            )}
+          </div>
+          {faves.length ? (
+            <div className="flex flex-col gap-1">
+              {faves.map(f => (
+                <div key={f.id} className="flex items-center gap-2 text-sm">
+                  <button className="px-2 py-1 rounded border border-neutral-300 hover:bg-neutral-50" onClick={()=>{ try { navigator.clipboard.writeText(f.surface); } catch {} }}>Copy</button>
+                  <button className="px-2 py-1 rounded border border-neutral-300 hover:bg-neutral-50" title="Remove favorite" onClick={()=> setFaves(prev=>prev.filter(x=>x.id!==f.id))}>★</button>
+                  <div className="truncate" title={f.input ? `${f.surface} — ${f.input}` : f.surface}>{f.surface}{f.input ? ` — ${f.input}` : ''}</div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-sm text-neutral-500">None starred yet.</div>
+          )}
+        </div>
+
+        {/* Usage guide */}
+        <div className="mt-4 p-3 rounded-xl border border-neutral-200 fantasy-card text-sm leading-6">
+          <div className="text-xs uppercase tracking-wide text-neutral-500 mb-1">How to use</div>
+          <ul className="list-disc ml-5 space-y-1">
+            <li>Subjects: i / you / he / she / we / they</li>
+            <li>Tense: will → future; did/was/were → past</li>
+            <li>Negation: not, don't, didn't, won't → negative</li>
+            <li>Progressive: be + -ing (am/is/are/was/were hiding) → progressive</li>
+            <li>Habitual: used to → habitual</li>
+            <li>Particles: with → ri; to → ith; from → ʌs; in/at → la</li>
+            <li>Coordination: and/or/nor/but join verbs and nouns (joiners editable in Settings)</li>
+            <li>Objects: me/us/you/him/her/them → ɪ/tɪ/su/se/se/te</li>
+          </ul>
+          <div className="mt-2 text-xs text-neutral-600">
+            Example: “we hunt with trap in shroud and hunter smell us and strike us” → tɪ kɪlab ri maklūb la sharūd ʋa kalāb χeraq ʋa derek tɪ
+          </div>
+        </div>
         {/* Hidden: dev Example Tests builder — removed from UI */}
         <button className="hidden" onClick={()=>{
           // Helpers that consult the current lexicon
@@ -918,8 +959,6 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
         <div className="flex items-center justify-between">
           <div className="text-xs uppercase tracking-wide text-neutral-500 mb-1">Huntspeak</div>
           <div className="flex items-center gap-2">
-            <button className="px-2 py-1 rounded border border-neutral-300 hover:bg-neutral-50 text-sm" onClick={() => { try { navigator.clipboard.writeText(result?.surface || ""); } catch {} }}>Copy</button>
-            <button className="px-2 py-1 rounded border border-neutral-300 hover:bg-neutral-50 text-sm" onClick={()=>setShowJSON(v=>!v)}>{showJSON ? 'Hide JSON' : 'Show JSON'}</button>
             <button
               className="px-2 py-1 rounded border border-neutral-300 hover:bg-neutral-50 text-sm"
               onClick={() => {
@@ -941,6 +980,8 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
               const exists = surface && faves.some(f => f.surface===surface && f.input===inputLine);
               return exists ? '★ Favorite' : '☆ Favorite';
             })()}</button>
+            <button className="px-2 py-1 rounded border border-neutral-300 hover:bg-neutral-50 text-sm" onClick={() => { try { navigator.clipboard.writeText(result?.surface || ""); } catch {} }}>Copy</button>
+            <button className="px-2 py-1 rounded border border-neutral-300 hover:bg-neutral-50 text-sm" onClick={()=>setShowJSON(v=>!v)}>{showJSON ? 'Hide JSON' : 'Show JSON'}</button>
           </div>
         </div>
         <div className="text-xl font-semibold mb-3 min-h-10">
