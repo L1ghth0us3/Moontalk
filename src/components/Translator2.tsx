@@ -1007,31 +1007,18 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
           const frm = built?.frame;
           if (!frm) return null;
           const subjHS = hsSubjectFor(frm.subject);
-          const verb = frm.verbRootId ? verbsLex.find(v=>v.id===frm.verbRootId) : null;
-          const verbForm = verb ? conjFinite(verb, subjHS, frm.tense, { prog: frm.prog, hab: frm.hab, neg: frm.neg }) : '—';
           const objects = frm.objects.map(id => wordOfNounId(id)).join(', ') || '—';
           const particles = pairParticlesWithNounsFromTokens(intakeTokens).map(p => `${p.part} ${wordOfNounId(p.nounId)}`).join(' • ') || '—';
-          const flags = [frm.prog?'Prog':null, frm.hab?'Hab':null, frm.neg?'Neg':null].filter(Boolean).join(', ') || '—';
           const coord = detectCoordination(intakeTokens);
           const verbsAll = detectAllVerbs(intakeTokens);
           const nounsAll = detectAllNouns(intakeTokens);
           const coordSummary = coord.lists.length ? coord.lists.map(l => `${l.role}:${l.type} [${l.items.map(it=>it.text).join(', ')}]`).join(' • ') : '—';
-          const usedFuzzy = (built?.resolutionLog || []).some(line => /fuzzy/.test(line));
+          const resLog = built?.resolutionLog || [];
           return (
             <div className="rounded-lg border p-2 analysis-panel">
               <div className="grid grid-cols-[10rem_1fr] gap-x-4 gap-y-1 text-sm">
                 <div className="opacity-70">Subject</div><div>{subjHS.form} <span className="opacity-60">({frm.subject})</span></div>
-                <div className="opacity-70">Verb</div><div>{verb ? `${verb.c1}${verb.c2}${verb.c3} — ${verb.gloss}` : '—'}</div>
-                <div className="opacity-70">Verbs (all)</div><div>{verbsAll.length ? verbsAll.map(v=>`${v.c1}${v.c2}${v.c3} — ${v.gloss}`).join(' • ') : '—'}</div>
-                <div className="opacity-70">Form</div><div>{verbForm}</div>
-                <div className="opacity-70">Tense</div><div>{frm.tense}</div>
-                <div className="opacity-70">Flags</div><div>{flags}</div>
-                <div className="opacity-70">Match quality</div>
-                <div>{usedFuzzy ? (
-                  <span className="badge badge-fuzzy">Fuzzy (≤1 edit)</span>
-                ) : (
-                  <span className="badge badge-exact">Exact</span>
-                )}</div>
+                <div className="opacity-70">Verbs</div><div>{verbsAll.length ? verbsAll.map(v=>`${v.c1}${v.c2}${v.c3} — ${v.gloss}`).join(' • ') : '—'}</div>
                 <div className="opacity-70">Objects</div><div>{objects}</div>
                 <div className="opacity-70">Particles</div><div>{particles}</div>
                 <div className="opacity-70">Coordination</div><div>{coordSummary}</div>
@@ -1046,8 +1033,13 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
                       <div key={v.id+':'+i} className="min-w-[16rem] rounded-lg border p-2 sub-panel">
                         <div className="text-sm font-medium mb-1">{v.c1}{v.c2}{v.c3} — {v.gloss || '(verb)'}</div>
                         <div className="text-sm"><span className="opacity-70">Form:</span> {conjFinite(v, subjHS, frm.tense, { prog: frm.prog, hab: frm.hab, neg: frm.neg })}</div>
-                        <div className="text-sm"><span className="opacity-70">Tense:</span> {frm.tense}</div>
-                        <div className="text-sm"><span className="opacity-70">Flags:</span> {flags}</div>
+                        <div className="mt-1">
+                          {resLog.some(line => line.includes(`${v.c1}${v.c2}${v.c3}`) && /fuzzy/.test(line)) ? (
+                            <span className="badge badge-fuzzy">Fuzzy (≤1 edit)</span>
+                          ) : (
+                            <span className="badge badge-exact">Exact</span>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -1068,6 +1060,13 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
                           <div className="text-sm font-medium mb-1">{n.word}{n.gloss?` — ${n.gloss}`:''}</div>
                           <div className="text-sm"><span className="opacity-70">Role:</span> {inObj? 'Object' : pair? `PP (${pair.part})` : '—'}</div>
                           <div className="text-sm"><span className="opacity-70">Coord:</span> {npList ? `${npList.type}` : '—'}</div>
+                          <div className="mt-1">
+                            {resLog.some(line => line.includes(`→ '${n.word}'`) && /fuzzy/.test(line)) ? (
+                              <span className="badge badge-fuzzy">Fuzzy (≤1 edit)</span>
+                            ) : (
+                              <span className="badge badge-exact">Exact</span>
+                            )}
+                          </div>
                         </div>
                       );
                     })}
