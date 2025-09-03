@@ -41,10 +41,7 @@ export default function MoontalkApp(){
   const [confirmResetOpen, setConfirmResetOpen] = useState(false);
   const [syncMorph, setSyncMorph] = useLocalStorageState<boolean>(LS_KEYS.morphSync, true);
   const [sharedMorph, setSharedMorph] = useLocalStorageState<{neg:boolean;prog:boolean;hab:boolean}>(LS_KEYS.morphToggles, {neg:false,prog:false,hab:false});
-  // Translator 2.0 Settings: coordinator mapping
-  const [t2Settings, setT2Settings] = useLocalStorageState(LS_KEYS.translator2Settings, {
-    coordinators: { AND: 'ʋa', OR: 'ra', NOR: 'ra', BUT: 'ma' }
-  });
+  // Translator 2.0 settings managed within Translator2 component
   const [nounsKey, setNounsKey] = useState(0);
 
   // One-time migration: ensure new default roots (e.g., "to be") are present
@@ -372,44 +369,7 @@ export default function MoontalkApp(){
                   </label>
                 </div>
               </div>
-              <div className="pt-2 border-t border-neutral-200/70">
-                <div className="text-sm font-medium mb-2">Translator 2.0 — Coordinator Mapping</div>
-                <div className="grid grid-cols-2 gap-3">
-                  <label className="block">
-                    <div className="text-xs uppercase tracking-wide text-neutral-500 mb-1">AND</div>
-                    <input
-                      className="w-full border rounded-lg px-2 py-2"
-                      value={t2Settings.coordinators.AND}
-                      onChange={e=>setT2Settings(s=>({ ...s, coordinators: { ...s.coordinators, AND: e.target.value } }))}
-                    />
-                  </label>
-                  <label className="block">
-                    <div className="text-xs uppercase tracking-wide text-neutral-500 mb-1">OR</div>
-                    <input
-                      className="w-full border rounded-lg px-2 py-2"
-                      value={t2Settings.coordinators.OR}
-                      onChange={e=>setT2Settings(s=>({ ...s, coordinators: { ...s.coordinators, OR: e.target.value } }))}
-                    />
-                  </label>
-                  <label className="block">
-                    <div className="text-xs uppercase tracking-wide text-neutral-500 mb-1">NOR</div>
-                    <input
-                      className="w-full border rounded-lg px-2 py-2"
-                      value={t2Settings.coordinators.NOR}
-                      onChange={e=>setT2Settings(s=>({ ...s, coordinators: { ...s.coordinators, NOR: e.target.value } }))}
-                    />
-                  </label>
-                  <label className="block">
-                    <div className="text-xs uppercase tracking-wide text-neutral-500 mb-1">BUT</div>
-                    <input
-                      className="w-full border rounded-lg px-2 py-2"
-                      value={t2Settings.coordinators.BUT}
-                      onChange={e=>setT2Settings(s=>({ ...s, coordinators: { ...s.coordinators, BUT: e.target.value } }))}
-                    />
-                  </label>
-                </div>
-                <div className="text-xs text-neutral-600 mt-1">Example: set OR = "ru" to join with “ru”.</div>
-              </div>
+              {/* Translator 2.0 settings moved to Translator 2.0 UI */}
               {/* Data controls moved to the Data popup */}
             </div>
           </div>

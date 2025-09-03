@@ -91,9 +91,11 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
   const [testsOpen, setTestsOpen] = useState(false);
   const [showJSON, setShowJSON] = useState(false);
   // Settings: coordinator join words (defaults: AND=ʋa, OR=ra, NOR=ra, BUT=ma)
-  const [t2Settings] = useLocalStorageState(LS_KEYS.translator2Settings, {
-    coordinators: { AND: 'ʋa', OR: 'ra', NOR: 'ra', BUT: 'ma' }
+  const [t2Settings, setT2Settings] = useLocalStorageState(LS_KEYS.translator2Settings, {
+    coordinators: { AND: 'ʋa', OR: 'ra', NOR: 'ra', BUT: 'ma' },
+    particles: { ri: 'with; instrument', ith: 'to; goal', 'ʌs': 'from; source', la: 'in/at; location' },
   });
+  const [t2SettingsOpen, setT2SettingsOpen] = useState(false);
 
   // ===== English intake (normalizer + tokenizer) =====
   type IntakeToken = { text: string; start: number; end: number };
@@ -1051,6 +1053,7 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
             })()}</button>
             <button className="px-2 py-1 rounded border border-neutral-300 hover:bg-neutral-50 text-sm" onClick={() => { try { navigator.clipboard.writeText(result?.surface || ""); } catch {} }}>Copy</button>
             <button className="px-2 py-1 rounded border border-neutral-300 hover:bg-neutral-50 text-sm" onClick={()=>setShowJSON(v=>!v)}>{showJSON ? 'Hide JSON' : 'Show JSON'}</button>
+            <button className="px-2 py-1 rounded border border-neutral-300 hover:bg-neutral-50 text-sm" onClick={()=>setT2SettingsOpen(true)}>Settings</button>
           </div>
         </div>
         <div className="text-xl font-semibold mb-3 min-h-10">
@@ -1208,10 +1211,10 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
               {/* Particles row */}
               {(() => {
                 const PARTICLE_INFO: Record<string, { en: string; triggers: string[] }> = {
-                  ri: { en: 'with; instrument', triggers: ['with'] },
-                  ith: { en: 'to; goal', triggers: ['to'] },
-                  'ʌs': { en: 'from; source', triggers: ['from'] },
-                  la: { en: 'in/at; location', triggers: ['in','at'] },
+                  ri: { en: (t2Settings as any).particles?.ri || 'with; instrument', triggers: ['with'] },
+                  ith: { en: (t2Settings as any).particles?.ith || 'to; goal', triggers: ['to'] },
+                  'ʌs': { en: (t2Settings as any).particles?.['ʌs'] || 'from; source', triggers: ['from'] },
+                  la: { en: (t2Settings as any).particles?.la || 'in/at; location', triggers: ['in','at'] },
                 };
                 const pairs = pairParticlesWithNounsFromTokens(intakeTokens);
                 if (!pairs.length) return null;
@@ -1344,6 +1347,44 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
                   </div>
                 ))}
                 {!tests?.length && <div className="text-neutral-600">No results.</div>}
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+      {t2SettingsOpen && (
+        <>
+          <div className="fixed inset-0 bg-black/50 z-50" onClick={()=>setT2SettingsOpen(false)}></div>
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={(e)=>{ if (e.target===e.currentTarget) setT2SettingsOpen(false); }}>
+            <div className="w-full max-w-lg rounded-2xl border border-neutral-200 bg-white fantasy-card p-5">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-xl font-semibold">Translator 2.0 Settings</h3>
+                <button className="px-3 py-1 rounded-lg border border-neutral-300 hover:bg-neutral-50" onClick={()=>setT2SettingsOpen(false)}>Close</button>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <div className="text-sm font-medium mb-2">Coordinator Mapping</div>
+                  <div className="grid grid-cols-2 gap-3">
+                    {(['AND','OR','NOR','BUT'] as const).map(k => (
+                      <label key={k} className="block">
+                        <div className="text-xs uppercase tracking-wide text-neutral-500 mb-1">{k}</div>
+                        <input className="w-full border rounded-lg px-2 py-2" value={t2Settings.coordinators[k]} onChange={e=>setT2Settings(s=>({ ...s, coordinators: { ...s.coordinators, [k]: e.target.value } }))} />
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <div className="pt-2 border-t border-neutral-200/70">
+                  <div className="text-sm font-medium mb-2">Particles Translation</div>
+                  <div className="grid grid-cols-2 gap-3">
+                    {(['ri','ith','ʌs','la'] as const).map(p => (
+                      <label key={p} className="block">
+                        <div className="text-xs uppercase tracking-wide text-neutral-500 mb-1">{p}</div>
+                        <input className="w-full border rounded-lg px-2 py-2" value={(t2Settings as any).particles?.[p] || ''} onChange={e=>setT2Settings(s=>({ ...s, particles: { ...(s as any).particles, [p]: e.target.value } }))} />
+                      </label>
+                    ))}
+                  </div>
+                  <div className="text-xs text-neutral-600 mt-1">These labels appear in analysis under Particles.</div>
+                </div>
               </div>
             </div>
           </div>
