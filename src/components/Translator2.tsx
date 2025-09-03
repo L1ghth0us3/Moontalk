@@ -168,56 +168,73 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
     return unk;
   }, [intakeTokens, englishInput]);
 
-  // Detect coordinated NP lists (basic): AND/OR/NOR/BUT; supports either/or, neither/nor, not only/but (also), as well as, plus
+  // Detect coordination lists for NP and VP (supports either/or, neither/nor, not only/but, as well as, plus)
   type CoordType = 'AND'|'OR'|'NOR'|'BUT';
-  function detectCoordination(tokens: IntakeToken[]): { lists: { type: CoordType; role: 'NP'; items: Array<{ text: string; nounId?: string }> }[]; markers: string[] }{
-    const lists: { type: CoordType; role: 'NP'; items: Array<{ text: string; nounId?: string }> }[] = [];
-    const markers: string[] = [];
-    let pending: Array<{ text: string; nounId?: string }> = [];
-    let pendingType: CoordType | null = null;
-    let eitherSeen = false, neitherSeen = false, notOnlySeen = false, asWellPtr = 0; // track multiword sequences
-    for (let i=0;i<tokens.length;i++){
-      const w = tokens[i].text;
-      const next = tokens[i+1]?.text;
-      // multiword helpers
-      if (w === 'either') eitherSeen = true;
-      if (w === 'neither') neitherSeen = true;
-      if (w === 'not' && next === 'only') { notOnlySeen = true; i++; continue; }
-      if (w === 'as' && next === 'well' && tokens[i+2]?.text === 'as') { markers.push('as well as'); pendingType = 'AND'; i+=2; continue; }
-      if (w === 'plus') { markers.push('plus'); pendingType = 'AND'; continue; }
+  function detectCoordination(tokens: IntakeToken[]): { lists: { type: CoordType; role: 'NP'|'VP'; items: Array<{ text: string; nounId?: string; verbId?: string }> }[]; markers: string[] }{
+    const markersSet = new Set<string>();
+    const lists: { type: CoordType; role: 'NP'|'VP'; items: Array<{ text: string; nounId?: string; verbId?: string }> }[] = [];
+    function collect(role: 'NP'|'VP'){
+      let pending: Array<{ text: string; nounId?: string; verbId?: string }> = [];
+      let pendingType: CoordType | null = null;
+      let eitherSeen = false, neitherSeen = false, notOnlySeen = false;
+      for (let i=0;i<tokens.length;i++){
+        const w = tokens[i].text;
+        const next = tokens[i+1]?.text;
+        // multiword helpers
+        if (w === 'either') eitherSeen = true;
+        if (w === 'neither') neitherSeen = true;
+        if (w === 'not' && next === 'only') { notOnlySeen = true; i++; continue; }
+        if (w === 'as' && next === 'well' && tokens[i+2]?.text === 'as') { markersSet.add('as well as'); pendingType = 'AND'; i+=2; continue; }
+        if (w === 'plus') { markersSet.add('plus'); pendingType = 'AND'; continue; }
 
-      // coordinator heads
-      if (w === 'and' || w === 'or' || w === 'nor' || w === 'but'){
-        if (w === 'or' && eitherSeen) { pendingType = 'OR'; markers.push('either … or'); }
-        else if (w === 'nor' && neitherSeen) { pendingType = 'NOR'; markers.push('neither … nor'); }
-        else if (w === 'but' && notOnlySeen) { pendingType = 'BUT'; markers.push('not only … but (also)'); }
-        else if (w === 'and') { pendingType = 'AND'; markers.push('and'); }
-        else if (w === 'or') { pendingType = 'OR'; markers.push('or'); }
-        else if (w === 'nor') { pendingType = 'NOR'; markers.push('nor'); }
-        else if (w === 'but') { pendingType = 'BUT'; markers.push('but'); }
-        // Next iterations will try to consume the following noun as the final item when we have a list
-        continue;
-      }
+        // coordinator heads
+        if (w === 'and' || w === 'or' || w === 'nor' || w === 'but'){
+          if (w === 'or' && eitherSeen) { pendingType = 'OR'; markersSet.add('either … or'); }
+          else if (w === 'nor' && neitherSeen) { pendingType = 'NOR'; markersSet.add('neither … nor'); }
+          else if (w === 'but' && notOnlySeen) { pendingType = 'BUT'; markersSet.add('not only … but (also)'); }
+          else if (w === 'and') { pendingType = 'AND'; markersSet.add('and'); }
+          else if (w === 'or') { pendingType = 'OR'; markersSet.add('or'); }
+          else if (w === 'nor') { pendingType = 'NOR'; markersSet.add('nor'); }
+          else if (w === 'but') { pendingType = 'BUT'; markersSet.add('but'); }
+          continue;
+        }
 
-      // collect noun candidates (skip function words)
-      if (w==='?' || PREPS.has(w) || SPECIAL.has(w) || PRONOUNS.has(w) || isBe(w) || COORD_BASE.has(w) || COORD_AUX.has(w)) continue;
-      const m2 = matchNounByToken(w, tokens[i+1]?.text, englishInput);
-      const nounHit = m2.noun || matchNounByToken(w, undefined, englishInput).noun;
-      if (nounHit){
-        pending.push({ text: nounHit.word, nounId: nounHit.id });
-        if (m2.noun && m2.span===2) i++;
-        // If we have a pending coordinator type and at least 2 items, finalize on first noun after the coordinator
+        // skip function words
+        if (w==='?' || PREPS.has(w) || SPECIAL.has(w) || PRONOUNS.has(w) || COORD_BASE.has(w) || COORD_AUX.has(w)) continue;
+
+        if (role === 'NP'){
+          const m2 = matchNounByToken(w, tokens[i+1]?.text, englishInput);
+          const nounHit = m2.noun || matchNounByToken(w, undefined, englishInput).noun;
+          if (nounHit){
+            pending.push({ text: nounHit.word, nounId: nounHit.id });
+            if (m2.noun && m2.span===2) i++;
+          }
+        } else {
+          // VP: try phrase verb then token verb
+          const two = tokens[i+1]?.text ? `${w} ${tokens[i+1].text}` : '';
+          let vHit: LexiconEntryVerb | null = null;
+          if (two){
+            const exactPhrase = verbsLex.find(v => splitGlossItems(v.gloss).includes(normPhrase(two)) || (v.synonyms||[]).map(normPhrase).includes(normPhrase(two)));
+            if (exactPhrase) { vHit = exactPhrase; }
+          }
+          if (!vHit) vHit = matchVerbByToken(w);
+          if (vHit){
+            pending.push({ text: vHit.gloss || `${vHit.c1}${vHit.c2}${vHit.c3}`, verbId: vHit.id });
+            if (two && vHit && (splitGlossItems(vHit.gloss).includes(normPhrase(two)) || (vHit.synonyms||[]).map(normPhrase).includes(normPhrase(two)))) i++;
+          }
+        }
+
         if (pendingType && pending.length >= 2){
-          lists.push({ type: pendingType, role: 'NP', items: [...pending] });
-          // reset for potential further lists
+          lists.push({ type: pendingType, role, items: [...pending] });
           pending = [];
           pendingType = null;
           eitherSeen = neitherSeen = notOnlySeen = false;
         }
-        continue;
       }
     }
-    return { lists, markers };
+    collect('NP');
+    collect('VP');
+    return { lists, markers: Array.from(markersSet) };
   }
 
   // ===== Minimal English → SemanticFrame builder =====
