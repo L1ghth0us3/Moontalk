@@ -256,6 +256,20 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
     return out;
   }
 
+  // Collect all detected nouns (unique, phrase-first), in token order
+  function detectAllNouns(tokens: IntakeToken[]): LexiconEntryNoun[] {
+    const out: LexiconEntryNoun[] = [];
+    const seen = new Set<string>();
+    for (let i=0;i<tokens.length;i++){
+      const w = tokens[i].text;
+      if (w==='?' || PREPS.has(w) || SPECIAL.has(w) || PRONOUNS.has(w)) continue;
+      const m2 = matchNounByToken(w, tokens[i+1]?.text, englishInput);
+      const nHit = m2.noun || matchNounByToken(w, undefined, englishInput).noun;
+      if (nHit && !seen.has(nHit.id)) { out.push(nHit); seen.add(nHit.id); if (m2.noun && m2.span===2) i++; }
+    }
+    return out;
+  }
+
   // ===== Minimal English → SemanticFrame builder =====
   function findCopulaRootId(): string | null {
     // Heuristic: look for a verb whose gloss or synonyms include "be" (or "exist").
@@ -966,6 +980,7 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
           const flags = [frm.prog?'Prog':null, frm.hab?'Hab':null, frm.neg?'Neg':null].filter(Boolean).join(', ') || '—';
           const coord = detectCoordination(intakeTokens);
           const verbsAll = detectAllVerbs(intakeTokens);
+          const nounsAll = detectAllNouns(intakeTokens);
           const coordSummary = coord.lists.length ? coord.lists.map(l => `${l.role}:${l.type} [${l.items.map(it=>it.text).join(', ')}]`).join(' • ') : '—';
           const usedFuzzy = (built?.resolutionLog || []).some(line => /fuzzy/.test(line));
           return (
@@ -988,6 +1003,44 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
                 <div className="opacity-70">Coordination</div><div>{coordSummary}</div>
                 <div className="opacity-70">Notes</div><div>{built?.clauseType || '—'}</div>
               </div>
+              {/* Per-verb analysis windows */}
+              {verbsAll.length > 1 && (
+                <div className="mt-3">
+                  <div className="text-xs uppercase tracking-wide text-neutral-500 mb-1">Per‑verb Analysis</div>
+                  <div className="flex gap-2 overflow-x-auto pb-1">
+                    {verbsAll.map((v,i)=> (
+                      <div key={v.id+':'+i} className="min-w-[16rem] rounded-lg border p-2 sub-panel">
+                        <div className="text-sm font-medium mb-1">{v.c1}{v.c2}{v.c3} — {v.gloss || '(verb)'}</div>
+                        <div className="text-sm"><span className="opacity-70">Form:</span> {conjFinite(v, subjHS, frm.tense, { prog: frm.prog, hab: frm.hab, neg: frm.neg })}</div>
+                        <div className="text-sm"><span className="opacity-70">Tense:</span> {frm.tense}</div>
+                        <div className="text-sm"><span className="opacity-70">Flags:</span> {flags}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Noun analysis windows (own row) */}
+              {nounsAll.length > 0 && (
+                <div className="mt-3">
+                  <div className="text-xs uppercase tracking-wide text-neutral-500 mb-1">Nouns</div>
+                  <div className="flex gap-2 overflow-x-auto pb-1">
+                    {nounsAll.map((n,i)=>{
+                      const inObj = frm.objects.includes(n.id);
+                      const pair = pairParticlesWithNounsFromTokens(intakeTokens).find(p=>p.nounId===n.id);
+                      const npList = coord.lists.find(l=> l.role==='NP' && l.items.some(it=>it.nounId===n.id));
+                      return (
+                        <div key={n.id+':'+i} className="min-w-[14rem] rounded-lg border p-2 sub-panel">
+                          <div className="text-sm font-medium mb-1">{n.word}{n.gloss?` — ${n.gloss}`:''}</div>
+                          <div className="text-sm"><span className="opacity-70">Role:</span> {inObj? 'Object' : pair? `PP (${pair.part})` : '—'}</div>
+                          <div className="text-sm"><span className="opacity-70">Coord:</span> {npList ? `${npList.type}` : '—'}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               {built?.resolutionLog?.length ? (
                 <div className="mt-2 text-xs">
                   <div className="opacity-70 mb-1">Resolution log</div>
