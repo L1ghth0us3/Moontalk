@@ -47,7 +47,23 @@ export default function RootEditor({ initial, onChange, selectedId, onSelect, sh
   const [expanded, setExpanded] = useState(false);
   const [query, setQuery] = useState("");
   const [showSearch, setShowSearch] = useLocalStorageState<boolean>(LS_KEYS.rootsSearchOpen, false);
-  const [dupGlossGroups, setDupGlossGroups] = useState<Array<{ gloss: string; ids: string[] }>>([]);
+  const [dupGlossGroups, setDupGlossGroups] = useState<Array<{ term: string; ids: string[] }>>([]);
+  function normalizeGlossTerms(raw: string): string[] {
+    if (!raw) return [];
+    let s = raw.replace(/\([^)]*\)/g, '');
+    const parts = s.split(/[;,]/);
+    const STOP = new Set(['the','a','an','to']);
+    const out: string[] = [];
+    for (let part of parts){
+      part = part.toLowerCase();
+      part = part.replace(/[^a-z\s]/g, ' ').replace(/\s+/g, ' ').trim();
+      if (!part) continue;
+      const words = part.split(' ').filter(w => w && !STOP.has(w));
+      const term = words.join(' ').trim();
+      if (term) out.push(term);
+    }
+    return Array.from(new Set(out));
+  }
   const [scanToast, setScanToast] = useState<string | null>(null);
   const toastTimer = useRef<number | null>(null);
 
@@ -78,16 +94,19 @@ export default function RootEditor({ initial, onChange, selectedId, onSelect, sh
     });
   }, [roots, query]);
 
-  // Duplicate gloss detection (exact normalized match, non-empty)
+  // Duplicate gloss detection (fuzzy terms, non-empty)
   useEffect(() => {
     const map = new Map<string, string[]>();
     for (const r of roots){
-      const g = (r.gloss||'').trim().toLowerCase();
-      if (!g) continue;
-      map.set(g, [ ...(map.get(g)||[]), r.id ]);
+      const terms = normalizeGlossTerms(r.gloss||'');
+      for (const t of terms){
+        const arr = map.get(t) || [];
+        if (!arr.includes(r.id)) arr.push(r.id);
+        map.set(t, arr);
+      }
     }
-    const groups: Array<{ gloss:string; ids:string[] }> = [];
-    for (const [g,ids] of map){ if (ids.length>1) groups.push({ gloss: g, ids }); }
+    const groups: Array<{ term:string; ids:string[] }> = [];
+    for (const [t,ids] of map){ if (ids.length>1) groups.push({ term: t, ids }); }
     setDupGlossGroups(groups);
   }, [roots]);
 
@@ -233,13 +252,14 @@ export default function RootEditor({ initial, onChange, selectedId, onSelect, sh
                 )}
                 {dupGlossGroups.length>0 && (
                   <div className="mt-2 text-sm rounded-lg border border-red-300 text-red-700 bg-red-50 px-3 py-2">
-                    <div className="font-semibold mb-1">Errors: duplicate verb gloss</div>
+                    <div className="font-semibold mb-1">Errors: duplicate verb gloss terms</div>
                     {dupGlossGroups.map((g,i)=> (
                       <div key={i} className="mb-1">
-                        <div className="opacity-80">“{g.gloss}”</div>
+                        <div className="opacity-80">“{g.term}”</div>
                         <div className="flex flex-wrap gap-2 mt-1">
                           {g.ids.map(id => {
-                            const r = roots.find(x=>x.id===id)!;
+                            const r = roots.find(x=>x.id===id);
+                            if (!r) return null;
                             return (
                               <button key={id} className="px-2 py-1 rounded border border-red-300 text-red-700 hover:bg-red-100 text-xs" onClick={()=>{ onSelect(id); }}>{[r.c1,r.c2,r.c3].join('-')}</button>
                             );

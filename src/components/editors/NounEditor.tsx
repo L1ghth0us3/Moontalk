@@ -38,7 +38,28 @@ export default function NounEditor({ initial, onChange, selectedId, onSelect, sh
   const [scanToast, setScanToast] = useState<string | null>(null);
   const toastTimer = useRef<number | null>(null);
   const [dupWords, setDupWords] = useState<string[]>([]);
-  const [dupGlossGroups, setDupGlossGroups] = useState<Array<{ gloss: string; ids: string[] }>>([]);
+  const [dupGlossGroups, setDupGlossGroups] = useState<Array<{ term: string; ids: string[] }>>([]);
+
+  function normalizeGlossTerms(raw: string): string[] {
+    if (!raw) return [];
+    // Remove parenthetical content
+    let s = raw.replace(/\([^)]*\)/g, '');
+    // Split by semicolons/commas
+    const parts = s.split(/[;,]/);
+    const STOP = new Set(['the','a','an','to']);
+    const out: string[] = [];
+    for (let part of parts){
+      part = part.toLowerCase();
+      // Keep letters/spaces only
+      part = part.replace(/[^a-z\s]/g, ' ').replace(/\s+/g, ' ').trim();
+      if (!part) continue;
+      const words = part.split(' ').filter(w => w && !STOP.has(w));
+      const term = words.join(' ').trim();
+      if (term) out.push(term);
+    }
+    // Deduplicate terms within a single gloss
+    return Array.from(new Set(out));
+  }
 
   // Focus bridge: open noun on request from other components
   useEffect(() => {
@@ -79,15 +100,19 @@ export default function NounEditor({ initial, onChange, selectedId, onSelect, sh
     setDupWords(d);
   }, [nouns]);
 
-  // Duplicate gloss groups
+  // Duplicate gloss groups (fuzzy: split terms, strip stopwords/parentheses/punct)
   useEffect(() => {
     const map = new Map<string, string[]>();
     for (const n of nouns){
-      const g = (n.gloss||'').trim().toLowerCase(); if (!g) continue;
-      map.set(g, [ ...(map.get(g)||[]), n.id ]);
+      const terms = normalizeGlossTerms(n.gloss||'');
+      for (const t of terms){
+        const arr = map.get(t) || [];
+        if (!arr.includes(n.id)) arr.push(n.id);
+        map.set(t, arr);
+      }
     }
-    const groups: Array<{ gloss:string; ids:string[] }> = [];
-    for (const [g,ids] of map){ if (ids.length>1) groups.push({ gloss: g, ids }); }
+    const groups: Array<{ term:string; ids:string[] }> = [];
+    for (const [t,ids] of map){ if (ids.length>1) groups.push({ term: t, ids }); }
     setDupGlossGroups(groups);
   }, [nouns]);
 
@@ -182,13 +207,13 @@ export default function NounEditor({ initial, onChange, selectedId, onSelect, sh
           </div>
         </div>
       )}
-      {/* Duplicate errors: gloss */}
+      {/* Duplicate errors: gloss (fuzzy terms) */}
       {dupGlossGroups.length>0 && (
         <div className="mt-2 text-sm rounded-lg border border-red-300 text-red-700 bg-red-50 px-3 py-2">
-          <div className="font-semibold mb-1">Errors: duplicate noun gloss</div>
+          <div className="font-semibold mb-1">Errors: duplicate noun gloss terms</div>
           {dupGlossGroups.map((g,i)=> (
             <div key={i} className="mb-1">
-              <div className="opacity-80">“{g.gloss}”</div>
+              <div className="opacity-80">“{g.term}”</div>
               <div className="flex flex-wrap gap-2 mt-1">
                 {g.ids.map(id => {
                   const n = nouns.find(x=>x.id===id);
