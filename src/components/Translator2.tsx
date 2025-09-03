@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Root, Noun } from "../types";
 import { buildFinite, withHabitual, withNegation, withProgressive } from "../lib/morphology";
+import RootEditor from "./editors/RootEditor";
+import NounEditor from "./editors/NounEditor";
 import { useLocalStorageState, LS_KEYS } from "../lib/storage";
 
 // Experimental Translator 2.0 — internal contracts
@@ -38,17 +40,20 @@ export type Result = {
 };
 
 export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }: { roots: Root[]; nouns: Noun[]; onCreateNoun?: (n: { word: string; gloss?: string; synonyms?: string[] })=>void; onCreateRoot?: (r: { c1: string; c2: string; c3: string; gloss?: string; synonyms?: string[] })=>void; }){
-  // Map app data into local lexicon entries (decoupled contract)
-  const verbsLex: LexiconEntryVerb[] = useMemo(() => roots.map(r => ({
+  // Local copies so embedded editors can update lexicon without affecting parent
+  const [rootsLocal, setRootsLocal] = useState<Root[]>(roots);
+  const [nounsLocal, setNounsLocal] = useState<Noun[]>(nouns);
+  // Map local data into lexicon entries (decoupled contract)
+  const verbsLex: LexiconEntryVerb[] = useMemo(() => rootsLocal.map(r => ({
     id: r.id, c1: r.c1, c2: r.c2, c3: r.c3,
     gloss: r.gloss || "",
     synonyms: Array.isArray(r.synonyms) ? r.synonyms : [],
-  })), [roots]);
-  const nounsLex: LexiconEntryNoun[] = useMemo(() => nouns.map(n => ({
+  })), [rootsLocal]);
+  const nounsLex: LexiconEntryNoun[] = useMemo(() => nounsLocal.map(n => ({
     id: n.id, word: n.word,
     gloss: n.gloss || "",
     synonyms: Array.isArray(n.synonyms) ? n.synonyms : [],
-  })), [nouns]);
+  })), [nounsLocal]);
 
   // Persistent UI state for the frame + input
   const [ui, setUi] = useLocalStorageState(LS_KEYS.translator2UI, {
@@ -838,6 +843,31 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
               Example: “we hunt with trap in shroud and hunter smell us and strike us” → tɪ kɪlab ri maklūb la sharūd ʋa kalāb χeraq ʋa derek tɪ
             </div>
           </section>
+        </div>
+        {/* Editors row: Verb Roots and Nouns */}
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3 items-start">
+          <div>
+            <RootEditor
+              initial={rootsLocal}
+              onChange={setRootsLocal}
+              selectedId={rootsLocal[0]?.id ?? null}
+              onSelect={()=>{ /* no-op within compact embed */ }}
+              showCollapse={false}
+              onCreateNoun={(n)=>{
+                const id = Math.random().toString(36).slice(2,10);
+                setNounsLocal(prev => [{ id, word: n.word, gloss: n.gloss || "", synonyms: n.synonyms || [] }, ...prev]);
+              }}
+            />
+          </div>
+          <div>
+            <NounEditor
+              initial={nounsLocal}
+              onChange={setNounsLocal}
+              selectedId={nounsLocal[0]?.id ?? null}
+              onSelect={()=>{ /* no-op within compact embed */ }}
+              showCollapse={false}
+            />
+          </div>
         </div>
         {/* Hidden: dev Example Tests builder — removed from UI */}
         <button className="hidden" onClick={()=>{
