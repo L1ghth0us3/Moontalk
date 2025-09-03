@@ -550,8 +550,8 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
   function wordOfNounId(id: string){ return nounsLex.find(n=>n.id===id)?.word || '?'; }
 
   // Build particle→noun pairing from intake tokens when available.
-  function pairParticlesWithNounsFromTokens(tokens: IntakeToken[]): Array<{ part: string; nounId: string }>{
-    const pairs: Array<{ part: string; nounId: string }> = [];
+  function pairParticlesWithNounsFromTokens(tokens: IntakeToken[]): Array<{ part: string; nounId: string; en: string }>{
+    const pairs: Array<{ part: string; nounId: string; en: string }> = [];
     for (let i=0;i<tokens.length;i++){
       const w = tokens[i].text;
       const code = PREP_TO_PARTICLE[w];
@@ -561,7 +561,7 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
         const w2 = tokens[j].text;
         if (w2==='?' || PREPS.has(w2)) break;
         const n = matchNounByToken(w2, tokens[j+1]?.text, englishInput);
-        if (n.noun){ pairs.push({ part: code, nounId: n.noun.id }); break; }
+        if (n.noun){ pairs.push({ part: code, nounId: n.noun.id, en: w }); break; }
       }
     }
     return pairs;
@@ -1204,6 +1204,43 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
                   </div>
                 </div>
               )}
+
+              {/* Particles row */}
+              {(() => {
+                const PARTICLE_INFO: Record<string, { en: string; triggers: string[] }> = {
+                  ri: { en: 'with; instrument', triggers: ['with'] },
+                  ith: { en: 'to; goal', triggers: ['to'] },
+                  'ʌs': { en: 'from; source', triggers: ['from'] },
+                  la: { en: 'in/at; location', triggers: ['in','at'] },
+                };
+                const pairs = pairParticlesWithNounsFromTokens(intakeTokens);
+                if (!pairs.length) return null;
+                // group by particle code
+                const map = new Map<string, { triggers: Set<string>; nouns: Set<string> }>();
+                for (const p of pairs){
+                  const ent = map.get(p.part) || { triggers: new Set(), nouns: new Set() };
+                  ent.triggers.add(p.en);
+                  ent.nouns.add(wordOfNounId(p.nounId));
+                  map.set(p.part, ent);
+                }
+                const items = Array.from(map.entries());
+                return (
+                  <div className="mt-3">
+                    <div className="text-xs uppercase tracking-wide text-neutral-500 mb-1">Particles</div>
+                    <div className="flex gap-2 overflow-x-auto pb-1">
+                      {items.map(([code, data]) => (
+                        <div key={`particle-${code}`} className="min-w-[16rem] rounded-lg border p-2 sub-panel">
+                          <div className="text-sm font-medium mb-1">{code}</div>
+                          <div className="text-sm"><span className="opacity-70">EN:</span> {PARTICLE_INFO[code]?.en || '—'}</div>
+                          <div className="text-sm"><span className="opacity-70">Triggered by:</span> {Array.from(data.triggers).join(', ')}</div>
+                          <div className="text-sm"><span className="opacity-70">Noun:</span> {Array.from(data.nouns).join(', ')}</div>
+                          <div className="text-xs mt-1 opacity-80">Possible triggers: {(PARTICLE_INFO[code]?.triggers || []).join(', ') || '—'}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Coordinators row */}
               {(coord.lists.length > 0 || clauseCoord) && (
