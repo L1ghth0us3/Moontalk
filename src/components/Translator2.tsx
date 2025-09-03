@@ -1069,8 +1069,24 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
           const flags = [frm.prog?'Prog':null, frm.hab?'Hab':null, frm.neg?'Neg':null].filter(Boolean).join(', ') || '—';
           const COORD_WORD: Record<CoordType, string> = { AND: 'ʋa', OR: 'ra', NOR: 'ʋa', BUT: 'ʋa' };
           const CLAUSE_WORD: Record<'AND'|'OR'|'NOR'|'BUT', string> = { AND:'ʋa', OR:'ra', NOR:'ra', BUT:'ma' };
+
+          const copyDebug = () => {
+            try {
+              const toks = intakeTokens.map(t=>t.text).join(',');
+              const verbsStr = verbsAll.map(v=>`${v.c1}${v.c2}${v.c3}(${(v.gloss||'').split(';')[0]})`).join(',');
+              const partsPairs = pairParticlesWithNounsFromTokens(intakeTokens).map(p=>`${p.part}:${wordOfNounId(p.nounId)}`).join(',');
+              const coordStr = coord.lists.map(l=>`${l.role}:${l.type}[${l.items.map(it=>it.text).join(',')}]`).join('|') || '—';
+              const clauseStr = clauseCoord ? `${clauseCoord.type}` : '—';
+              const res = (resLog||[]).join('; ');
+              const line = `DBG input="${englishInput}" | tokens=${toks} | subj=${frm.subject} | tense=${frm.tense} | flags=${flags} | verb=${frm.verbRootId||'—'} | verbs=${verbsStr} | objs=${objects} | parts=${partsPairs||'—'} | clause=${built?.clauseType||'manual'} | coord=${coordStr} | clauseCoord=${clauseStr} | reslog=${res}`;
+              navigator.clipboard.writeText(line);
+            } catch {}
+          };
           return (
             <div className="rounded-lg border p-2 analysis-panel">
+              <div className="flex items-center justify-end mb-2">
+                <button className="px-2 py-1 rounded border border-neutral-300 hover:bg-neutral-50 text-xs" onClick={copyDebug} title="Copy a single-line debug summary">Copy Debug</button>
+              </div>
               <div className="grid grid-cols-[10rem_1fr] gap-x-4 gap-y-1 text-sm">
                 <div className="opacity-70">Subject</div><div>{subjHS.form} <span className="opacity-60">({frm.subject})</span></div>
                 <div className="opacity-70">Verbs</div><div>{verbsAll.length ? verbsAll.map(v=>`${v.c1}${v.c2}${v.c3} — ${v.gloss}`).join(' • ') : '—'}</div>
