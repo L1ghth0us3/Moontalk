@@ -403,34 +403,7 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
     const negFlag = words.includes('not') || words.includes('never');
     const progFlag = words.some(w => w.endsWith('ing'));
     const resLog: string[] = [];
-    // Subject coordination → plural pronoun via hierarchy: 1st > 2nd > 3rd
-    // Look before the first verb for coordinated pronouns or two+ nouns with a coordinator
-    let firstVerbIdx = -1;
-    for (let i=0;i<tokens.length;i++){
-      const w = tokens[i].text;
-      const two = tokens[i+1]?.text ? `${w} ${tokens[i+1].text}` : '';
-      const mv2 = two ? verbsLex.find(v => splitGlossItems(v.gloss).includes(normPhrase(two)) || (v.synonyms||[]).map(normPhrase).includes(normPhrase(two))) : null;
-      const mv = matchVerbByToken(w);
-      if (mv2 || mv){ firstVerbIdx = i; break; }
-    }
-    const pv = firstVerbIdx >= 0 ? tokens.slice(0, firstVerbIdx) : tokens;
-    const pws = new Set(pv.map(t=>t.text));
-    // Gather pre-verb pronouns in order
-    const pronList = pv.map(t=>t.text).filter(w => ['i','you','he','she','we','they'].includes(w));
-    // Count pre-verb nouns for name pairs
-    let preNounCount = 0;
-    for (let i=0;i<pv.length;i++){
-      const m2 = matchNounByToken(pv[i].text, pv[i+1]?.text, englishInput);
-      if (m2.noun) { preNounCount++; if (m2.span===2) i++; }
-    }
-    // Subject coordination: pronoun list length>=2 or name pair (no pronoun) triggers plural selection
-    if (pronList.length >= 2 || (!pron && preNounCount >= 2)){
-      const prev = subj;
-      if (pronList.includes('i') || pronList.includes('we')) subj = 'we';
-      else if (pronList.includes('you')) subj = 'you(pl)';
-      else subj = 'they';
-      if (prev !== subj) resLog.push(`subject coordination → ${subj} (1st>2nd>3rd)`);
-    }
+    // Subject coordination (plural pronoun) reverted — keep detected pronoun as-is
     let tense: 'present'|'past'|'future' = 'present';
     if (words.includes('will')) tense = 'future';
     else if (words.includes('did') || words.includes('was') || words.includes('were')) tense = 'past';
