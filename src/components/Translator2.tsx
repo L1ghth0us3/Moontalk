@@ -73,7 +73,6 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
   const particles = ui.particles; const setParticles = (fn: (prev:string[])=>string[])=>setUi(s=>({...s, particles: fn(s.particles)}));
 
   const [result, setResult] = useState<Result | null>(null);
-  const [history, setHistory] = useLocalStorageState<{id:string; input:string; surface:string; at:number}[]>(LS_KEYS.translator2History, []);
   const [faves, setFaves] = useLocalStorageState<{id:string; input:string; surface:string; at:number}[]>(LS_KEYS.translator2Faves, []);
   const [tests, setTests] = useState<null | { name: string; pass: boolean; expected: string; got: string; note?: string; lex?: string }[]>(null);
   const [testsOpen, setTestsOpen] = useState(false);
@@ -750,10 +749,6 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
       warnings: [...warnings, ...(built?.warnings || [])],
     };
     setResult(res);
-    if (gen.surface){
-      const entry = { id: Math.random().toString(36).slice(2,10), input: englishInput.trim(), surface: gen.surface, at: Date.now() };
-      setHistory(prev => [entry, ...prev.filter(e => e.surface!==entry.surface || e.input!==entry.input)].slice(0,10));
-    }
   }
 
   return (
@@ -986,6 +981,27 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
           <div className="flex items-center gap-2">
             <button className="px-2 py-1 rounded border border-neutral-300 hover:bg-neutral-50 text-sm" onClick={() => { try { navigator.clipboard.writeText(result?.surface || ""); } catch {} }}>Copy</button>
             <button className="px-2 py-1 rounded border border-neutral-300 hover:bg-neutral-50 text-sm" onClick={()=>setShowJSON(v=>!v)}>{showJSON ? 'Hide JSON' : 'Show JSON'}</button>
+            <button
+              className="px-2 py-1 rounded border border-neutral-300 hover:bg-neutral-50 text-sm"
+              onClick={() => {
+                const surface = result?.surface?.trim() || '';
+                const inputLine = englishInput.trim();
+                if (!surface) return;
+                const exists = faves.some(f => f.surface===surface && f.input===inputLine);
+                if (exists) {
+                  setFaves(prev => prev.filter(f => !(f.surface===surface && f.input===inputLine)));
+                } else {
+                  const entry = { id: Math.random().toString(36).slice(2,10), input: inputLine, surface, at: Date.now() };
+                  setFaves(prev => [entry, ...prev]);
+                }
+              }}
+              title="Toggle favorite for this output"
+            >{(() => {
+              const surface = result?.surface?.trim() || '';
+              const inputLine = englishInput.trim();
+              const exists = surface && faves.some(f => f.surface===surface && f.input===inputLine);
+              return exists ? '★ Favorite' : '☆ Favorite';
+            })()}</button>
           </div>
         </div>
         <div className="text-xl font-semibold mb-3 min-h-10">
@@ -1189,31 +1205,7 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
           </div>
         )}
 
-        {/* History and Favorites */}
-        <div className="mt-4">
-          <div className="flex items-center justify-between mb-1">
-            <div className="text-xs uppercase tracking-wide text-neutral-500">History</div>
-            {history.length>0 && (
-              <button className="text-xs px-2 py-1 rounded border border-neutral-300 hover:bg-neutral-50" onClick={()=>setHistory([])}>Clear</button>
-            )}
-          </div>
-          {history.length ? (
-            <div className="flex flex-col gap-1">
-              {history.map(h => (
-                <div key={h.id} className="flex items-center gap-2 text-sm">
-                  <button className="px-2 py-1 rounded border border-neutral-300 hover:bg-neutral-50" onClick={()=>{ try { navigator.clipboard.writeText(h.surface); } catch {} }}>Copy</button>
-                  <button className="px-2 py-1 rounded border border-neutral-300 hover:bg-neutral-50" title="Favorite" onClick={()=>{
-                    const exists = faves.some(f=>f.surface===h.surface && f.input===h.input);
-                    setFaves(exists ? faves.filter(f=>!(f.surface===h.surface && f.input===h.input)) : [{...h}, ...faves]);
-                  }}>{faves.some(f=>f.surface===h.surface && f.input===h.input) ? '★' : '☆'}</button>
-                  <div className="truncate" title={h.input ? `${h.surface} — ${h.input}` : h.surface}>{h.surface}{h.input ? ` — ${h.input}` : ''}</div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-sm text-neutral-500">No translations yet.</div>
-          )}
-        </div>
+        {/* Favorites */}
 
         <div className="mt-4">
           <div className="flex items-center justify-between mb-1">
