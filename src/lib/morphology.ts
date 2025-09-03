@@ -38,17 +38,34 @@ export function withNegation(form: string) { return /^(k|g|q)/i.test(form) ? `na
  * First attempts exact token match against semi‑tokenized gloss; falls back to substring.
  */
 export function findRootByEnglish(roots: Root[], token: string): Root | null {
-  const t = token.toLowerCase();
+  const t = token.toLowerCase().trim();
+  if (!t) return null;
+
+  // 1) Exact token match against semicolon/comma-separated items (preferred)
   for (const r of roots) {
-    const spaceGloss = `${r.gloss}; ${(r.synonyms||[]).join('; ')}`.toLowerCase();
-    for (const g of spaceGloss.split(/[,;]/).map(s => s.trim())) {
-      if (!g) continue;
-      if (g === t) return r;
-    }
+    const items = `${r.gloss}; ${(r.synonyms || []).join('; ')}`
+      .toLowerCase()
+      .split(/[,;]/)
+      .map(s => s.trim())
+      .filter(Boolean);
+    if (items.includes(t)) return r;
   }
-  for (const r of roots) {
-    const g = `${r.gloss} ${(r.synonyms||[]).join(' ')}`.toLowerCase();
-    if (g.includes(t)) return r;
+
+  const textOf = (r: Root) => `${r.gloss} ${(r.synonyms || []).join(' ')}`.toLowerCase();
+  const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+  // 2) Multi-word: require whole-phrase word-boundary match
+  if (t.includes(' ')) {
+    const re = new RegExp(`\\b${esc(t)}\\b`);
+    for (const r of roots) { if (re.test(textOf(r))) return r; }
+    return null;
   }
+
+  // 3) Short tokens (<= 2 chars): do not attempt fuzzy/substring matching to avoid collisions (e.g., "am" vs "ambush")
+  if (t.length <= 2) return null;
+
+  // 4) Fallback: prefix-of-word match (less permissive than arbitrary substring)
+  const rePrefix = new RegExp(`\\b${esc(t)}`);
+  for (const r of roots) { if (rePrefix.test(textOf(r))) return r; }
   return null;
 }

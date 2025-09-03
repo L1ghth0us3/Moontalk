@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocalStorageState } from "../lib/storage";
 import type { Root } from "../types";
 
-// Non‑finite/Binyanim‑style derivation patterns from a triliteral root.
+// Non‑finite / binyanim‑style derivation patterns from a triliteral root.
 // Each pattern builds a lexical derivative and a short English explanation.
 const DERIVATIONS = [
   { key: "agent", label: "agent (CaCāC)", build: (r: Root) => `${r.c1}a${r.c2}ā${r.c3}` },
@@ -15,6 +15,15 @@ const DERIVATIONS = [
   { key: "concept", label: "general concept (CaCiC)", build: (r: Root) => `${r.c1}a${r.c2}i${r.c3}` },
 ];
 
+/**
+ * RenderDerivations
+ *
+ * Shows a grid of non‑finite (lexical) forms derived from a triliteral root.
+ * Clicking a card opens a small popover that lets the user save the form as a noun.
+ *
+ * - Outside click closes any open popover.
+ * - Explanations are derived from the English gloss of the current root.
+ */
 export default function RenderDerivations({ root, showCollapse = false, onCreateNoun }: { root: Root, showCollapse?: boolean; onCreateNoun?: (n: { word: string; gloss?: string; synonyms?: string[] }) => void }){
   const [openKey, setOpenKey] = useState<string | null>(null);
   const [draft, setDraft] = useState<{ word: string; gloss: string; syn: string }>({ word: "", gloss: "", syn: "" });

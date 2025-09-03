@@ -6,8 +6,11 @@ import { useState, useMemo } from "react";
 import { useLocalStorageState } from "../lib/storage";
 
 /**
- * Matrix of finite forms for a single root across all pronouns × tenses,
- * with optional toggles to apply progressive/habitual/negation uniformly.
+ * Matrix of finite forms for a single root across all pronouns × tenses.
+ *
+ * - Toggles apply Progressive/Habitual/Negation to the entire table at once.
+ * - Can optionally sync these toggles with Talk Pad via `syncMorph`+`morph`.
+ * - Cell spacing adapts to the longest visible word to keep the grid compact.
  */
 export default function FiniteForms({ root, showCollapse = false, syncMorph = false, morph, onMorphChange, onToggleSync }: {
   root: Root;

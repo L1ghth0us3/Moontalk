@@ -6,7 +6,10 @@ const uid = () => Math.random().toString(36).slice(2, 10);
 
 /**
  * CRUD list for nouns with simple creator and detail editor.
- * Persists to localStorage and notifies parent via onChange.
+ *
+ * - Persists to localStorage and notifies parent via onChange.
+ * - Fuzzy search over word/gloss/synonyms using subsequence matching.
+ * - Editing happens in the Expanded modal to keep the compact panel lightweight.
  */
 export default function NounEditor({ initial, onChange, selectedId, onSelect, showCollapse = false }: { initial: Noun[]; onChange: (n: Noun[])=>void; selectedId: string|null; onSelect: (id: string|null)=>void; showCollapse?: boolean; }){
   const [nouns, setNouns] = useLocalStorageState<Noun[]>(LS_KEYS.nouns, initial);
@@ -25,6 +28,7 @@ export default function NounEditor({ initial, onChange, selectedId, onSelect, sh
   const [showSearch, setShowSearch] = useLocalStorageState<boolean>(LS_KEYS.nounsSearchOpen, false);
   const [query, setQuery] = useState("");
 
+  // Simple subsequence matcher for forgiving/fuzzy filtering
   function fuzzySubsequence(needle: string, hay: string){
     needle = needle.toLowerCase(); hay = hay.toLowerCase();
     let j = 0; for (let i = 0; i < hay.length && j < needle.length; i++){ if (hay[i] === needle[j]) j++; }

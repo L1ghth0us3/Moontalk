@@ -2,7 +2,7 @@
 
 ## Project Structure & Module Organization
 - Source: `src/` (entry `src/main.tsx`, app shell `src/App.tsx`).
-- UI: `src/HuntspeakTalkPad.tsx` (core logic + subcomponents), styles in `src/index.css` (Tailwind v4 via `@tailwindcss/vite`).
+- UI: `src/NightTongueApp.tsx` (core logic + subcomponents), styles in `src/index.css` (Tailwind v4 via `@tailwindcss/vite`).
 - Assets: `src/assets/`.
 - Build config: `vite.config.ts`, TypeScript configs: `tsconfig.*.json`.
 
@@ -34,4 +34,3 @@
 - Client-only app; do not commit secrets. Avoid adding `.env` values unless needed; prefer `import.meta.env` with Vite prefixes if introduced.
 - App persists data in `localStorage` (`huntspeak_*` keys). When changing storage shape, provide migration or a safe reset path.
 - Validate user-provided JSON on import (already present); keep it strict when extending.
-

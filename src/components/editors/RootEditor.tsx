@@ -8,7 +8,10 @@ const uid = () => Math.random().toString(36).slice(2, 10);
 
 /**
  * CRUD list for verb roots with a simple in‑panel creator and detail editor.
- * Persists to localStorage and notifies parent via onChange.
+ *
+ * - Persists to localStorage and notifies parent via onChange.
+ * - Fuzzy search matches subsequences in gloss/synonyms or C1-C2-C3 when query contains '-'.
+ * - Expanded modal shows the list on the left and details + tools on the right.
  */
 export default function RootEditor({ initial, onChange, selectedId, onSelect, showCollapse = false, onCreateNoun }: { initial: Root[]; onChange: (r: Root[])=>void; selectedId: string|null; onSelect: (id: string|null)=>void; showCollapse?: boolean; onCreateNoun?: (n: { word: string; gloss?: string; synonyms?: string[] }) => void; }){
   const [roots, setRoots] = useLocalStorageState<Root[]>(LS_KEYS.roots, initial);
@@ -31,6 +34,7 @@ export default function RootEditor({ initial, onChange, selectedId, onSelect, sh
   const [query, setQuery] = useState("");
   const [showSearch, setShowSearch] = useLocalStorageState<boolean>(LS_KEYS.rootsSearchOpen, false);
 
+  // Simple subsequence matcher for forgiving/fuzzy filtering
   function fuzzySubsequence(needle: string, hay: string){
     needle = needle.toLowerCase();
     hay = hay.toLowerCase();

@@ -11,6 +11,7 @@ export const DEFAULT_ROOTS: Root[] = [
   { id: uid(), c1: "d", c2: "r", c3: "k", gloss: "strike; bring down", synonyms: ["strike", "hit", "kill"] },
   { id: uid(), c1: "q", c2: "r", c3: "b", gloss: "draw near; approach", synonyms: ["approach", "near", "come"] },
   { id: uid(), c1: "t", c2: "r", c3: "f", gloss: "hear; detect", synonyms: ["hear", "detect", "listen"] },
+  { id: uid(), c1: "k", c2: "r", c3: "n", gloss: "be; exist", synonyms: ["be", "exist", "copula", "to be"] },
 ];
 
 export const DEFAULT_NOUNS: Noun[] = [
