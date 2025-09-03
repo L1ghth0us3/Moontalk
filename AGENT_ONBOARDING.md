@@ -70,6 +70,47 @@ Use this file to get productive fast. It summarizes the architecture, where to m
 - Include any file moves/renames in the same commit (use `git add -A`).
 - Treat this as a professional local dev workflow: no uncommitted work between steps; prefer incremental, revertible commits.
 
+### Example Local Git Workflow (professional)
+1) Sync and branch
+   - `git fetch --all --tags`
+   - `git switch 1.4-dev` (or the current `*-dev` branch). If missing, create it from `main`: `git switch -c 1.4-dev origin/main`.
+2) Implement a small, focused change
+   - Edit code, run build/lint locally, validate behavior.
+3) Stage and commit immediately when the step is complete
+   - `git add -A`
+   - `git commit -m "feat: add Translator 2.0 intake tokenizer"`
+4) Iterate in small steps
+   - Repeat implement → validate → commit after each instruction/tasklet.
+5) Push dev branch as needed (optional for collaboration/review)
+   - `git push -u origin 1.4-dev`
+6) Release flow (never work directly on `main`)
+   - Ensure `1.4-dev` is green and ready.
+   - `git switch main && git pull`
+   - `git merge --no-ff 1.4-dev -m "chore(release): merge 1.4-dev"`
+   - Tag release if applicable: `git tag -a v1.4.0 -m "v1.4.0" && git push --tags`
+   - Immediately create the next dev branch from `main` and switch to it (keep continuous dev unblocked):
+     - `git switch -c 1.5-dev`
+     - `git push -u origin 1.5-dev`
+   - Continue new work only on the latest `*-dev` branch.
+
+### Commit Message Rules
+- Use Conventional Commit prefixes:
+  - `feat:` new feature; `fix:` bug fix; `chore:` tooling/infra; `docs:` documentation; `refactor:` non‑behavioral code changes; `perf:` performance.
+- Scope (optional) in parentheses: `feat(translator2): ...`.
+- Present tense, imperative mood; keep subject concise; body optional but helpful for rationale.
+- One logical change per commit; avoid mixing unrelated changes.
+
+### Branching Rules
+- Never work directly on `main`.
+- All active work happens on the latest `*-dev` branch.
+- After merging `*-dev` into `main`, immediately create the next `*-dev` branch with the incremented version and switch to it.
+- Keep branches focused; prefer short‑lived feature branches off `*-dev` when needed, then merge back into `*-dev`.
+
+### Reverting and Safety
+- Because commits are small and per‑instruction, reverts are easy: `git revert <sha>`.
+- If an instruction causes regressions, revert that commit and re‑attempt with a new commit.
+- When moving/renaming files, commit moves atomically to preserve history.
+
 ## Validation
 - No test runner configured yet. Prefer adding Vitest + React Testing Library.
 - Until tests: `npm run build` for type safety and spin `npm run dev` for a smoke run.
