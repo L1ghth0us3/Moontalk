@@ -379,6 +379,19 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
       // Skip nouns immediately governed by a preceding preposition (with/to/from/in/at)
       const prev = i>0 ? tokens[i-1].text : '';
       if (prev && PREPS.has(prev)) continue;
+      // Heuristic: if a preposition occurred shortly before (e.g., with X and Y), treat following nouns as PP complements, not objects
+      let withinPP = false;
+      for (let j=i-1; j>=0 && j>=i-4; j--) {
+        const ww = tokens[j].text;
+        if (ww === '?') break;
+        if (PREPS.has(ww)) { withinPP = true; break; }
+        if (PRONOUNS.has(ww) || isBe(ww)) break;
+        // stop backtracking if we hit something that looks like a verb token
+        if (matchVerbByToken(ww)) break;
+        // skip coordinators/aux helpers
+        if (COORD_BASE.has(ww) || COORD_AUX.has(ww)) continue;
+      }
+      if (withinPP) continue;
       const mn = matchNounByToken(w, tokens[i+1]?.text, englishInput, resLog);
       if (mn.noun && !objectIds.includes(mn.noun.id)) { objectIds.push(mn.noun.id); if (mn.span===2) i++; }
     }
