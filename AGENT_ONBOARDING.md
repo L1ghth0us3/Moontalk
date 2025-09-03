@@ -8,6 +8,12 @@ Use this file to get productive fast. It summarizes the architecture, where to m
 - `npm run preview`: Preview the production build.
 - `npm run lint`: ESLint across the project.
 
+> Mandatory workflow for Codex agents (do not skip):
+> 1) Run `npm run build` (and optionally `npm run lint`).
+> 2) Fix all errors/warnings relevant to your change.
+> 3) Only then `git add -A` + `git commit -m "..."`.
+> Repeat this cycle for every step/commit.
+
 ## Architecture
 - Entry: `src/main.tsx` → `src/App.tsx` (simple pathname switch) → `src/MoontalkApp.tsx` (app shell)
 - UI Panels:
@@ -70,12 +76,19 @@ Use this file to get productive fast. It summarizes the architecture, where to m
 - Include any file moves/renames in the same commit (use `git add -A`).
 - Treat this as a professional local dev workflow: no uncommitted work between steps; prefer incremental, revertible commits.
 
+#### Pre-commit Gate (must pass before every commit)
+- Run: `npm run build` to type-check and build. Fix all errors before committing.
+- Recommended: `npm run lint` and a quick `npm run dev` smoke (open app, quick clickthrough).
+- Only after a clean build: `git add -A && git commit -m "<type(scope): message>"`.
+
 ### Example Local Git Workflow (professional)
 1) Sync and branch
    - `git fetch --all --tags`
    - `git switch 1.4-dev` (or the current `*-dev` branch). If missing, create it from `main`: `git switch -c 1.4-dev origin/main`.
 2) Implement a small, focused change
-   - Edit code, run build/lint locally, validate behavior.
+   - Edit code.
+   - Run `npm run build` (and optionally `npm run lint`). Fix issues until green.
+   - Validate behavior quickly in `npm run dev` if UI/logic changed.
 3) Stage and commit immediately when the step is complete
    - `git add -A`
    - `git commit -m "feat: add Translator 2.0 intake tokenizer"`
