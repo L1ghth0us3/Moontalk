@@ -753,9 +753,8 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      {/* Left: input controls */}
+      {/* Left: English input + Favorites + Guide */}
       <div>
-        <div className="text-sm text-neutral-600 mb-3">Experimental: English intake + structured frame → output (stub).</div>
         <label className="block mb-3">
           <div className="text-xs uppercase tracking-wide text-neutral-500 mb-1">English line (experimental)</div>
           <input
@@ -766,79 +765,19 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
           />
           <div className="mt-1 text-xs text-neutral-500">Keeps ?; strips quotes/punct; removes a/an/the when safe; lowercases.</div>
         </label>
-        <div className="grid grid-cols-2 gap-3 mb-3">
-          <label className="block">
-            <div className="text-xs uppercase tracking-wide text-neutral-500 mb-1">Subject</div>
-            <select className="w-full border rounded-lg px-2 py-2" value={subject} onChange={e=>setSubject(e.target.value)}>
-              {["I","you","he","she","we","you(pl)","they"].map(s => (
-                <option key={s} value={s}>{s}</option>
-              ))}
-            </select>
-          </label>
-          <label className="block">
-            <div className="text-xs uppercase tracking-wide text-neutral-500 mb-1">Tense</div>
-            <select className="w-full border rounded-lg px-2 py-2" value={tense} onChange={e=>setTense(e.target.value as any)}>
-              <option value="present">present</option>
-              <option value="past">past</option>
-              <option value="future">future</option>
-            </select>
-          </label>
-        </div>
+        {/* Controls removed: subject, tense */}
 
-        <label className="block mb-3">
-          <div className="text-xs uppercase tracking-wide text-neutral-500 mb-1">Verb</div>
-          <select className="w-full border rounded-lg px-2 py-2" value={verbRootId ?? ""} onChange={e=>setVerbRootId(e.target.value || null)}>
-            <option value="">(none)</option>
-            {verbsLex.map(v => (
-              <option key={v.id} value={v.id}>{`${v.c1}${v.c2}${v.c3}${v.gloss?` — ${v.gloss}`:''}`}</option>
-            ))}
-          </select>
-        </label>
+        {/* Controls removed: verb picker */}
 
-        <div className="flex flex-wrap gap-3 mb-3">
-          <label className="inline-flex items-center gap-2 select-none"><input type="checkbox" className="h-4 w-4" checked={neg} onChange={e=>setNeg(e.target.checked)} /> Neg</label>
-          <label className="inline-flex items-center gap-2 select-none"><input type="checkbox" className="h-4 w-4" checked={prog} onChange={e=>setProg(e.target.checked)} /> Prog</label>
-          <label className="inline-flex items-center gap-2 select-none"><input type="checkbox" className="h-4 w-4" checked={hab} onChange={e=>setHab(e.target.checked)} /> Hab</label>
-          <label className="inline-flex items-center gap-2 select-none"><input type="checkbox" className="h-4 w-4" checked={question} onChange={e=>setQuestion(e.target.checked)} /> Question</label>
-        </div>
+        {/* Controls removed: neg/prog/hab/question toggles */}
 
-        <div className="mb-3">
-          <div className="text-xs uppercase tracking-wide text-neutral-500 mb-1">Objects</div>
-          <div className="flex items-center gap-2 mb-2">
-            <select className="flex-1 border rounded-lg px-2 py-2" value={objPick} onChange={e=>setObjPick(e.target.value)}>
-              {nounsLex.map(n => (
-                <option key={n.id} value={n.id}>{`${n.word}${n.gloss?` — ${n.gloss}`:''}`}</option>
-              ))}
-            </select>
-            <button className="px-3 py-2 rounded-lg border border-neutral-300 hover:bg-neutral-50" onClick={addObject}>Add</button>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {objects.map(id => {
-              const n = nounsLex.find(x=>x.id===id);
-              return (
-                <span key={id} className="inline-flex items-center gap-2 px-2 py-1 rounded-full border border-neutral-300 text-sm">
-                  {n?.word || id}
-                  <button className="text-neutral-500 hover:text-neutral-800" onClick={()=>removeObject(id)} aria-label="Remove">×</button>
-                </span>
-              );
-            })}
-            {!objects.length && <span className="text-sm text-neutral-500">(none)</span>}
-          </div>
-        </div>
+        {/* Controls removed: object picker */}
 
-        <div className="mb-4">
-          <div className="text-xs uppercase tracking-wide text-neutral-500 mb-1">Particles</div>
-          <div className="flex flex-wrap gap-3">
-            {(["with","to","from","in"]).map(p => (
-              <label key={p} className="inline-flex items-center gap-2 select-none">
-                <input type="checkbox" className="h-4 w-4" checked={particles.includes(p)} onChange={()=>toggleParticle(p)} /> {p}
-              </label>
-            ))}
-          </div>
-        </div>
+        {/* Controls removed: particles */}
 
         <button className="px-3 py-2 rounded-lg border border-neutral-300 hover:bg-neutral-50" onClick={onTranslate}>Translate</button>
-        <button className="ml-2 px-3 py-2 rounded-lg border border-neutral-300 hover:bg-neutral-50" onClick={()=>{
+        {/* Hidden: dev Example Tests builder — removed from UI */}
+        <button className="hidden" onClick={()=>{
           // Helpers that consult the current lexicon
           const nounWord = (en: string) => {
             const m = matchNounByToken(en.toLowerCase(), undefined, englishInput);
@@ -1205,29 +1144,7 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
           </div>
         )}
 
-        {/* Favorites */}
-
-        <div className="mt-4">
-          <div className="flex items-center justify-between mb-1">
-            <div className="text-xs uppercase tracking-wide text-neutral-500">My Phrases</div>
-            {faves.length>0 && (
-              <button className="text-xs px-2 py-1 rounded border border-neutral-300 hover:bg-neutral-50" onClick={()=>setFaves([])}>Clear</button>
-            )}
-          </div>
-          {faves.length ? (
-            <div className="flex flex-col gap-1">
-              {faves.map(f => (
-                <div key={f.id} className="flex items-center gap-2 text-sm">
-                  <button className="px-2 py-1 rounded border border-neutral-300 hover:bg-neutral-50" onClick={()=>{ try { navigator.clipboard.writeText(f.surface); } catch {} }}>Copy</button>
-                  <button className="px-2 py-1 rounded border border-neutral-300 hover:bg-neutral-50" title="Remove favorite" onClick={()=> setFaves(prev=>prev.filter(x=>x.id!==f.id))}>★</button>
-                  <div className="truncate" title={f.input ? `${f.surface} — ${f.input}` : f.surface}>{f.surface}{f.input ? ` — ${f.input}` : ''}</div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-sm text-neutral-500">None starred yet.</div>
-          )}
-        </div>
+        {/* Favorites moved to left panel */}
       </div>
       {/* Dev: Example Tests popup */}
       {testsOpen && (
