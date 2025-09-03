@@ -691,14 +691,14 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
   function onTranslate(){
     // Prefer building from English intake if provided; fallback to UI state
     let clauseSplit = englishInput.trim() ? detectClauseCoordination(intakeTokens) : null;
-    const built = (!clauseSplit && englishInput.trim()) ? buildFrameFromEnglish(intakeTokens) : null;
+    const builtMain = englishInput.trim() ? buildFrameFromEnglish(intakeTokens) : null;
     // Prefer built frame; if verb unresolved, backfill from first detected verb
-    let frame: SemanticFrame = built?.frame ?? { subject, verbRootId, tense, neg, prog, hab, question, objects, particles };
-    if (built) {
+    let frame: SemanticFrame = builtMain?.frame ?? { subject, verbRootId, tense, neg, prog, hab, question, objects, particles };
+    if (builtMain) {
       const vAll = detectAllVerbs(intakeTokens);
       if (!frame.verbRootId && vAll[0]) {
         frame = { ...frame, verbRootId: vAll[0].id };
-        built.resolutionLog.push(`backfill verb from first detected: ${vAll[0].c1}${vAll[0].c2}${vAll[0].c3}`);
+        builtMain.resolutionLog.push(`backfill verb from first detected: ${vAll[0].c1}${vAll[0].c2}${vAll[0].c3}`);
       }
     }
     const verb = verbsLex.find(v => v.id === frame.verbRootId) || null;
@@ -707,7 +707,7 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
     if (!frame.subject) warnings.push("Missing subject");
     if (!verb) warnings.push("No verb selected");
 
-    let gen = generateHuntspeak(frame, built?.clauseType ?? 'transitive', intakeTokens);
+    let gen = generateHuntspeak(frame, builtMain?.clauseType ?? 'transitive', intakeTokens);
     let surface = gen.surface || [
       "[Experimental]",
       frame.subject,
@@ -744,13 +744,13 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
           pronoun: intakePronoun,
           bePositions,
         },
-        clause: built?.clauseType ?? 'manual',
-        resolutionLog: built?.resolutionLog || [],
+        clause: builtMain?.clauseType ?? 'manual',
+        resolutionLog: builtMain?.resolutionLog || [],
         coordination: detectCoordination(intakeTokens),
         clauseCoordination: clauseSplit ? { type: clauseSplit.type, left: clauseSplit.left.map(t=>t.text), right: clauseSplit.right.map(t=>t.text) } : null,
         verbsAll: detectAllVerbs(intakeTokens).map(v=>({ id:v.id, root:`${v.c1}${v.c2}${v.c3}`, gloss:v.gloss })),
       },
-      warnings: [...warnings, ...(built?.warnings || [])],
+      warnings: [...warnings, ...(builtMain?.warnings || [])],
     };
     setResult(res);
     if (gen.surface){
