@@ -415,21 +415,20 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
     }
     const pv = firstVerbIdx >= 0 ? tokens.slice(0, firstVerbIdx) : tokens;
     const pws = new Set(pv.map(t=>t.text));
-    const hasCoord = pv.some(t=>COORD_BASE.has(t.text) || (t.text==='as'));
-    const hasIorWe = pws.has('i') || pws.has('we');
-    const hasYou = pws.has('you');
+    // Count pre-verb nouns for name pairs
     let preNounCount = 0;
     for (let i=0;i<pv.length;i++){
       const m2 = matchNounByToken(pv[i].text, pv[i+1]?.text, englishInput);
       if (m2.noun) { preNounCount++; if (m2.span===2) i++; }
     }
-    // Trigger when at least two distinct person categories are present, or when two+ nouns form a coordinated subject with no pronoun detected
-    if (hasCoord && ((hasIorWe && (hasYou || pws.has('he') || pws.has('she') || pws.has('they'))) || (hasYou && (pws.has('he') || pws.has('she') || pws.has('they'))) || (!pron && preNounCount >= 2))){
+    const heSheThey = pws.has('he') || pws.has('she') || pws.has('they');
+    // Simple, explicit subject coordination rules (pre-verb only)
+    if ((pws.has('i') && (heSheThey || pws.has('you'))) || (pws.has('you') && heSheThey) || (!pron && preNounCount >= 2)){
       const prev = subj;
-      if (hasIorWe) subj = 'we';
-      else if (hasYou) subj = 'you(pl)';
+      if (pws.has('i')) subj = 'we';
+      else if (pws.has('you')) subj = 'you(pl)';
       else subj = 'they';
-      resLog.push(`subject coordination → ${subj} (1st>2nd>3rd)`);
+      if (prev !== subj) resLog.push(`subject coordination → ${subj} (1st>2nd>3rd)`);
     }
     let tense: 'present'|'past'|'future' = 'present';
     if (words.includes('will')) tense = 'future';
@@ -700,6 +699,29 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
         frame = { ...frame, verbRootId: vAll[0].id };
         builtMain.resolutionLog.push(`backfill verb from first detected: ${vAll[0].c1}${vAll[0].c2}${vAll[0].c3}`);
       }
+      // Final subject coordination enforcement at generation time (AND-coordination only)
+      // Recompute pre-verb pronouns and apply 1st>2nd>3rd if coordinated
+      let firstVerbIdx = -1;
+      for (let i=0;i<intakeTokens.length;i++){
+        const w = intakeTokens[i].text;
+        const two = intakeTokens[i+1]?.text ? `${w} ${intakeTokens[i+1].text}` : '';
+        const mv2 = two ? verbsLex.find(v => splitGlossItems(v.gloss).includes(normPhrase(two)) || (v.synonyms||[]).map(normPhrase).includes(normPhrase(two))) : null;
+        if (mv2 || matchVerbByToken(w)) { firstVerbIdx = i; break; }
+      }
+      const pv = firstVerbIdx >= 0 ? intakeTokens.slice(0, firstVerbIdx) : intakeTokens;
+      const pws = new Set(pv.map(t=>t.text));
+      const hasAnd = pv.some(t=>t.text==='and' || t.text==='plus' || (t.text==='as' && pv.some(u=>u.text==='well')) || (t.text==='not' && pv.some(u=>u.text==='only')));
+      const hasIorWe = pws.has('i') || pws.has('we');
+      const hasYou = pws.has('you');
+      const has3rd = pws.has('he') || pws.has('she') || pws.has('they');
+      if (hasAnd && ( (hasIorWe && (hasYou || has3rd)) || (hasYou && has3rd) )){
+        const prevSubj = frame.subject;
+        const nextSubj = hasIorWe ? 'we' : hasYou ? 'you(pl)' : 'they';
+        if (prevSubj !== nextSubj){
+          frame = { ...frame, subject: nextSubj };
+          builtMain.resolutionLog.push(`subject coordination (final) → ${nextSubj} (1st>2nd>3rd)`);
+        }
+      }
     }
     const verb = verbsLex.find(v => v.id === frame.verbRootId) || null;
     const objWords = frame.objects.map(oid => nounsLex.find(n => n.id === oid)?.word || "?");
@@ -761,6 +783,42 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Top tools */}
+      <div className="md:col-span-2 -mt-2 -mb-2">
+        <div className="flex items-center justify-end gap-2">
+          <button
+            className="px-2 py-1 rounded border border-neutral-300 hover:bg-neutral-50 text-xs"
+            onClick={() => {
+              try {
+                const builtMain = englishInput.trim() ? buildFrameFromEnglish(intakeTokens) : null;
+                const vAll = detectAllVerbs(intakeTokens).map(v=>({ id:v.id, root:`${v.c1}${v.c2}${v.c3}`, gloss:v.gloss }));
+                const nAll = detectAllNouns(intakeTokens).map(n=>({ id:n.id, word:n.word, gloss:n.gloss }));
+                const pairs = pairParticlesWithNounsFromTokens(intakeTokens).map(p=>({ part:p.part, noun: wordOfNounId(p.nounId), id: p.nounId }));
+                const coord = detectCoordination(intakeTokens);
+                const clauseSplit = englishInput.trim() ? detectClauseCoordination(intakeTokens) : null;
+                const debug = {
+                  input: englishInput,
+                  ui,
+                  frameMain: builtMain?.frame || null,
+                  clause: builtMain?.clauseType || 'manual',
+                  tokens: intakeTokens,
+                  verbsAll: vAll,
+                  nounsAll: nAll,
+                  particlePairs: pairs,
+                  coordination: coord,
+                  clauseCoordination: clauseSplit ? { type: clauseSplit.type, left: clauseSplit.left.map(t=>t.text), right: clauseSplit.right.map(t=>t.text) } : null,
+                  analysisResult: result?.analysis || null,
+                  surface: result?.surface || '',
+                  historyLen: history.length,
+                  favoritesLen: faves.length,
+                };
+                navigator.clipboard.writeText(JSON.stringify(debug));
+              } catch {}
+            }}
+            title="Copy full debug (one line JSON)"
+          >Copy Debug</button>
+        </div>
+      </div>
       {/* Left: input controls */}
       <div>
         <div className="text-sm text-neutral-600 mb-3">Experimental: English intake + structured frame → output (stub).</div>
@@ -1084,9 +1142,6 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
           };
           return (
             <div className="rounded-lg border p-2 analysis-panel">
-              <div className="flex items-center justify-end mb-2">
-                <button className="px-2 py-1 rounded border border-neutral-300 hover:bg-neutral-50 text-xs" onClick={copyDebug} title="Copy a single-line debug summary">Copy Debug</button>
-              </div>
               <div className="grid grid-cols-[10rem_1fr] gap-x-4 gap-y-1 text-sm">
                 <div className="opacity-70">Subject</div><div>{subjHS.form} <span className="opacity-60">({frm.subject})</span></div>
                 <div className="opacity-70">Verbs</div><div>{verbsAll.length ? verbsAll.map(v=>`${v.c1}${v.c2}${v.c3} — ${v.gloss}`).join(' • ') : '—'}</div>
