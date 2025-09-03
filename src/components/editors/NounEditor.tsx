@@ -6,7 +6,10 @@ const uid = () => Math.random().toString(36).slice(2, 10);
 
 /**
  * CRUD list for nouns with simple creator and detail editor.
- * Persists to localStorage and notifies parent via onChange.
+ *
+ * - Persists to localStorage and notifies parent via onChange.
+ * - Fuzzy search over word/gloss/synonyms using subsequence matching.
+ * - Editing happens in the Expanded modal to keep the compact panel lightweight.
  */
 export default function NounEditor({ initial, onChange, selectedId, onSelect, showCollapse = false }: { initial: Noun[]; onChange: (n: Noun[])=>void; selectedId: string|null; onSelect: (id: string|null)=>void; showCollapse?: boolean; }){
   const [nouns, setNouns] = useLocalStorageState<Noun[]>(LS_KEYS.nouns, initial);
@@ -25,6 +28,7 @@ export default function NounEditor({ initial, onChange, selectedId, onSelect, sh
   const [showSearch, setShowSearch] = useLocalStorageState<boolean>(LS_KEYS.nounsSearchOpen, false);
   const [query, setQuery] = useState("");
 
+  // Simple subsequence matcher for forgiving/fuzzy filtering
   function fuzzySubsequence(needle: string, hay: string){
     needle = needle.toLowerCase(); hay = hay.toLowerCase();
     let j = 0; for (let i = 0; i < hay.length && j < needle.length; i++){ if (hay[i] === needle[j]) j++; }
@@ -73,17 +77,7 @@ export default function NounEditor({ initial, onChange, selectedId, onSelect, sh
         {!(showSearch && query ? filtered.length : nouns.length) && <div className="text-neutral-500 text-sm">{showSearch && query ? 'No matching nouns.' : 'No nouns yet. Add one above.'}</div>}
       </div>
 
-      {selected && (
-        <div className="mt-4 space-y-2">
-          <h3 className="text-sm font-semibold">Edit selected</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-            <input className="w-full min-w-0 px-2 py-1 rounded-lg border border-neutral-300" value={selected.word} onChange={e=>updateNoun(selected.id,{word:e.target.value})} />
-            <input className="md:col-span-2 w-full min-w-0 px-2 py-1 rounded-lg border border-neutral-300" placeholder="gloss" value={selected.gloss} onChange={e=>updateNoun(selected.id,{gloss:e.target.value})} />
-            <button onClick={()=>deleteNoun(selected.id)} className="w-full md:w-auto px-2 py-1 rounded-lg border border-red-300 text-red-600 hover:bg-red-50">Delete</button>
-          </div>
-          <input className="w-full px-2 py-1 rounded-lg border border-neutral-300" placeholder="extra English triggers (comma-separated)" value={synText} onChange={e=>setSynText(e.target.value)} onBlur={e=> updateNoun(selected.id, { synonyms: e.target.value.split(",").map(s=>s.trim()).filter(Boolean) })} />
-        </div>
-      )}
+      {/* Edit selected is available in Expanded view */}
       </>
       )}
     </section>

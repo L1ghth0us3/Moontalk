@@ -1,8 +1,14 @@
 import React from "react";
 
 /**
- * Lightweight accessible-ish select with keyboard navigation and hover states.
- * Keeps styling consistent across themes while avoiding native <select>.
+ * NiceSelect — lightweight custom select.
+ *
+ * - Basic ARIA roles (`listbox`/`option`) with click, hover, and keyboard support.
+ * - Optional `searchable` filter with simple subsequence matching (for fuzzy UX).
+ * - Click outside to close; focuses the searchbox on open when searchable.
+ *
+ * Note: This is intentionally minimal to keep bundle overhead small; prefer
+ * improving this component rather than introducing a heavy UI library.
  */
 export default function NiceSelect({ value, onChange, items, placeholder = "Select…", searchable = false }: { value: string; onChange: (v: string)=>void; items: { value: string; label: string }[]; placeholder?: string; searchable?: boolean; }) {
   const [open, setOpen] = React.useState(false);

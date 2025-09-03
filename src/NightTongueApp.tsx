@@ -6,24 +6,33 @@ import NounEditor from "./components/editors/NounEditor";
 import TalkPad from "./components/TalkPad";
 import RenderDerivations from "./components/Derivations";
 import FreeTranslator from "./components/FreeTranslator";
-import { useLocalStorageState, LS_KEYS } from "./lib/storage";
+import { useLocalStorageState, LS_KEYS, lsGet, lsSet } from "./lib/storage";
 import FiniteForms from "./components/FiniteForms";
 
 /**
- * App shell: orchestrates roots/nouns editing, sentence builder (Talk Pad),
- * finite/derivation views, theme switching, and import/export.
+ * Application shell
  *
- * Data flow:
- * - Editable data lives in child editors and is persisted via localStorage.
- * - This shell mirrors that data in top‑level state to pass to other views.
- * - Theme preference persists and applies a body class.
+ * Responsibilities
+ * - Own the top‑level in‑memory state for Roots and Nouns (mirrored by editors).
+ * - Persist user preferences and UI toggles to localStorage via LS_KEYS.
+ * - Wire cross‑component features (e.g., shared morph toggles, quick noun create).
+ * - Render the main sections: Talk Pad, Roots/Nouns editors, Finite Forms, Derivations.
+ *
+ * Theme handling
+ * - Theme is stored in localStorage (see LS_KEYS.theme) and applied as a body class.
+ * - Supported labels: Auto, Dracula, Light, Dark.
+ *
+ * Conventions
+ * - “Expanded” modals (⛶) use a centered fixed overlay with click‑off‑to‑close.
+ * - All modals and popovers avoid global state; they are local to their components.
  */
-export default function HuntspeakTalkPad(){
+export default function NightTongueApp(){
   const [roots, setRoots] = useState<Root[]>(DEFAULT_ROOTS);
   const [nouns, setNouns] = useState<Noun[]>(DEFAULT_NOUNS);
   const [selectedId, setSelectedId] = useLocalStorageState<string|null>(LS_KEYS.selectedRoot, roots[0]?.id || null);
   const [selectedNounId, setSelectedNounId] = useState<string|null>(nouns[0]?.id || null);
-  const [theme, setTheme] = useLocalStorageState<'fantasy'|'plain'|'dark'|'auto'>("huntspeak_theme", 'auto');
+  // Theme selection persisted via shared LS_KEYS for consistency across the app
+  const [theme, setTheme] = useLocalStorageState<'fantasy'|'plain'|'dark'|'auto'>(LS_KEYS.theme, 'auto');
   const [systemDark, setSystemDark] = useState<boolean>(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [dataOpen, setDataOpen] = useState(false);
@@ -32,6 +41,29 @@ export default function HuntspeakTalkPad(){
   const [syncMorph, setSyncMorph] = useLocalStorageState<boolean>(LS_KEYS.morphSync, true);
   const [sharedMorph, setSharedMorph] = useLocalStorageState<{neg:boolean;prog:boolean;hab:boolean}>(LS_KEYS.morphToggles, {neg:false,prog:false,hab:false});
   const [nounsKey, setNounsKey] = useState(0);
+
+  // One-time migration: ensure new default roots (e.g., "to be") are present
+  // for existing users who already have roots in localStorage. If any default
+  // signatures are missing, merge them into storage and reload to propagate.
+  useEffect(() => {
+    try {
+      const stored = lsGet<Root[] | null>(LS_KEYS.roots, null as any);
+      if (Array.isArray(stored)) {
+        const sig = (r: Root) => `${r.c1}-${r.c2}-${r.c3}`.toLowerCase();
+        const present = new Set(stored.map(sig));
+        const missing = DEFAULT_ROOTS.filter(r => !present.has(sig(r)));
+        if (missing.length) {
+          const next = [...stored, ...missing];
+          lsSet(LS_KEYS.roots, next);
+          // Reload to let RootEditor (which hydrates from LS on mount) pick up the merge.
+          location.reload();
+        }
+      } else {
+        // First-time: seed defaults to storage for consistency.
+        lsSet(LS_KEYS.roots, DEFAULT_ROOTS);
+      }
+    } catch {}
+  }, []);
 
   // Keep a valid selected root when the roots list changes (e.g. delete).
   useEffect(()=>{
@@ -43,7 +75,7 @@ export default function HuntspeakTalkPad(){
     if (!selectedNounId && nouns[0]) setSelectedNounId(nouns[0].id);
     else if (selectedNounId && !nouns.some(n=>n.id===selectedNounId)) setSelectedNounId(nouns[0]?.id || null);
   }, [nouns, selectedNounId]);
-  // Track system dark preference for 'auto' theme
+  // Track system dark preference for 'auto' theme (supports modern + legacy listeners)
   useEffect(()=>{
     if (typeof window === 'undefined' || !('matchMedia' in window)) return;
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
@@ -63,6 +95,7 @@ export default function HuntspeakTalkPad(){
   // No sticky background tracking (removed by request)
 
   // Apply effective theme class to <body> whenever theme or system preference changes.
+  // 'auto' → fantasy (light) by day, dark at night.
   useEffect(()=>{
     const effective = theme==='auto' ? (systemDark ? 'dark' : 'fantasy') : theme;
     const b = document.body;
@@ -105,6 +138,8 @@ export default function HuntspeakTalkPad(){
           morph={sharedMorph}
           onMorphChange={setSharedMorph}
           onToggleSync={()=>setSyncMorph(v=>!v)}
+          onCreateNoun={addNounQuick}
+          onCreateRoot={addRootQuick}
         />
       </>
     );
@@ -113,12 +148,14 @@ export default function HuntspeakTalkPad(){
     if (composerCollapsed) return null;
     return (
       <>
-        <FreeTranslator roots={roots} nouns={nouns} embedded />
+        {/* Embedded = true: renders a compact translator body without own card shell */}
+        <FreeTranslator roots={roots} nouns={nouns} embedded onCreateNoun={addNounQuick} onCreateRoot={addRootQuick} />
       </>
     );
   }
 
   // Import/Export (roots + nouns) as strict JSON with minimal validation.
+  // Export writes a file; Import sanitizes structure and reloads to hydrate app state.
   function exportData(){
     const payload = { roots, nouns };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
@@ -157,6 +194,15 @@ export default function HuntspeakTalkPad(){
     setNouns(next);
     setNounsKey(k=>k+1);
   }
+  // Quick-create verb root (experimental from Talk Pad add flow)
+  function addRootQuick(r: { c1: string; c2: string; c3: string; gloss?: string; synonyms?: string[] }){
+    const id = Math.random().toString(36).slice(2,10);
+    const rr: Root = { id, c1: r.c1, c2: r.c2, c3: r.c3, gloss: r.gloss || "", synonyms: r.synonyms || [] };
+    const next = [rr, ...roots];
+    try { localStorage.setItem(LS_KEYS.roots, JSON.stringify(next)); } catch {}
+    setRoots(next);
+    setSelectedId(id);
+  }
 
   return (
     <>
@@ -164,10 +210,11 @@ export default function HuntspeakTalkPad(){
       <header className="mb-6">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold">Huntspeak Talk Pad</h1>
-            <p className="text-neutral-600 mt-1">RP-ready: create words and get instant Huntspeak lines.</p>
+            <h1 className="text-2xl md:text-3xl font-bold">Night‑tongue</h1>
+            <p className="text-neutral-600 mt-1">RP-ready: create words and get instant Night‑tongue lines.</p>
           </div>
           <nav aria-label="Main" className="flex items-center gap-2">
+            <a className="px-3 py-2 rounded-xl border border-neutral-300 hover:bg-neutral-50" href="/what-is-this">What is this</a>
             <button className="px-3 py-2 rounded-xl border border-neutral-300 hover:bg-neutral-50" onClick={()=>setDataOpen(true)}>Data</button>
             <button className="px-3 py-2 rounded-xl border border-neutral-300 hover:bg-neutral-50" onClick={()=>setSettingsOpen(true)}>Settings</button>
           </nav>
@@ -319,7 +366,7 @@ export default function HuntspeakTalkPad(){
           <div className="w-full max-w-md rounded-2xl border border-neutral-200 bg-white fantasy-card p-5">
             <h3 className="text-xl font-semibold mb-2">Are you sure?</h3>
             <p className="text-sm text-neutral-700 mb-4">
-              This will remove all Huntspeak data and settings from your browser, including Verb Roots, Nouns, Talk Pad state, and interface preferences. This action cannot be undone.
+              This will remove all Night‑tongue data and settings from your browser, including Verb Roots, Nouns, Talk Pad state, and interface preferences. This action cannot be undone.
             </p>
             <div className="flex items-center justify-end gap-2">
               <button className="px-3 py-2 rounded-lg border border-neutral-300 hover:bg-neutral-50" onClick={()=>setConfirmResetOpen(false)}>Cancel</button>
