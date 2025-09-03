@@ -3,6 +3,8 @@ import type { Root, Noun } from "../types";
 import { buildFinite, withHabitual, withNegation, withProgressive } from "../lib/morphology";
 import RootEditor from "./editors/RootEditor";
 import NounEditor from "./editors/NounEditor";
+import FiniteForms from "./FiniteForms";
+import RenderDerivations from "./Derivations";
 import { useLocalStorageState, LS_KEYS } from "../lib/storage";
 
 // Experimental Translator 2.0 — internal contracts
@@ -43,6 +45,7 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
   // Local copies so embedded editors can update lexicon without affecting parent
   const [rootsLocal, setRootsLocal] = useState<Root[]>(roots);
   const [nounsLocal, setNounsLocal] = useState<Noun[]>(nouns);
+  const [selectedRootId, setSelectedRootId] = useState<string | null>(rootsLocal[0]?.id ?? null);
   // Map local data into lexicon entries (decoupled contract)
   const verbsLex: LexiconEntryVerb[] = useMemo(() => rootsLocal.map(r => ({
     id: r.id, c1: r.c1, c2: r.c2, c3: r.c3,
@@ -850,8 +853,8 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
             <RootEditor
               initial={rootsLocal}
               onChange={setRootsLocal}
-              selectedId={rootsLocal[0]?.id ?? null}
-              onSelect={()=>{ /* no-op within compact embed */ }}
+              selectedId={selectedRootId}
+              onSelect={setSelectedRootId}
               showCollapse={false}
               onCreateNoun={(n)=>{
                 const id = Math.random().toString(36).slice(2,10);
@@ -869,6 +872,24 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
             />
           </div>
         </div>
+        {/* Forms row: Finite Forms and Derivations for selected root */}
+        {selectedRootId && (
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3 items-start">
+            {(() => {
+              const root = rootsLocal.find(r=>r.id===selectedRootId);
+              if (!root) return <div className="text-sm text-neutral-500">Select a verb root to see forms.</div>;
+              return (
+                <>
+                  <FiniteForms root={root} />
+                  <RenderDerivations root={root} onCreateNoun={(n)=>{
+                    const id = Math.random().toString(36).slice(2,10);
+                    setNounsLocal(prev => [{ id, word: n.word, gloss: n.gloss || "", synonyms: n.synonyms || [] }, ...prev]);
+                  }} />
+                </>
+              );
+            })()}
+          </div>
+        )}
         {/* Hidden: dev Example Tests builder — removed from UI */}
         <button className="hidden" onClick={()=>{
           // Helpers that consult the current lexicon
