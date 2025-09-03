@@ -558,6 +558,30 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
     const parts: string[] = [];
     const variants: string[] = [];
 
+    // Literal subject rendering for coordinated pronouns; verb agrees with first pronoun
+    let firstVerbIdx = -1;
+    for (let i=0;i<tokens.length;i++){
+      const w = tokens[i].text;
+      const two = tokens[i+1]?.text ? `${w} ${tokens[i+1].text}` : '';
+      // consider phrase verb via matchVerbByToken
+      if (matchVerbByToken(two) || matchVerbByToken(w)) { firstVerbIdx = i; break; }
+    }
+    const preVerb = firstVerbIdx >= 0 ? tokens.slice(0, firstVerbIdx) : tokens;
+    const pronSeq = preVerb.map(t=>t.text).filter(w => ['i','you','he','she','we','they'].includes(w));
+    const pronToHS = (p: string): HSSubj => {
+      switch (p) {
+        case 'i': return { form: 'ɪ', subjV: 'ɪ' };
+        case 'we': return { form: 'tɪ', subjV: 'ɪ' };
+        case 'you': return { form: 'su', subjV: 'u' };
+        case 'they': return { form: 'te', subjV: 'e' };
+        case 'he':
+        case 'she':
+        default: return { form: 'se', subjV: 'e' };
+      }
+    };
+    const subjConj = preVerb.some(t=>t.text==='or') ? 'ra' : 'ʋa';
+    const conjSubjHS = pronSeq.length ? pronToHS(pronSeq[0]) : subjHS;
+
     if (clause === 'existential'){
       // 3sg copula + NP (+ la PLACE). Present non-neg may optionally drop verb, but keep main as with verb.
       const copId = findCopulaRootId();
@@ -576,27 +600,53 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
     } else if (clause === 'copular'){
       // Equatives: present + non-neg → zero-copula; else conjugated copula
       const zero = frame.tense==='present' && !frame.neg;
-      if (!zero) parts.push(subjHS.form);
+      if (!zero) {
+        if (pronSeq.length > 1) {
+          pronSeq.forEach((p, idx) => {
+            const hs = pronToHS(p).form;
+            if (idx>0) parts.push(subjConj);
+            parts.push(hs);
+          });
+        } else {
+          parts.push(subjHS.form);
+        }
+      }
       const copId = findCopulaRootId();
       const cop = copId ? verbsLex.find(v=>v.id===copId) : null;
-      if (!zero && cop) parts.push(conjFinite(cop, subjHS, frame.tense, { prog:false, hab:frame.hab, neg:frame.neg }, true));
+      if (!zero && cop) parts.push(conjFinite(cop, conjSubjHS, frame.tense, { prog:false, hab:frame.hab, neg:frame.neg }, true));
       // NP (predicate nominal): first object noun
       if (frame.objects[0]) parts.push(wordOfNounId(frame.objects[0]));
       // Variant: explicit copula when zero-copula chosen
       if (zero && cop) {
-        const alt = [subjHS.form, conjFinite(cop, subjHS, frame.tense, { prog:false, hab:frame.hab, neg:frame.neg }, true), frame.objects[0] ? wordOfNounId(frame.objects[0]) : undefined].filter(Boolean).join(' ');
+        const alt = [subjHS.form, conjFinite(cop, conjSubjHS, frame.tense, { prog:false, hab:frame.hab, neg:frame.neg }, true), frame.objects[0] ? wordOfNounId(frame.objects[0]) : undefined].filter(Boolean).join(' ');
         variants.push(alt);
         // Main should be zero-copula surface
         parts.unshift(subjHS.form);
         parts.splice(1,1); // remove pronoun we just unshifted? ensure surface starts with pronoun for readability
         // But the intended zero-copula example omits the verb but keeps pronoun + NP
         parts.length = 0; // reset to exactly pronoun + NP
-        parts.push(subjHS.form);
+        if (pronSeq.length > 1) {
+          pronSeq.forEach((p, idx) => {
+            const hs = pronToHS(p).form;
+            if (idx>0) parts.push(subjConj);
+            parts.push(hs);
+          });
+        } else {
+          parts.push(subjHS.form);
+        }
         if (frame.objects[0]) parts.push(wordOfNounId(frame.objects[0]));
       }
     } else {
       // Transitive
-      if (subjHS.form) parts.push(subjHS.form);
+      if (pronSeq.length > 1) {
+        pronSeq.forEach((p, idx) => {
+          const hs = pronToHS(p).form;
+          if (idx>0) parts.push(subjConj);
+          parts.push(hs);
+        });
+      } else {
+        if (subjHS.form) parts.push(subjHS.form);
+      }
       // VP coordination: build multiple verbs with shared flags
       const vpList = coord.lists.find(l => l.role === 'VP' && l.items.length >= 2);
       if (vpList){
@@ -604,15 +654,15 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
         const forms: string[] = [];
         for (const it of vpList.items){
           const v = it.verbId ? verbsLex.find(x=>x.id===it.verbId) : null;
-          if (v) forms.push(conjFinite(v, subjHS, frame.tense, { prog:frame.prog, hab:frame.hab, neg:frame.neg }));
+          if (v) forms.push(conjFinite(v, conjSubjHS, frame.tense, { prog:frame.prog, hab:frame.hab, neg:frame.neg }));
         }
         if (forms.length){
           parts.push(forms.map((f,i)=> i===0 ? f : `${conjWord} ${f}`).join(' '));
         } else if (verbLex){
-          parts.push(conjFinite(verbLex, subjHS, frame.tense, { prog:frame.prog, hab:frame.hab, neg:frame.neg }));
+          parts.push(conjFinite(verbLex, conjSubjHS, frame.tense, { prog:frame.prog, hab:frame.hab, neg:frame.neg }));
         }
       } else {
-        if (verbLex) parts.push(conjFinite(verbLex, subjHS, frame.tense, { prog:frame.prog, hab:frame.hab, neg:frame.neg }));
+        if (verbLex) parts.push(conjFinite(verbLex, conjSubjHS, frame.tense, { prog:frame.prog, hab:frame.hab, neg:frame.neg }));
       }
       // Direct object: support NP coordination
       if (frame.objects[0]){
