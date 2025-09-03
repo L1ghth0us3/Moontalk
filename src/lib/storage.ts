@@ -17,6 +17,8 @@ export const LS_KEYS = {
   translator2UI: "huntspeak_translator2_ui",
   translator2History: "huntspeak_translator2_history",
   translator2Faves: "huntspeak_translator2_faves",
+  // Translator 2.0 configurable settings (e.g., coordinator word mapping)
+  translator2Settings: "huntspeak_translator2_settings",
   // Theme selection; value is one of: 'auto' | 'fantasy' | 'plain' | 'dark'
   theme: "huntspeak_theme",
 } as const;

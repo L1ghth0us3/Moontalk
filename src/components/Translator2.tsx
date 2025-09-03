@@ -78,6 +78,10 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
   const [tests, setTests] = useState<null | { name: string; pass: boolean; expected: string; got: string; note?: string; lex?: string }[]>(null);
   const [testsOpen, setTestsOpen] = useState(false);
   const [showJSON, setShowJSON] = useState(false);
+  // Settings: coordinator join words (defaults: AND=ʋa, OR=ra, NOR=ra, BUT=ma)
+  const [t2Settings] = useLocalStorageState(LS_KEYS.translator2Settings, {
+    coordinators: { AND: 'ʋa', OR: 'ra', NOR: 'ra', BUT: 'ma' }
+  });
 
   // ===== English intake (normalizer + tokenizer) =====
   type IntakeToken = { text: string; start: number; end: number };
@@ -259,18 +263,27 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
   // Clause-level coordination: detect a coordinator with subjects on both sides
   function detectClauseCoordination(tokens: IntakeToken[]): { left: IntakeToken[]; right: IntakeToken[]; type: 'AND'|'OR'|'NOR'|'BUT' } | null {
     const wordTypes: Record<string,'AND'|'OR'|'NOR'|'BUT'> = { and:'AND', or:'OR', nor:'NOR', but:'BUT' } as const;
+    function hasVerb(side: IntakeToken[]): boolean {
+      for (let i=0;i<side.length;i++){
+        const w = side[i].text;
+        if (w==='?' || PREPS.has(w) || SPECIAL.has(w)) continue;
+        const two = side[i+1]?.text ? `${w} ${side[i+1].text}` : '';
+        if (two){
+          const exactPhrase = verbsLex.find(v => splitGlossItems(v.gloss).includes(normPhrase(two)) || (v.synonyms||[]).map(normPhrase).includes(normPhrase(two)));
+          if (exactPhrase) return true;
+        }
+        if (matchVerbByToken(w)) return true;
+      }
+      return false;
+    }
     for (let i=0;i<tokens.length;i++){
       const w = tokens[i].text;
       const typ = wordTypes[w as keyof typeof wordTypes];
       if (!typ) continue;
       const left = tokens.slice(0,i);
       const right = tokens.slice(i+1);
-      const leftPron = detectPronoun(left);
-      const rightPron = detectPronoun(right);
-      // Also consider existential 'there' as subject
-      const leftHasThere = left.some(t=>t.text==='there');
-      const rightHasThere = right.some(t=>t.text==='there');
-      if ((leftPron || leftHasThere) && (rightPron || rightHasThere)){
+      // Split only if both sides look like clauses (each has a verb)
+      if (hasVerb(left) && hasVerb(right)){
         return { left, right, type: typ };
       }
     }
@@ -530,7 +543,8 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
     const pairs = pairParticlesWithNounsFromTokens(tokens);
     const coord = detectCoordination(tokens);
     const npLists = coord.lists.filter(l => l.role === 'NP');
-    const COORD_WORD: Record<CoordType, string> = { AND: 'ʋa', OR: 'ra', NOR: 'ʋa', BUT: 'ʋa' };
+    // Use settings-based coordinator mapping; fallback to defaults
+    const COORD_WORD: Record<CoordType, string> = (t2Settings?.coordinators as any) || { AND: 'ʋa', OR: 'ra', NOR: 'ra', BUT: 'ma' };
     function listForNounId(id: string | undefined | null){
       if (!id) return null;
       return npLists.find(l => l.items.some(it => it.nounId === id)) || null;
@@ -585,23 +599,53 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
       }
     } else {
       // Transitive
-      if (subjHS.form) parts.push(subjHS.form);
-      // VP coordination: build multiple verbs with shared flags
-      const vpList = coord.lists.find(l => l.role === 'VP' && l.items.length >= 2);
-      if (vpList){
-        const conjWord = COORD_WORD[vpList.type] || 'ʋa';
-        const forms: string[] = [];
-        for (const it of vpList.items){
-          const v = it.verbId ? verbsLex.find(x=>x.id===it.verbId) : null;
-          if (v) forms.push(conjFinite(v, subjHS, frame.tense, { prog:frame.prog, hab:frame.hab, neg:frame.neg }));
+      // Heuristic: if a clear noun appears before the first verb and there is no earlier pronoun,
+      // treat it as the overt subject NP and conjugate as 3sg without outputting a pronoun.
+      let usedSubjectNounId: string | null = null;
+      let firstVerbIdx = -1;
+      for (let i=0;i<tokens.length;i++){
+        const w = tokens[i].text;
+        if (w==='?' || PREPS.has(w) || SPECIAL.has(w)) continue;
+        const two = tokens[i+1]?.text ? `${w} ${tokens[i+1].text}` : '';
+        const phraseHit = two ? verbsLex.find(v => splitGlossItems(v.gloss).includes(normPhrase(two)) || (v.synonyms||[]).map(normPhrase).includes(normPhrase(two))) : null;
+        if (phraseHit || matchVerbByToken(w)) { firstVerbIdx = i; break; }
+      }
+      const pronBeforeVerb = firstVerbIdx >= 0 ? tokens.slice(0, firstVerbIdx).some(t=>PRONOUNS.has(t.text)) : false;
+      if (firstVerbIdx > 0 && !pronBeforeVerb){
+        // Try to take the nearest noun to the left of the verb as subject
+        for (let j=firstVerbIdx-1; j>=0; j--){
+          const m = matchNounByToken(tokens[j].text, tokens[j+1]?.text, englishInput);
+          if (m.noun){ usedSubjectNounId = m.noun.id; parts.push(wordOfNounId(usedSubjectNounId)); break; }
         }
-        if (forms.length){
-          parts.push(forms.map((f,i)=> i===0 ? f : `${conjWord} ${f}`).join(' '));
-        } else if (verbLex){
-          parts.push(conjFinite(verbLex, subjHS, frame.tense, { prog:frame.prog, hab:frame.hab, neg:frame.neg }));
+      }
+      // Output subject pronoun only if no overt noun subject was used
+      if (!usedSubjectNounId && subjHS.form) parts.push(subjHS.form);
+      // VP coordination: render all VP lists in token order, de-duplicating verbs across lists
+      const vpLists = coord.lists.filter(l => l.role === 'VP' && l.items.length >= 2);
+      if (vpLists.length){
+        const seenVerbIds = new Set<string>();
+        let emitted = 0;
+        for (const lst of vpLists){
+          const conjWord = COORD_WORD[lst.type] || 'ʋa';
+          for (const it of lst.items){
+            const v = it.verbId ? verbsLex.find(x=>x.id===it.verbId) : null;
+            if (!v || seenVerbIds.has(v.id)) continue;
+            const conjSubj = usedSubjectNounId ? { form:'se', subjV:'e' } : subjHS;
+            const form = conjFinite(v, conjSubj, frame.tense, { prog:frame.prog, hab:frame.hab, neg:frame.neg });
+            if (emitted===0) parts.push(form); else parts.push(conjWord, form);
+            emitted++;
+            seenVerbIds.add(v.id);
+          }
+        }
+        if (emitted===0 && verbLex){
+          const conjSubj = usedSubjectNounId ? { form:'se', subjV:'e' } : subjHS;
+          parts.push(conjFinite(verbLex, conjSubj, frame.tense, { prog:frame.prog, hab:frame.hab, neg:frame.neg }));
         }
       } else {
-        if (verbLex) parts.push(conjFinite(verbLex, subjHS, frame.tense, { prog:frame.prog, hab:frame.hab, neg:frame.neg }));
+        if (verbLex) {
+          const conjSubj = usedSubjectNounId ? { form:'se', subjV:'e' } : subjHS;
+          parts.push(conjFinite(verbLex, conjSubj, frame.tense, { prog:frame.prog, hab:frame.hab, neg:frame.neg }));
+        }
       }
       // Direct object: support NP coordination
       if (frame.objects[0]){
@@ -611,13 +655,13 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
           const ids = lst.items.map(it=>it.nounId!).filter(Boolean);
           pushJoinedNouns(parts, ids, lst.type);
         } else {
-          parts.push(wordOfNounId(baseObjId));
+          if (!usedSubjectNounId || baseObjId !== usedSubjectNounId) parts.push(wordOfNounId(baseObjId));
         }
       }
       // Adpositional phrases: place particle once, then join NP list with coordinator if applicable
       const usedGroups = new Set<string>();
       for (const p of pairs){
-        if (frame.objects[0] && p.nounId===frame.objects[0]) continue; // avoid repeating object noun
+        if ((frame.objects[0] && p.nounId===frame.objects[0]) || (usedSubjectNounId && p.nounId===usedSubjectNounId)) continue; // avoid repeating object or subject noun
         const lst = listForNounId(p.nounId);
         if (lst && lst.items.filter(it=>it.nounId).length >= 2){
           const key = `${p.part}:${lst.items.map(it=>it.nounId||it.text).join(',')}`;
@@ -631,6 +675,10 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
           parts.push(wordOfNounId(p.nounId));
         }
       }
+      // Object pronouns (me/us/you/him/her/them) → append HS pronoun surface once
+      const OBJ_PRON: Record<string,string> = { me:'ɪ', us:'tɪ', you:'su', him:'se', her:'se', them:'te' };
+      const hasObjPron = tokens.find(t => OBJ_PRON[t.text]);
+      if (hasObjPron){ parts.push(OBJ_PRON[hasObjPron.text]); }
     }
 
     // Question marker: align with app style (qa?) at end
@@ -676,8 +724,8 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
       const rightBuilt = buildFrameFromEnglish(clauseSplit.right);
       const leftGen = generateHuntspeak(leftBuilt.frame, leftBuilt.clauseType, clauseSplit.left);
       const rightGen = generateHuntspeak(rightBuilt.frame, rightBuilt.clauseType, clauseSplit.right);
-      const COORD_JOIN: Record<'AND'|'OR'|'NOR'|'BUT', string> = { AND:'ʋa', OR:'ra', NOR:'ra', BUT:'ma' };
-      surface = [leftGen.surface, COORD_JOIN[clauseSplit.type], rightGen.surface].join(' ');
+      const joinMap: Record<'AND'|'OR'|'NOR'|'BUT', string> = (t2Settings?.coordinators as any) || { AND:'ʋa', OR:'ra', NOR:'ra', BUT:'ma' };
+      surface = [leftGen.surface, joinMap[clauseSplit.type] || { AND:'ʋa', OR:'ra', NOR:'ra', BUT:'ma' }[clauseSplit.type], rightGen.surface].join(' ');
       gen = { surface, variants: [] };
     }
 
@@ -1016,7 +1064,7 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
           const coordSummary = coord.lists.length ? coord.lists.map(l => `${l.role}:${l.type} [${l.items.map(it=>it.text).join(', ')}]`).join(' • ') : '—';
           const resLog = built?.resolutionLog || [];
           const flags = [frm.prog?'Prog':null, frm.hab?'Hab':null, frm.neg?'Neg':null].filter(Boolean).join(', ') || '—';
-          const COORD_WORD: Record<CoordType, string> = { AND: 'ʋa', OR: 'ra', NOR: 'ʋa', BUT: 'ʋa' };
+    const COORD_WORD: Record<CoordType, string> = (t2Settings?.coordinators as any) || { AND: 'ʋa', OR: 'ra', NOR: 'ra', BUT: 'ma' };
           const CLAUSE_WORD: Record<'AND'|'OR'|'NOR'|'BUT', string> = { AND:'ʋa', OR:'ra', NOR:'ra', BUT:'ma' };
           return (
             <div className="rounded-lg border p-2 analysis-panel">
