@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Root, Noun } from "../types";
 import { buildFinite, withHabitual, withNegation, withProgressive } from "../lib/morphology";
 import { useLocalStorageState, LS_KEYS } from "../lib/storage";
@@ -85,6 +85,21 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
   // ===== English intake (normalizer + tokenizer) =====
   type IntakeToken = { text: string; start: number; end: number };
   const englishInput = ui.englishInput; const setEnglishInput = (v: string)=>setUi(s=>({...s, englishInput:v}));
+  // Live update (debounced): recompute output when the English input changes
+  const liveTimer = useRef<number | null>(null);
+  const lastComputed = useRef<string>("");
+  useEffect(() => {
+    const val = englishInput.trim();
+    if (liveTimer.current) { clearTimeout(liveTimer.current); liveTimer.current = null; }
+    if (!val) { setResult(null); lastComputed.current = ""; return; }
+    liveTimer.current = window.setTimeout(() => {
+      if (lastComputed.current !== val) {
+        onTranslate();
+        lastComputed.current = val;
+      }
+    }, 120);
+    return () => { if (liveTimer.current) { clearTimeout(liveTimer.current); liveTimer.current = null; } };
+  }, [englishInput]);
 
   function isWordChar(ch: string){ return /[A-Za-z0-9]/.test(ch); }
   const ARTICLES = new Set(["a","an","the"]);
