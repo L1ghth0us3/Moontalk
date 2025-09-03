@@ -23,7 +23,10 @@ export default function NounEditor({ initial, onChange, selectedId, onSelect, sh
 
   const addNoun = (n: Partial<Noun>) => { if (!n.word) return; const nn: Noun = { id: uid(), word: String(n.word), gloss: String(n.gloss ?? "") }; setNouns(prev=>[nn, ...prev]); onSelect(nn.id); };
   const updateNoun = (id: string, patch: Partial<Noun>) => setNouns(prev=> prev.map(n=> n.id===id ? { ...n, ...patch } : n));
-  const deleteNoun = (id: string) => { setNouns(prev=> prev.filter(n=> n.id!==id)); if (selectedId===id) onSelect(nouns.find(n=> n.id!==id)?.id ?? null); };
+  const deleteNoun = (id: string) => {
+    // Update nouns; selection will be reconciled by parent effects (see MoontalkApp/Translator2)
+    setNouns(prev => prev.filter(n => n.id !== id));
+  };
 
   const [collapsed, setCollapsed] = useLocalStorageState<boolean>('huntspeak_collapse_nouns', false);
   const [expanded, setExpanded] = useState(false);
@@ -140,7 +143,8 @@ export default function NounEditor({ initial, onChange, selectedId, onSelect, sh
               <div className="opacity-80">“{g.gloss}”</div>
               <div className="flex flex-wrap gap-2 mt-1">
                 {g.ids.map(id => {
-                  const n = nouns.find(x=>x.id===id)!;
+                  const n = nouns.find(x=>x.id===id);
+                  if (!n) return null;
                   return (
                     <button key={id} className="px-2 py-1 rounded border border-red-300 text-red-700 hover:bg-red-100 text-xs" onClick={()=>{ onSelect(id); setExpanded(true); }}>{n.word}</button>
                   );

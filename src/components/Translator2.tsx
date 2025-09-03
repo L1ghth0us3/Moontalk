@@ -47,6 +47,11 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
   const [nounsLocal, setNounsLocal] = useState<Noun[]>(nouns);
   const [selectedRootId, setSelectedRootId] = useState<string | null>(rootsLocal[0]?.id ?? null);
   const [selectedNounId, setSelectedNounId] = useState<string | null>(nounsLocal[0]?.id ?? null);
+  useEffect(() => {
+    if (selectedNounId && !nounsLocal.some(n => n.id === selectedNounId)) {
+      setSelectedNounId(nounsLocal[0]?.id ?? null);
+    }
+  }, [nounsLocal, selectedNounId]);
   // Map local data into lexicon entries (decoupled contract)
   const verbsLex: LexiconEntryVerb[] = useMemo(() => rootsLocal.map(r => ({
     id: r.id, c1: r.c1, c2: r.c2, c3: r.c3,
