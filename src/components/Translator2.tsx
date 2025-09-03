@@ -461,6 +461,21 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
     const subjHS = hsSubjectFor(frame.subject);
     const verbLex = findVerbById(frame.verbRootId);
     const pairs = pairParticlesWithNounsFromTokens(tokens);
+    const coord = detectCoordination(tokens);
+    const npLists = coord.lists.filter(l => l.role === 'NP');
+    const COORD_WORD: Record<CoordType, string> = { AND: 'ʋa', OR: 'ra', NOR: 'ʋa', BUT: 'ʋa' };
+    function listForNounId(id: string | undefined | null){
+      if (!id) return null;
+      return npLists.find(l => l.items.some(it => it.nounId === id)) || null;
+    }
+    function pushJoinedNouns(partsArr: string[], nounIds: string[], type: CoordType){
+      const conj = COORD_WORD[type] || 'ʋa';
+      nounIds.forEach((nid, idx) => {
+        const w = wordOfNounId(nid);
+        if (idx>0) partsArr.push(conj);
+        partsArr.push(w);
+      });
+    }
 
     const parts: string[] = [];
     const variants: string[] = [];
@@ -505,14 +520,33 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
       // Transitive
       if (subjHS.form) parts.push(subjHS.form);
       if (verbLex) parts.push(conjFinite(verbLex, subjHS, frame.tense, { prog:frame.prog, hab:frame.hab, neg:frame.neg }));
-      // Direct object: first object noun
-      if (frame.objects[0]) parts.push(wordOfNounId(frame.objects[0]));
-      // Adpositional phrases from pairs in token order, skipping noun already used as object
+      // Direct object: support NP coordination
+      if (frame.objects[0]){
+        const baseObjId = frame.objects[0];
+        const lst = listForNounId(baseObjId);
+        if (lst && lst.items.filter(it=>it.nounId).length >= 2){
+          const ids = lst.items.map(it=>it.nounId!).filter(Boolean);
+          pushJoinedNouns(parts, ids, lst.type);
+        } else {
+          parts.push(wordOfNounId(baseObjId));
+        }
+      }
+      // Adpositional phrases: place particle once, then join NP list with coordinator if applicable
+      const usedGroups = new Set<string>();
       for (const p of pairs){
-        const w = wordOfNounId(p.nounId);
-        if (frame.objects[0] && p.nounId===frame.objects[0]) continue;
-        parts.push(p.part);
-        parts.push(w);
+        if (frame.objects[0] && p.nounId===frame.objects[0]) continue; // avoid repeating object noun
+        const lst = listForNounId(p.nounId);
+        if (lst && lst.items.filter(it=>it.nounId).length >= 2){
+          const key = `${p.part}:${lst.items.map(it=>it.nounId||it.text).join(',')}`;
+          if (usedGroups.has(key)) continue;
+          usedGroups.add(key);
+          parts.push(p.part);
+          const ids = lst.items.map(it=>it.nounId!).filter(Boolean);
+          pushJoinedNouns(parts, ids, lst.type);
+        } else {
+          parts.push(p.part);
+          parts.push(wordOfNounId(p.nounId));
+        }
       }
     }
 
