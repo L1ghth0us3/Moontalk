@@ -415,18 +415,19 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
     }
     const pv = firstVerbIdx >= 0 ? tokens.slice(0, firstVerbIdx) : tokens;
     const pws = new Set(pv.map(t=>t.text));
+    // Gather pre-verb pronouns in order
+    const pronList = pv.map(t=>t.text).filter(w => ['i','you','he','she','we','they'].includes(w));
     // Count pre-verb nouns for name pairs
     let preNounCount = 0;
     for (let i=0;i<pv.length;i++){
       const m2 = matchNounByToken(pv[i].text, pv[i+1]?.text, englishInput);
       if (m2.noun) { preNounCount++; if (m2.span===2) i++; }
     }
-    const heSheThey = pws.has('he') || pws.has('she') || pws.has('they');
-    // Simple, explicit subject coordination rules (pre-verb only)
-    if ((pws.has('i') && (heSheThey || pws.has('you'))) || (pws.has('you') && heSheThey) || (!pron && preNounCount >= 2)){
+    // Subject coordination: pronoun list length>=2 or name pair (no pronoun) triggers plural selection
+    if (pronList.length >= 2 || (!pron && preNounCount >= 2)){
       const prev = subj;
-      if (pws.has('i')) subj = 'we';
-      else if (pws.has('you')) subj = 'you(pl)';
+      if (pronList.includes('i') || pronList.includes('we')) subj = 'we';
+      else if (pronList.includes('you')) subj = 'you(pl)';
       else subj = 'they';
       if (prev !== subj) resLog.push(`subject coordination → ${subj} (1st>2nd>3rd)`);
     }
@@ -699,29 +700,7 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
         frame = { ...frame, verbRootId: vAll[0].id };
         builtMain.resolutionLog.push(`backfill verb from first detected: ${vAll[0].c1}${vAll[0].c2}${vAll[0].c3}`);
       }
-      // Final subject coordination enforcement at generation time (AND-coordination only)
-      // Recompute pre-verb pronouns and apply 1st>2nd>3rd if coordinated
-      let firstVerbIdx = -1;
-      for (let i=0;i<intakeTokens.length;i++){
-        const w = intakeTokens[i].text;
-        const two = intakeTokens[i+1]?.text ? `${w} ${intakeTokens[i+1].text}` : '';
-        const mv2 = two ? verbsLex.find(v => splitGlossItems(v.gloss).includes(normPhrase(two)) || (v.synonyms||[]).map(normPhrase).includes(normPhrase(two))) : null;
-        if (mv2 || matchVerbByToken(w)) { firstVerbIdx = i; break; }
-      }
-      const pv = firstVerbIdx >= 0 ? intakeTokens.slice(0, firstVerbIdx) : intakeTokens;
-      const pws = new Set(pv.map(t=>t.text));
-      const hasAnd = pv.some(t=>t.text==='and' || t.text==='plus' || (t.text==='as' && pv.some(u=>u.text==='well')) || (t.text==='not' && pv.some(u=>u.text==='only')));
-      const hasIorWe = pws.has('i') || pws.has('we');
-      const hasYou = pws.has('you');
-      const has3rd = pws.has('he') || pws.has('she') || pws.has('they');
-      if (hasAnd && ( (hasIorWe && (hasYou || has3rd)) || (hasYou && has3rd) )){
-        const prevSubj = frame.subject;
-        const nextSubj = hasIorWe ? 'we' : hasYou ? 'you(pl)' : 'they';
-        if (prevSubj !== nextSubj){
-          frame = { ...frame, subject: nextSubj };
-          builtMain.resolutionLog.push(`subject coordination (final) → ${nextSubj} (1st>2nd>3rd)`);
-        }
-      }
+      // Subject coordination final enforcement removed (reverted)
     }
     const verb = verbsLex.find(v => v.id === frame.verbRootId) || null;
     const objWords = frame.objects.map(oid => nounsLex.find(n => n.id === oid)?.word || "?");
