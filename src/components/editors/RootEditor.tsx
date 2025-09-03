@@ -179,7 +179,7 @@ export default function RootEditor({ initial, onChange, selectedId, onSelect, sh
         {(showSearch && query ? filtered : roots).map(r => (
           <div
             key={r.id}
-            className={`px-3 py-2 rounded-xl flex items-center gap-2 ${selectedId === r.id ? "border border-blue-500 root-item--selected" : (dupSigs.has(`${(r.c1||'').toLowerCase()}-${(r.c2||'').toLowerCase()}-${(r.c3||'').toLowerCase()}`) ? 'border border-red-300 bg-red-50' : 'border border-neutral-300 hover:bg-neutral-100')}`}
+            className={`list-item px-3 py-2 rounded-xl flex items-center gap-2 ${selectedId === r.id ? "border-blue-500 root-item--selected" : (dupSigs.has(`${(r.c1||'').toLowerCase()}-${(r.c2||'').toLowerCase()}-${(r.c3||'').toLowerCase()}`) ? 'border-red-300 bg-red-50' : '')}`}
             onClick={() => onSelect(r.id)}
             onDoubleClick={()=>setExpanded(true)}
             role="button"
@@ -261,7 +261,7 @@ export default function RootEditor({ initial, onChange, selectedId, onSelect, sh
                   {filtered.map(r => (
                     <div
                       key={r.id}
-                      className={`px-3 py-2 rounded-xl flex items-center gap-2 ${selectedId === r.id ? "border border-blue-500 root-item--selected" : (dupSigs.has(`${(r.c1||'').toLowerCase()}-${(r.c2||'').toLowerCase()}-${(r.c3||'').toLowerCase()}`) ? 'border border-red-300 bg-red-50' : 'border border-neutral-300 hover:bg-neutral-100')}`}
+                      className={`list-item px-3 py-2 rounded-xl flex items-center gap-2 ${selectedId === r.id ? "border-blue-500 root-item--selected" : (dupSigs.has(`${(r.c1||'').toLowerCase()}-${(r.c2||'').toLowerCase()}-${(r.c3||'').toLowerCase()}`) ? 'border-red-300 bg-red-50' : '')}`}
                       onClick={() => onSelect(r.id)}
                       role="button"
                       tabIndex={0}
