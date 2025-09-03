@@ -47,6 +47,7 @@ export default function RootEditor({ initial, onChange, selectedId, onSelect, sh
   const [expanded, setExpanded] = useState(false);
   const [query, setQuery] = useState("");
   const [showSearch, setShowSearch] = useLocalStorageState<boolean>(LS_KEYS.rootsSearchOpen, false);
+  const [dupGlossGroups, setDupGlossGroups] = useState<Array<{ gloss: string; ids: string[] }>>([]);
   const [scanToast, setScanToast] = useState<string | null>(null);
   const toastTimer = useRef<number | null>(null);
 
@@ -76,6 +77,19 @@ export default function RootEditor({ initial, onChange, selectedId, onSelect, sh
       return false;
     });
   }, [roots, query]);
+
+  // Duplicate gloss detection (exact normalized match, non-empty)
+  useEffect(() => {
+    const map = new Map<string, string[]>();
+    for (const r of roots){
+      const g = (r.gloss||'').trim().toLowerCase();
+      if (!g) continue;
+      map.set(g, [ ...(map.get(g)||[]), r.id ]);
+    }
+    const groups: Array<{ gloss:string; ids:string[] }> = [];
+    for (const [g,ids] of map){ if (ids.length>1) groups.push({ gloss: g, ids }); }
+    setDupGlossGroups(groups);
+  }, [roots]);
 
   function scanVerbToNounCollisions(){
     try {
@@ -202,9 +216,42 @@ export default function RootEditor({ initial, onChange, selectedId, onSelect, sh
                     onChange={e=>setQuery(e.target.value)}
                   />
                 </div>
+                {dupSigs.size>0 && (
+                  <div className="mt-2 text-sm rounded-lg border border-red-300 text-red-700 bg-red-50 px-3 py-2">
+                    <div className="font-semibold mb-1">Errors: duplicate verb roots</div>
+                    <div className="flex flex-wrap gap-2">
+                      {roots.map(r => {
+                        const sig = `${(r.c1||'').toLowerCase()}-${(r.c2||'').toLowerCase()}-${(r.c3||'').toLowerCase()}`;
+                        if (!dupSigs.has(sig)) return null;
+                        return (
+                          <button key={r.id} className="px-2 py-1 rounded border border-red-300 text-red-700 hover:bg-red-100 text-xs" onClick={()=>{ onSelect(r.id); }}>[{[r.c1,r.c2,r.c3].join('-')}] {r.gloss||'(no gloss)'}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+                {dupGlossGroups.length>0 && (
+                  <div className="mt-2 text-sm rounded-lg border border-red-300 text-red-700 bg-red-50 px-3 py-2">
+                    <div className="font-semibold mb-1">Errors: duplicate verb gloss</div>
+                    {dupGlossGroups.map((g,i)=> (
+                      <div key={i} className="mb-1">
+                        <div className="opacity-80">“{g.gloss}”</div>
+                        <div className="flex flex-wrap gap-2 mt-1">
+                          {g.ids.map(id => {
+                            const r = roots.find(x=>x.id===id)!;
+                            return (
+                              <button key={id} className="px-2 py-1 rounded border border-red-300 text-red-700 hover:bg-red-100 text-xs" onClick={()=>{ onSelect(id); }}>{[r.c1,r.c2,r.c3].join('-')}</button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 <div className="mt-3 max-h-[24rem] overflow-y-auto space-y-2 pr-1">
                   {filtered.map(r => (
-                    <button key={r.id} onClick={() => onSelect(r.id)} className={`w-full text-left px-3 py-2 rounded-xl border ${selectedId === r.id ? "border-blue-500 root-item--selected" : "border-neutral-200 hover:bg-neutral-50"}`}>
+                    <button key={r.id} onClick={() => onSelect(r.id)} className={`w-full text-left px-3 py-2 rounded-xl border ${selectedId === r.id ? "border-blue-500 root-item--selected" : (dupSigs.has(`${(r.c1||'').toLowerCase()}-${(r.c2||'').toLowerCase()}-${(r.c3||'').toLowerCase()}`) ? 'border-red-300 bg-red-50' : 'border-neutral-200 hover:bg-neutral-50')}`}>
                       <div className="flex items-center justify-between gap-2 min-w-0">
                         <div className="font-semibold text-lg shrink-0">{[r.c1, r.c2, r.c3].join("-")}</div>
                         <div className="text-xs text-neutral-500 truncate flex-1 min-w-0 text-right">{r.gloss || "(no gloss)"}</div>
