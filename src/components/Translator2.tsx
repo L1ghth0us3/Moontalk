@@ -270,7 +270,17 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
       // Also consider existential 'there' as subject
       const leftHasThere = left.some(t=>t.text==='there');
       const rightHasThere = right.some(t=>t.text==='there');
-      if ((leftPron || leftHasThere) && (rightPron || rightHasThere)){
+      // Require a verb on both sides to be considered independent clauses
+      const hasVerb = (arr: IntakeToken[]) => {
+        for (let j=0;j<arr.length;j++){
+          const ww = arr[j].text; const two = arr[j+1]?.text ? `${ww} ${arr[j+1].text}` : '';
+          const mv2 = two ? verbsLex.find(v => splitGlossItems(v.gloss).includes(normPhrase(two)) || (v.synonyms||[]).map(normPhrase).includes(normPhrase(two))) : null;
+          if (mv2) return true;
+          if (matchVerbByToken(ww)) return true;
+        }
+        return false;
+      };
+      if ((leftPron || leftHasThere) && (rightPron || rightHasThere) && hasVerb(left) && hasVerb(right)){
         return { left, right, type: typ };
       }
     }
