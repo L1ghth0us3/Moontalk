@@ -918,12 +918,29 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
             <div className="w-full max-w-2xl rounded-2xl border border-neutral-200 bg-white fantasy-card p-5">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-xl font-semibold">Example Tests</h3>
-                <button className="px-3 py-1 rounded-lg border border-neutral-300 hover:bg-neutral-50" onClick={()=>setTestsOpen(false)}>Close</button>
+                <div className="flex items-center gap-2">
+                  <button
+                    className="px-3 py-1 rounded-lg border border-neutral-300 hover:bg-neutral-50"
+                    onClick={()=>{
+                      const line = (tests||[]).map(t => `${t.pass? 'PASS':'FAIL'} ${t.name}: expected=${t.expected}; got=${t.got}${t.note?`; note=${t.note}`:''}`).join(' | ');
+                      try { navigator.clipboard.writeText(line); } catch {}
+                    }}
+                    title="Copy plain text (single line)"
+                  >Copy Plain</button>
+                  <button className="px-3 py-1 rounded-lg border border-neutral-300 hover:bg-neutral-50" onClick={()=>setTestsOpen(false)}>Close</button>
+                </div>
               </div>
               <div className="space-y-3 text-sm">
                 {tests?.map((t,i)=> (
                   <div key={i}>
-                    <div className={t.pass ? 'text-emerald-700' : 'text-red-700'}>
+                    <div
+                      className={t.pass ? 'text-emerald-700 cursor-pointer hover:underline' : 'text-red-700 cursor-pointer hover:underline'}
+                      title="Click to copy this result as plain text"
+                      onClick={()=>{
+                        const line = `${t.pass? 'PASS':'FAIL'} ${t.name}: expected=${t.expected}; got=${t.got}${t.note?`; note=${t.note}`:''}`;
+                        try { navigator.clipboard.writeText(line); } catch {}
+                      }}
+                    >
                       {t.pass ? '✓' : '✗'} {t.name}: expected “{t.expected}” got “{t.got}”{t.note?` — ${t.note}`:''}
                     </div>
                     {t.lex && (
