@@ -93,7 +93,8 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
   // Settings: coordinator join words (defaults: AND=ʋa, OR=ra, NOR=ra, BUT=ma)
   const [t2Settings, setT2Settings] = useLocalStorageState(LS_KEYS.translator2Settings, {
     coordinators: { AND: 'ʋa', OR: 'ra', NOR: 'ra', BUT: 'ma' },
-    particles: { ri: 'with; instrument', ith: 'to; goal', 'ʌs': 'from; source', la: 'in/at; location' },
+    // Particles Mapping: English category → HS particle code
+    particles: { WITH: 'ri', TO: 'ith', FROM: 'ʌs', IN_AT: 'la' },
   });
   const [t2SettingsOpen, setT2SettingsOpen] = useState(false);
 
@@ -1210,12 +1211,17 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
 
               {/* Particles row */}
               {(() => {
-                const PARTICLE_INFO: Record<string, { en: string; triggers: string[] }> = {
-                  ri: { en: (t2Settings as any).particles?.ri || 'with; instrument', triggers: ['with'] },
-                  ith: { en: (t2Settings as any).particles?.ith || 'to; goal', triggers: ['to'] },
-                  'ʌs': { en: (t2Settings as any).particles?.['ʌs'] || 'from; source', triggers: ['from'] },
-                  la: { en: (t2Settings as any).particles?.la || 'in/at; location', triggers: ['in','at'] },
+                const P_MAP = (t2Settings as any).particles || { WITH:'ri', TO:'ith', FROM:'ʌs', IN_AT:'la' };
+                const EN_LABEL: Record<string, string> = {
+                  WITH: 'with; instrument', TO: 'to; goal', FROM: 'from; source', IN_AT: 'in/at; location'
                 };
+                // Invert EN→HS mapping to HS→EN label for display
+                const PARTICLE_INFO: Record<string, { en: string; triggers: string[] }> = {
+                  [P_MAP.WITH]: { en: EN_LABEL.WITH, triggers: ['with'] },
+                  [P_MAP.TO]: { en: EN_LABEL.TO, triggers: ['to'] },
+                  [P_MAP.FROM]: { en: EN_LABEL.FROM, triggers: ['from'] },
+                  [P_MAP.IN_AT]: { en: EN_LABEL.IN_AT, triggers: ['in','at'] },
+                } as any;
                 const pairs = pairParticlesWithNounsFromTokens(intakeTokens);
                 if (!pairs.length) return null;
                 // group by particle code
@@ -1374,16 +1380,25 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
                   </div>
                 </div>
                 <div className="pt-2 border-t border-neutral-200/70">
-                  <div className="text-sm font-medium mb-2">Particles Translation</div>
+                  <div className="text-sm font-medium mb-2">Particles Mapping</div>
                   <div className="grid grid-cols-2 gap-3">
-                    {(['ri','ith','ʌs','la'] as const).map(p => (
-                      <label key={p} className="block">
-                        <div className="text-xs uppercase tracking-wide text-neutral-500 mb-1">{p}</div>
-                        <input className="w-full border rounded-lg px-2 py-2" value={(t2Settings as any).particles?.[p] || ''} onChange={e=>setT2Settings(s=>({ ...s, particles: { ...(s as any).particles, [p]: e.target.value } }))} />
+                    {([
+                      { key: 'WITH', label: 'with / instrument' },
+                      { key: 'TO', label: 'to / goal' },
+                      { key: 'FROM', label: 'from / source' },
+                      { key: 'IN_AT', label: 'in / at / location' },
+                    ] as const).map(p => (
+                      <label key={p.key} className="block">
+                        <div className="text-xs uppercase tracking-wide text-neutral-500 mb-1">{p.label}</div>
+                        <input
+                          className="w-full border rounded-lg px-2 py-2"
+                          value={(t2Settings as any).particles?.[p.key] || ''}
+                          onChange={e=>setT2Settings(s=>({ ...s, particles: { ...(s as any).particles, [p.key]: e.target.value } }))}
+                        />
                       </label>
                     ))}
                   </div>
-                  <div className="text-xs text-neutral-600 mt-1">These labels appear in analysis under Particles.</div>
+                  <div className="text-xs text-neutral-600 mt-1">Map English roles to HS particles (used in output/analysis).</div>
                 </div>
               </div>
             </div>
