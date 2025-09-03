@@ -264,18 +264,22 @@ export default function NounEditor({ initial, onChange, selectedId, onSelect, sh
       )}
       <div className="mt-3 max-h-[20rem] overflow-y-auto space-y-2 pr-1">
         {(showSearch && query ? filtered : nouns).map(n => (
-          <div key={n.id} className="flex items-center gap-2">
-            <button onClick={() => onSelect(n.id)} onDoubleClick={()=>setExpanded(true)} className={`flex-1 text-left px-3 py-2 rounded-xl border ${selectedId === n.id ? "border-blue-500 noun-item--selected" : (colliding.has(n.id) ? 'border-amber-300 bg-amber-50' : 'border-neutral-200 hover:bg-neutral-50')}`}>
-              <div className="flex items-center justify-between gap-2 min-w-0">
-                <div className="font-semibold text-lg truncate max-w-full">{n.word}</div>
-                <div className="text-xs text-neutral-500 truncate flex-1 min-w-0 text-right">{n.gloss || "(no gloss)"}</div>
-              </div>
-            </button>
+          <div
+            key={n.id}
+            className={`px-3 py-2 rounded-xl border flex items-center gap-2 ${selectedId === n.id ? "border-blue-500 noun-item--selected" : (colliding.has(n.id) ? 'border-amber-300 bg-amber-50' : 'border-neutral-200 hover:bg-neutral-50')}`}
+            onClick={() => onSelect(n.id)}
+            onDoubleClick={()=>setExpanded(true)}
+            role="button"
+            tabIndex={0}
+          >
+            <div className="font-semibold text-lg truncate max-w-full">{n.word}</div>
+            <div className="text-xs text-neutral-500 truncate ml-auto">{n.gloss || "(no gloss)"}</div>
             <button
-              className="px-2 py-1 rounded border border-neutral-300 hover:bg-neutral-50 text-xs shrink-0"
+              className="ml-2 px-2 py-1 rounded border border-neutral-300 hover:bg-neutral-50 text-xs shrink-0"
               title="Copy noun"
+              aria-label="Copy noun"
               onClick={(e)=>{ e.stopPropagation(); try { navigator.clipboard.writeText(n.word); } catch {} }}
-            >Copy</button>
+            >📋</button>
           </div>
         ))}
         {!(showSearch && query ? filtered.length : nouns.length) && <div className="text-neutral-500 text-sm">{showSearch && query ? 'No matching nouns.' : 'No nouns yet. Add one above.'}</div>}
@@ -357,18 +361,21 @@ export default function NounEditor({ initial, onChange, selectedId, onSelect, sh
                 )}
                 <div className="mt-3 max-h-[24rem] overflow-y-auto space-y-2 pr-1">
                   {filtered.map(n => (
-                    <div key={n.id} className="flex items-center gap-2">
-                      <button onClick={() => onSelect(n.id)} className={`flex-1 text-left px-3 py-2 rounded-xl border ${selectedId === n.id ? "border-blue-500 noun-item--selected" : "border-neutral-200 hover:bg-neutral-50"}`}>
-                        <div className="flex items-center justify-between gap-2 min-w-0">
-                          <div className="font-semibold text-lg truncate max-w-full">{n.word}</div>
-                          <div className="text-xs text-neutral-500 truncate flex-1 min-w-0 text-right">{n.gloss || "(no gloss)"}</div>
-                        </div>
-                      </button>
+                    <div
+                      key={n.id}
+                      className={`px-3 py-2 rounded-xl border flex items-center gap-2 ${selectedId === n.id ? "border-blue-500 noun-item--selected" : "border-neutral-200 hover:bg-neutral-50"}`}
+                      onClick={() => onSelect(n.id)}
+                      role="button"
+                      tabIndex={0}
+                    >
+                      <div className="font-semibold text-lg truncate max-w-full">{n.word}</div>
+                      <div className="text-xs text-neutral-500 truncate ml-auto">{n.gloss || "(no gloss)"}</div>
                       <button
-                        className="px-2 py-1 rounded border border-neutral-300 hover:bg-neutral-50 text-xs shrink-0"
+                        className="ml-2 px-2 py-1 rounded border border-neutral-300 hover:bg-neutral-50 text-xs shrink-0"
                         title="Copy noun"
+                        aria-label="Copy noun"
                         onClick={(e)=>{ e.stopPropagation(); try { navigator.clipboard.writeText(n.word); } catch {} }}
-                      >Copy</button>
+                      >📋</button>
                     </div>
                   ))}
                   {!filtered.length && <div className="text-neutral-500 text-sm">No matching nouns.</div>}
