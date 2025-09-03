@@ -1,9 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Root } from "../../types";
-import { useLocalStorageState, LS_KEYS, lsGet } from "../../lib/storage";
-import type { Noun } from "../../types";
-import { PRONOUNS, TENSES } from "../../types";
-import { buildFinite } from "../../lib/morphology";
+import { useLocalStorageState, LS_KEYS } from "../../lib/storage";
 import FiniteForms from "../FiniteForms";
 import RenderDerivations from "../Derivations";
 
@@ -64,8 +61,7 @@ export default function RootEditor({ initial, onChange, selectedId, onSelect, sh
     }
     return Array.from(new Set(out));
   }
-  const [scanToast, setScanToast] = useState<string | null>(null);
-  const toastTimer = useRef<number | null>(null);
+  // no scan toast in RootEditor (scan lives in NounEditor)
 
   // Simple subsequence matcher for forgiving/fuzzy filtering
   function fuzzySubsequence(needle: string, hay: string){
@@ -110,32 +106,7 @@ export default function RootEditor({ initial, onChange, selectedId, onSelect, sh
     setDupGlossGroups(groups);
   }, [roots]);
 
-  function scanVerbToNounCollisions(){
-    try {
-      const nouns: Noun[] = lsGet<Noun[]>(LS_KEYS.nouns, [] as any);
-      const nounMap = new Map<string, Noun>();
-      for (const n of nouns){ nounMap.set((n.word||'').toLowerCase(), n); }
-      const hits: Noun[] = [];
-      for (const r of roots){
-        for (const p of PRONOUNS){
-          for (const t of TENSES){
-            const f = buildFinite(r as any, p.subjV, t.vowel).toLowerCase();
-            const n = nounMap.get(f); if (n) hits.push(n);
-          }
-        }
-      }
-      if (hits.length){
-        try { localStorage.setItem(LS_KEYS.nounsFocus, JSON.stringify({ id: hits[0].id, at: Date.now() })); } catch {}
-        setScanToast(`${hits.length} noun${hits.length===1?'':'s'} collide with verb forms — click Nouns to inspect`);
-      } else {
-        setScanToast('No noun ↔ verb-form collisions');
-      }
-    } catch {
-      setScanToast('Scan failed');
-    }
-    if (toastTimer.current) { clearTimeout(toastTimer.current); toastTimer.current = null; }
-    toastTimer.current = window.setTimeout(() => setScanToast(null), 2200);
-  }
+  // removed scan function
 
   return (
     <>
@@ -160,14 +131,6 @@ export default function RootEditor({ initial, onChange, selectedId, onSelect, sh
       <>
       <div className="flex items-center gap-2">
         <RootCreator onCreate={addRoot} />
-        <div className="relative">
-          <button aria-label="Scan noun collisions" title="Scan noun collisions (on-demand)" className="px-2 py-1 text-sm rounded border border-amber-300 text-amber-700 hover:bg-amber-50" onClick={scanVerbToNounCollisions}>Scan</button>
-          {scanToast && (
-            <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 rounded-md border border-amber-300 bg-amber-50 text-amber-700 text-xs px-2.5 py-1.5 shadow-lg transition-opacity duration-500 opacity-100">
-              {scanToast}
-            </div>
-          )}
-        </div>
       </div>
       {dupSigs.size>0 && (
         <div className="mt-2 text-sm rounded-lg border border-red-300 text-red-700 bg-red-50 px-3 py-2">
