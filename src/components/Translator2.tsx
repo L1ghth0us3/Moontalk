@@ -46,6 +46,7 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
   const [rootsLocal, setRootsLocal] = useState<Root[]>(roots);
   const [nounsLocal, setNounsLocal] = useState<Noun[]>(nouns);
   const [selectedRootId, setSelectedRootId] = useState<string | null>(rootsLocal[0]?.id ?? null);
+  const [selectedNounId, setSelectedNounId] = useState<string | null>(nounsLocal[0]?.id ?? null);
   // Map local data into lexicon entries (decoupled contract)
   const verbsLex: LexiconEntryVerb[] = useMemo(() => rootsLocal.map(r => ({
     id: r.id, c1: r.c1, c2: r.c2, c3: r.c3,
@@ -856,8 +857,8 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
             <NounEditor
               initial={nounsLocal}
               onChange={setNounsLocal}
-              selectedId={nounsLocal[0]?.id ?? null}
-              onSelect={()=>{ /* no-op within compact embed */ }}
+              selectedId={selectedNounId}
+              onSelect={setSelectedNounId}
               showCollapse={false}
             />
           </div>
