@@ -1382,21 +1382,29 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
                 <div className="pt-2 border-t border-neutral-200/70">
                   <div className="text-sm font-medium mb-2">Particles Mapping</div>
                   <div className="grid grid-cols-2 gap-3">
-                    {([
-                      { key: 'WITH', label: 'with / instrument' },
-                      { key: 'TO', label: 'to / goal' },
-                      { key: 'FROM', label: 'from / source' },
-                      { key: 'IN_AT', label: 'in / at / location' },
-                    ] as const).map(p => (
-                      <label key={p.key} className="block">
-                        <div className="text-xs uppercase tracking-wide text-neutral-500 mb-1">{p.label}</div>
-                        <input
-                          className="w-full border rounded-lg px-2 py-2"
-                          value={(t2Settings as any).particles?.[p.key] || ''}
-                          onChange={e=>setT2Settings(s=>({ ...s, particles: { ...(s as any).particles, [p.key]: e.target.value } }))}
-                        />
-                      </label>
-                    ))}
+                    {(() => {
+                      const DEF_P = { WITH:'ri', TO:'ith', FROM:'ʌs', IN_AT:'la' } as const;
+                      const current = (t2Settings as any).particles || {};
+                      return (
+                        <>
+                      {([
+                        { key: 'WITH', label: 'with / instrument' },
+                        { key: 'TO', label: 'to / goal' },
+                        { key: 'FROM', label: 'from / source' },
+                        { key: 'IN_AT', label: 'in / at / location' },
+                      ] as const).map(p => (
+                        <label key={p.key} className="block">
+                          <div className="text-xs uppercase tracking-wide text-neutral-500 mb-1">{p.label}</div>
+                          <input
+                            className="w-full border rounded-lg px-2 py-2"
+                            value={(current as any)[p.key] || (DEF_P as any)[p.key]}
+                            onChange={e=>setT2Settings(s=>({ ...s, particles: { ...(s as any).particles, [p.key]: e.target.value } }))}
+                          />
+                        </label>
+                      ))}
+                        </>
+                      );
+                    })()}
                   </div>
                   <div className="text-xs text-neutral-600 mt-1">Map English roles to HS particles (used in output/analysis).</div>
                 </div>
