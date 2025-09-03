@@ -33,6 +33,7 @@ export default function NounEditor({ initial, onChange, selectedId, onSelect, sh
   const [showSearch, setShowSearch] = useLocalStorageState<boolean>(LS_KEYS.nounsSearchOpen, false);
   const [query, setQuery] = useState("");
   const [colliding, setColliding] = useState<Set<string>>(new Set());
+  const [collisions, setCollisions] = useState<Record<string, Array<{ form: string; root: string; gloss: string; pron: string; tense: string }>>>({});
   const [scanned, setScanned] = useState<boolean>(false);
   const [dupWords, setDupWords] = useState<string[]>([]);
   const [dupGlossGroups, setDupGlossGroups] = useState<Array<{ gloss: string; ids: string[] }>>([]);
@@ -91,17 +92,34 @@ export default function NounEditor({ initial, onChange, selectedId, onSelect, sh
   function scanVerbCollisions(){
     try {
       const roots: Root[] = lsGet<Root[]>(LS_KEYS.roots, [] as any);
-      const forms = new Set<string>();
+      // Build form -> details map
+      const formMap = new Map<string, Array<{ form: string; root: string; gloss: string; pron: string; tense: string }>>();
       for (const r of roots){
+        const rootSig = `${r.c1}${r.c2}${r.c3}`;
+        const gloss = r.gloss || '';
         for (const p of PRONOUNS){
           for (const t of TENSES){
-            forms.add(buildFinite(r as any, p.subjV, t.vowel).toLowerCase());
+            const f = buildFinite(r as any, p.subjV, t.vowel);
+            const key = f.toLowerCase();
+            const arr = formMap.get(key) || [];
+            arr.push({ form: f, root: rootSig, gloss, pron: p.form, tense: t.label });
+            formMap.set(key, arr);
           }
         }
       }
       const col = new Set<string>();
-      for (const n of nouns){ if (forms.has((n.word||'').toLowerCase())) col.add(n.id); }
-      setColliding(col); setScanned(true);
+      const colDetail: Record<string, Array<{ form: string; root: string; gloss: string; pron: string; tense: string }>> = {};
+      for (const n of nouns){
+        const key = (n.word||'').toLowerCase();
+        const hits = formMap.get(key);
+        if (hits && hits.length){
+          col.add(n.id);
+          colDetail[n.id] = hits;
+        }
+      }
+      setColliding(col);
+      setCollisions(colDetail);
+      setScanned(true);
     } catch { setColliding(new Set()); setScanned(true); }
   }
 
@@ -157,10 +175,29 @@ export default function NounEditor({ initial, onChange, selectedId, onSelect, sh
       {scanned && (
         <div className={`mt-2 text-sm rounded-lg px-3 py-2 ${colliding.size>0 ? 'border border-amber-300 text-amber-700 bg-amber-50' : 'border border-neutral-200 text-neutral-700 bg-neutral-50'}`}>
           {colliding.size>0 ? (
-            <>
-              <span className="font-semibold mr-1">Warnings:</span>
-              {colliding.size} noun{colliding.size===1?'':'s'} collide with verb forms.
-            </>
+            <div>
+              <div className="font-semibold mb-1">Warnings: {colliding.size} noun{colliding.size===1?'':'s'} collide with verb forms</div>
+              <div className="space-y-1">
+                {Array.from(colliding).map(id => {
+                  const n = nouns.find(x=>x.id===id);
+                  if (!n) return null;
+                  const hits = collisions[id] || [];
+                  return (
+                    <div key={id} className="border border-amber-200 rounded-md px-2 py-1 bg-amber-50/50">
+                      <button className="font-medium underline underline-offset-2" onClick={()=>{ onSelect(id); setExpanded(true); }}>{n.word}</button>
+                      <div className="text-xs mt-1">
+                        {hits.slice(0,6).map((h,idx)=> (
+                          <span key={idx} className="inline-block mr-2 mb-1 px-1.5 py-0.5 rounded border border-amber-200 bg-white text-amber-700">
+                            {h.form} <span className="opacity-70">({h.pron}, {h.tense}; {h.root}{h.gloss?` — ${h.gloss}`:''})</span>
+                          </span>
+                        ))}
+                        {hits.length>6 && <span className="opacity-70">(+{hits.length-6} more)</span>}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           ) : 'No noun ↔ verb-form collisions found.'}
         </div>
       )}
