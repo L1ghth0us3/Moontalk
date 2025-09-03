@@ -1010,10 +1010,14 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
           const objects = frm.objects.map(id => wordOfNounId(id)).join(', ') || '—';
           const particles = pairParticlesWithNounsFromTokens(intakeTokens).map(p => `${p.part} ${wordOfNounId(p.nounId)}`).join(' • ') || '—';
           const coord = detectCoordination(intakeTokens);
+          const clauseCoord = detectClauseCoordination(intakeTokens);
           const verbsAll = detectAllVerbs(intakeTokens);
           const nounsAll = detectAllNouns(intakeTokens);
           const coordSummary = coord.lists.length ? coord.lists.map(l => `${l.role}:${l.type} [${l.items.map(it=>it.text).join(', ')}]`).join(' • ') : '—';
           const resLog = built?.resolutionLog || [];
+          const flags = [frm.prog?'Prog':null, frm.hab?'Hab':null, frm.neg?'Neg':null].filter(Boolean).join(', ') || '—';
+          const COORD_WORD: Record<CoordType, string> = { AND: 'ʋa', OR: 'ra', NOR: 'ʋa', BUT: 'ʋa' };
+          const CLAUSE_WORD: Record<'AND'|'OR'|'NOR'|'BUT', string> = { AND:'ʋa', OR:'ra', NOR:'ra', BUT:'ma' };
           return (
             <div className="rounded-lg border p-2 analysis-panel">
               <div className="grid grid-cols-[10rem_1fr] gap-x-4 gap-y-1 text-sm">
@@ -1033,6 +1037,8 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
                       <div key={v.id+':'+i} className="min-w-[16rem] rounded-lg border p-2 sub-panel">
                         <div className="text-sm font-medium mb-1">{v.c1}{v.c2}{v.c3} — {v.gloss || '(verb)'}</div>
                         <div className="text-sm"><span className="opacity-70">Form:</span> {conjFinite(v, subjHS, frm.tense, { prog: frm.prog, hab: frm.hab, neg: frm.neg })}</div>
+                        <div className="text-sm"><span className="opacity-70">Tense:</span> {frm.tense}</div>
+                        <div className="text-sm"><span className="opacity-70">Flags:</span> {flags}</div>
                         <div className="mt-1">
                           {resLog.some(line => line.includes(`${v.c1}${v.c2}${v.c3}`) && /fuzzy/.test(line)) ? (
                             <span className="badge badge-fuzzy">Fuzzy (≤1 edit)</span>
@@ -1070,6 +1076,32 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
                         </div>
                       );
                     })}
+                  </div>
+                </div>
+              )}
+
+              {/* Coordinators row */}
+              {(coord.lists.length > 0 || clauseCoord) && (
+                <div className="mt-3">
+                  <div className="text-xs uppercase tracking-wide text-neutral-500 mb-1">Coordinators</div>
+                  <div className="flex gap-2 overflow-x-auto pb-1">
+                    {coord.lists.map((l, idx) => (
+                      <div key={`coord-npvp-${idx}`} className="min-w-[16rem] rounded-lg border p-2 sub-panel">
+                        <div className="text-sm font-medium mb-1">{l.role}: {l.type}</div>
+                        <div className="text-sm"><span className="opacity-70">HS:</span> {COORD_WORD[l.type]}</div>
+                        <div className="text-sm"><span className="opacity-70">EN:</span> {l.type.toLowerCase()}</div>
+                        <div className="text-sm"><span className="opacity-70">Items:</span> {l.items.map(it=>it.text).join(', ')}</div>
+                        <div className="text-xs mt-1 opacity-80">Joined {l.role} with {COORD_WORD[l.type]}</div>
+                      </div>
+                    ))}
+                    {clauseCoord && (
+                      <div key={`coord-clause`} className="min-w-[16rem] rounded-lg border p-2 sub-panel">
+                        <div className="text-sm font-medium mb-1">CLAUSE: {clauseCoord.type}</div>
+                        <div className="text-sm"><span className="opacity-70">HS:</span> {CLAUSE_WORD[clauseCoord.type]}</div>
+                        <div className="text-sm"><span className="opacity-70">EN:</span> {clauseCoord.type.toLowerCase()}</div>
+                        <div className="text-xs mt-1 opacity-80">Joined two clauses with {CLAUSE_WORD[clauseCoord.type]}</div>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
