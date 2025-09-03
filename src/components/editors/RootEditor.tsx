@@ -183,6 +183,25 @@ export default function RootEditor({ initial, onChange, selectedId, onSelect, sh
           </div>
         </div>
       )}
+      {dupGlossGroups.length>0 && (
+        <div className="mt-2 text-sm rounded-lg border border-red-300 text-red-700 bg-red-50 px-3 py-2">
+          <div className="font-semibold mb-1">Errors: duplicate verb gloss terms</div>
+          {dupGlossGroups.map((g,i)=> (
+            <div key={i} className="mb-1">
+              <div className="opacity-80">“{g.term}”</div>
+              <div className="flex flex-wrap gap-2 mt-1">
+                {g.ids.map(id => {
+                  const r = roots.find(x=>x.id===id);
+                  if (!r) return null;
+                  return (
+                    <button key={id} className="px-2 py-1 rounded border border-red-300 text-red-700 hover:bg-red-100 text-xs" onClick={()=>{ onSelect(id); setExpanded(true); }}>{[r.c1,r.c2,r.c3].join('-')}</button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
       {showSearch && (
         <div className="mt-3">
           <input

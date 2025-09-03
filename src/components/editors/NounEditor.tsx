@@ -294,6 +294,35 @@ export default function NounEditor({ initial, onChange, selectedId, onSelect, sh
                 <div className="mt-3">
                   <input className="w-full px-3 py-2 rounded-lg border border-neutral-300" placeholder="Search nouns (word, gloss, synonyms)" value={query} onChange={e=>setQuery(e.target.value)} />
                 </div>
+                {dupWords.length>0 && (
+                  <div className="mt-2 text-sm rounded-lg border border-red-300 text-red-700 bg-red-50 px-3 py-2">
+                    <div className="font-semibold mb-1">Errors: duplicate nouns</div>
+                    <div className="flex flex-wrap gap-2">
+                      {dupWords.map(w => (
+                        <span key={w} className="px-2 py-1 rounded border border-red-300 text-red-700 text-xs">{w}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {dupGlossGroups.length>0 && (
+                  <div className="mt-2 text-sm rounded-lg border border-red-300 text-red-700 bg-red-50 px-3 py-2">
+                    <div className="font-semibold mb-1">Errors: duplicate noun gloss terms</div>
+                    {dupGlossGroups.map((g,i)=> (
+                      <div key={i} className="mb-1">
+                        <div className="opacity-80">“{g.term}”</div>
+                        <div className="flex flex-wrap gap-2 mt-1">
+                          {g.ids.map(id => {
+                            const n = nouns.find(x=>x.id===id);
+                            if (!n) return null;
+                            return (
+                              <button key={id} className="px-2 py-1 rounded border border-red-300 text-red-700 hover:bg-red-100 text-xs" onClick={()=>{ onSelect(id); }}>{n.word}</button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 {scanned && colliding.size>0 && (
                   <div className="mt-2 text-sm rounded-lg border border-amber-300 text-amber-700 bg-amber-50 px-3 py-2">
                     <div className="font-semibold mb-1">Warnings: {colliding.size} noun{colliding.size===1?'':'s'} collide with verb forms</div>
