@@ -16,6 +16,17 @@ const uid = () => Math.random().toString(36).slice(2, 10);
 export default function RootEditor({ initial, onChange, selectedId, onSelect, showCollapse = false, onCreateNoun }: { initial: Root[]; onChange: (r: Root[])=>void; selectedId: string|null; onSelect: (id: string|null)=>void; showCollapse?: boolean; onCreateNoun?: (n: { word: string; gloss?: string; synonyms?: string[] }) => void; }){
   const [roots, setRoots] = useLocalStorageState<Root[]>(LS_KEYS.roots, initial);
   useEffect(()=>{ onChange(roots); }, [roots]);
+  // Duplicate detection by signature
+  const dupSigs = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const r of roots){
+      const sig = `${(r.c1||'').toLowerCase()}-${(r.c2||'').toLowerCase()}-${(r.c3||'').toLowerCase()}`;
+      counts.set(sig, (counts.get(sig)||0)+1);
+    }
+    const d = new Set<string>();
+    for (const [k,v] of counts){ if (v>1) d.add(k); }
+    return d;
+  }, [roots]);
 
   const selected = useMemo(()=> roots.find(r=>r.id===selectedId) ?? null, [roots, selectedId]);
   const [synonymsText, setSynonymsText] = useState("");
@@ -83,6 +94,12 @@ export default function RootEditor({ initial, onChange, selectedId, onSelect, sh
       {!collapsed && (
       <>
       <RootCreator onCreate={addRoot} />
+      {dupSigs.size>0 && (
+        <div className="mt-2 text-sm rounded-lg border border-red-300 text-red-700 bg-red-50 px-3 py-2">
+          <span className="font-semibold mr-1">Errors:</span>
+          Duplicate verb roots found ({dupSigs.size}). Please resolve.
+        </div>
+      )}
       {showSearch && (
         <div className="mt-3">
           <input
@@ -99,7 +116,7 @@ export default function RootEditor({ initial, onChange, selectedId, onSelect, sh
             key={r.id}
             onClick={() => onSelect(r.id)}
             onDoubleClick={()=>setExpanded(true)}
-            className={`w-full text-left px-3 py-2 rounded-xl border ${selectedId === r.id ? "border-blue-500 root-item--selected" : "border-neutral-200 hover:bg-neutral-50"}`}
+            className={`w-full text-left px-3 py-2 rounded-xl border ${selectedId === r.id ? "border-blue-500 root-item--selected" : (dupSigs.has(`${(r.c1||'').toLowerCase()}-${(r.c2||'').toLowerCase()}-${(r.c3||'').toLowerCase()}`) ? 'border-red-300 bg-red-50' : 'border-neutral-200 hover:bg-neutral-50')}`}
           >
             <div className="flex items-center justify-between gap-2 min-w-0">
               <div className="font-semibold text-lg shrink-0">{[r.c1, r.c2, r.c3].join("-")}</div>

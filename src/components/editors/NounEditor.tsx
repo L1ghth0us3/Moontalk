@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import type { Noun } from "../../types";
-import { useLocalStorageState, LS_KEYS } from "../../lib/storage";
+import type { Noun, Root } from "../../types";
+import { useLocalStorageState, LS_KEYS, lsGet } from "../../lib/storage";
+import { PRONOUNS, TENSES } from "../../types";
+import { buildFinite } from "../../lib/morphology";
 
 const uid = () => Math.random().toString(36).slice(2, 10);
 
@@ -27,6 +29,8 @@ export default function NounEditor({ initial, onChange, selectedId, onSelect, sh
   const [expanded, setExpanded] = useState(false);
   const [showSearch, setShowSearch] = useLocalStorageState<boolean>(LS_KEYS.nounsSearchOpen, false);
   const [query, setQuery] = useState("");
+  const [colliding, setColliding] = useState<Set<string>>(new Set());
+  const [scanned, setScanned] = useState<boolean>(false);
 
   // Simple subsequence matcher for forgiving/fuzzy filtering
   function fuzzySubsequence(needle: string, hay: string){
@@ -42,13 +46,31 @@ export default function NounEditor({ initial, onChange, selectedId, onSelect, sh
     });
   }, [nouns, query]);
 
+  function scanVerbCollisions(){
+    try {
+      const roots: Root[] = lsGet<Root[]>(LS_KEYS.roots, [] as any);
+      const forms = new Set<string>();
+      for (const r of roots){
+        for (const p of PRONOUNS){
+          for (const t of TENSES){
+            forms.add(buildFinite(r as any, p.subjV, t.vowel).toLowerCase());
+          }
+        }
+      }
+      const col = new Set<string>();
+      for (const n of nouns){ if (forms.has((n.word||'').toLowerCase())) col.add(n.id); }
+      setColliding(col); setScanned(true);
+    } catch { setColliding(new Set()); setScanned(true); }
+  }
+
   return (
     <>
     <section className="rounded-3xl border border-neutral-200 p-4 shadow-sm overflow-hidden fantasy-card">
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-xl md:text-2xl font-semibold">Nouns</h2>
-        <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2">
           <button aria-label="Search" title="Search" className="px-2 py-1 text-sm rounded border border-neutral-300 hover:bg-neutral-50" onClick={()=>setShowSearch(s=>!s)}>🔎</button>
+          <button aria-label="Scan verb collisions" title="Scan verb collisions (on-demand)" className="px-2 py-1 text-sm rounded border border-amber-300 text-amber-700 hover:bg-amber-50" onClick={scanVerbCollisions}>Scan</button>
           {showCollapse && (
             <button aria-label={collapsed? 'Expand' : 'Collapse'} className="px-2 py-1 text-sm rounded border border-neutral-300 hover:bg-neutral-50" onClick={()=>setCollapsed(c=>!c)}>
               {collapsed ? '▸' : '▾'}
@@ -59,6 +81,16 @@ export default function NounEditor({ initial, onChange, selectedId, onSelect, sh
       </div>
       {!collapsed && (
       <>
+      {scanned && (
+        <div className={`mt-2 text-sm rounded-lg px-3 py-2 ${colliding.size>0 ? 'border border-amber-300 text-amber-700 bg-amber-50' : 'border border-neutral-200 text-neutral-700 bg-neutral-50'}`}>
+          {colliding.size>0 ? (
+            <>
+              <span className="font-semibold mr-1">Warnings:</span>
+              {colliding.size} noun{colliding.size===1?'':'s'} collide with verb forms.
+            </>
+          ) : 'No noun ↔ verb-form collisions found.'}
+        </div>
+      )}
       <NounCreator onCreate={addNoun} />
       {showSearch && (
         <div className="mt-3">
@@ -67,7 +99,7 @@ export default function NounEditor({ initial, onChange, selectedId, onSelect, sh
       )}
       <div className="mt-3 max-h-[20rem] overflow-y-auto space-y-2 pr-1">
         {(showSearch && query ? filtered : nouns).map(n => (
-          <button key={n.id} onClick={() => onSelect(n.id)} onDoubleClick={()=>setExpanded(true)} className={`w-full text-left px-3 py-2 rounded-xl border ${selectedId === n.id ? "border-blue-500 noun-item--selected" : "border-neutral-200 hover:bg-neutral-50"}`}>
+          <button key={n.id} onClick={() => onSelect(n.id)} onDoubleClick={()=>setExpanded(true)} className={`w-full text-left px-3 py-2 rounded-xl border ${selectedId === n.id ? "border-blue-500 noun-item--selected" : (colliding.has(n.id) ? 'border-amber-300 bg-amber-50' : 'border-neutral-200 hover:bg-neutral-50')}`}>
             <div className="flex items-center justify-between gap-2 min-w-0">
               <div className="font-semibold text-lg truncate max-w-full">{n.word}</div>
               <div className="text-xs text-neutral-500 truncate flex-1 min-w-0 text-right">{n.gloss || "(no gloss)"}</div>
