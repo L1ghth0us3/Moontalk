@@ -3,6 +3,7 @@ import type { Root } from "../../types";
 import { useLocalStorageState, LS_KEYS } from "../../lib/storage";
 import FiniteForms from "../FiniteForms";
 import RenderDerivations from "../Derivations";
+import { useContextMenu, copyText } from "../../lib/contextMenu";
 
 const uid = () => Math.random().toString(36).slice(2, 10);
 
@@ -14,6 +15,7 @@ const uid = () => Math.random().toString(36).slice(2, 10);
  * - Expanded modal shows the list on the left and details + tools on the right.
  */
 export default function RootEditor({ initial, onChange, selectedId, onSelect, showCollapse = false, onCreateNoun }: { initial: Root[]; onChange: (r: Root[])=>void; selectedId: string|null; onSelect: (id: string|null)=>void; showCollapse?: boolean; onCreateNoun?: (n: { word: string; gloss?: string; synonyms?: string[] }) => void; }){
+  const { showAt } = useContextMenu();
   const [roots, setRoots] = useLocalStorageState<Root[]>(LS_KEYS.roots, initial);
   useEffect(()=>{ onChange(roots); }, [roots]);
   // Duplicate detection by signature
@@ -175,12 +177,21 @@ export default function RootEditor({ initial, onChange, selectedId, onSelect, sh
           />
         </div>
       )}
+      <div className="mt-2 text-xs text-neutral-500">Tip: Right-click a root to copy its word or gloss.</div>
       <div className="mt-3 max-h-[20rem] overflow-y-auto space-y-2 pr-1">
         {(showSearch && query ? filtered : roots).map(r => (
           <button
             key={r.id}
             onClick={() => onSelect(r.id)}
             onDoubleClick={()=>setExpanded(true)}
+            onContextMenu={(e)=>{
+              e.preventDefault();
+              const word = [r.c1, r.c2, r.c3].join('-');
+              showAt(e.clientX, e.clientY, [
+                { label: 'Copy word', action: () => copyText(word) },
+                { label: 'Copy gloss', action: () => copyText(r.gloss || '') },
+              ]);
+            }}
             className={`w-full text-left px-3 py-2 rounded-xl border ${selectedId === r.id ? "border-blue-500 root-item--selected" : (dupSigs.has(`${(r.c1||'').toLowerCase()}-${(r.c2||'').toLowerCase()}-${(r.c3||'').toLowerCase()}`) ? 'border-red-300 bg-red-50' : 'border-neutral-200 hover:bg-neutral-50')}`}
           >
             <div className="flex items-center justify-between gap-2 min-w-0">
@@ -249,11 +260,19 @@ export default function RootEditor({ initial, onChange, selectedId, onSelect, sh
                         </div>
                       </div>
                     ))}
-                  </div>
-                )}
+                </div>
+              )}
+                <div className="mt-2 text-xs text-neutral-500">Tip: Right-click a root to copy its word or gloss.</div>
                 <div className="mt-3 max-h-[24rem] overflow-y-auto space-y-2 pr-1">
                   {filtered.map(r => (
-                    <button key={r.id} onClick={() => onSelect(r.id)} className={`w-full text-left px-3 py-2 rounded-xl border ${selectedId === r.id ? "border-blue-500 root-item--selected" : (dupSigs.has(`${(r.c1||'').toLowerCase()}-${(r.c2||'').toLowerCase()}-${(r.c3||'').toLowerCase()}`) ? 'border-red-300 bg-red-50' : 'border-neutral-200 hover:bg-neutral-50')}`}>
+                    <button key={r.id} onClick={() => onSelect(r.id)} onContextMenu={(e)=>{
+                      e.preventDefault();
+                      const word = [r.c1, r.c2, r.c3].join('-');
+                      showAt(e.clientX, e.clientY, [
+                        { label: 'Copy word', action: () => copyText(word) },
+                        { label: 'Copy gloss', action: () => copyText(r.gloss || '') },
+                      ]);
+                    }} className={`w-full text-left px-3 py-2 rounded-xl border ${selectedId === r.id ? "border-blue-500 root-item--selected" : (dupSigs.has(`${(r.c1||'').toLowerCase()}-${(r.c2||'').toLowerCase()}-${(r.c3||'').toLowerCase()}`) ? 'border-red-300 bg-red-50' : 'border-neutral-200 hover:bg-neutral-50')}`}>
                       <div className="flex items-center justify-between gap-2 min-w-0">
                         <div className="font-semibold text-lg shrink-0">{[r.c1, r.c2, r.c3].join("-")}</div>
                         <div className="text-xs text-neutral-500 truncate flex-1 min-w-0 text-right">{r.gloss || "(no gloss)"}</div>

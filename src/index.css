@@ -208,6 +208,31 @@ body.theme-dark input, body.theme-dark textarea, body.theme-dark select {
 }
 body.theme-dark input::placeholder, body.theme-dark textarea::placeholder { color: #8b8595; }
 
+/* Context menu overrides: square buttons, no heavy button styles inside */
+body.theme-plain .ctx-menu button,
+body.theme-fantasy .ctx-menu button,
+body.theme-dark .ctx-menu button {
+  border-radius: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  transition: background-color .15s ease, box-shadow .15s ease;
+}
+
+/* Light glow on hover per theme */
+body.theme-plain .ctx-menu button:hover {
+  background: #f8fafc !important; /* neutral-50 */
+  box-shadow: inset 0 0 0 2px #e5e7eb !important; /* neutral-200 ring */
+}
+body.theme-fantasy .ctx-menu button:hover {
+  background: #34384c !important; /* soft lift */
+  box-shadow: inset 0 0 0 2px rgba(189,147,249,0.35) !important; /* lavender glow */
+}
+body.theme-dark .ctx-menu button:hover {
+  background: #23222b !important; /* dark lift */
+  box-shadow: inset 0 0 0 2px rgba(58,51,69,0.65) !important; /* subtle dark ring */
+}
+
 /* Danger button variant that overrides theme button styles */
 body.theme-plain .btn-danger {
   background-color: #dc2626; /* red-600 */
