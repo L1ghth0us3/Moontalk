@@ -69,7 +69,7 @@ export default function FreeTranslator({ roots, nouns, showCollapse = false, emb
     const withMatch = rest.match(/\bwith\s+([^]+?)(?=\bto\b|\bfrom\b|\bin\b|\bat\b|$)/);
     const toMatch   = rest.match(/\bto\s+([^]+?)(?=\bwith\b|\bfrom\b|\bin\b|\bat\b|$)/);
     const fromMatch = rest.match(/\bfrom\s+([^]+?)(?=\bwith\b|\bto\b|$)/);
-    const inMatch   = rest.match(/\b(in|at)\s+([^]+?)(?=\bwith\b|\bto\b|\bfrom\b|$)/);
+    // const inMatch   = rest.match(/\b(in|at)\s+([^]+?)(?=\bwith\b|\bto\b|\bfrom\b|$)/);
     const withMatchRaw = raw.match(/\bwith\s+([^]+?)(?=\bto\b|\bfrom\b|\bin\b|\bat\b|$)/);
     const toMatchRaw   = raw.match(/\bto\s+([^]+?)(?=\bwith\b|\bfrom\b|\bin\b|\bat\b|$)/);
     const fromMatchRaw = raw.match(/\bfrom\s+([^]+?)(?=\bwith\b|\bto\b|$)/);

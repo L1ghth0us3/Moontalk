@@ -69,16 +69,15 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
     particles: [] as string[],
     englishInput: ""
   });
-  const subject = ui.subject; const setSubject = (v: any)=>setUi(s=>({...s, subject:v}));
-  const verbRootId = ui.verbRootId; const setVerbRootId = (v: any)=>setUi(s=>({...s, verbRootId:v}));
-  const tense = ui.tense; const setTense = (v: any)=>setUi(s=>({...s, tense:v}));
-  const neg = ui.neg; const setNeg = (v: boolean)=>setUi(s=>({...s, neg:v}));
-  const prog = ui.prog; const setProg = (v: boolean)=>setUi(s=>({...s, prog:v}));
-  const hab = ui.hab; const setHab = (v: boolean)=>setUi(s=>({...s, hab:v}));
-  const question = ui.question; const setQuestion = (v: boolean)=>setUi(s=>({...s, question:v}));
-  const objPick = ui.objPick; const setObjPick = (v: string)=>setUi(s=>({...s, objPick:v}));
-  const objects = ui.objects; const setObjects = (fn: (prev:string[])=>string[])=>setUi(s=>({...s, objects: fn(s.objects)}));
-  const particles = ui.particles; const setParticles = (fn: (prev:string[])=>string[])=>setUi(s=>({...s, particles: fn(s.particles)}));
+  const subject = ui.subject;
+  const verbRootId = ui.verbRootId;
+  const tense = ui.tense;
+  const neg = ui.neg;
+  const prog = ui.prog;
+  const hab = ui.hab;
+  const question = ui.question;
+  const objects = ui.objects;
+  const particles = ui.particles;
 
   const [result, setResult] = useState<Result | null>(null);
   const [faves, setFaves] = useLocalStorageState<{id:string; input:string; surface:string; at:number}[]>(LS_KEYS.translator2Faves, []);
@@ -711,16 +710,7 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
     return { surface: parts.join(' ').trim(), variants };
   }
 
-  function toggleParticle(p: string){
-    setParticles(prev => prev.includes(p) ? prev.filter(x=>x!==p) : [...prev, p]);
-  }
-  function addObject(){
-    if (!objPick) return;
-    setObjects(prev => prev.includes(objPick) ? prev : [...prev, objPick]);
-  }
-  function removeObject(id: string){
-    setObjects(prev => prev.filter(x=>x!==id));
-  }
+  // UI helpers removed with simplified left panel
 
   function onTranslate(){
     // Prefer building from English intake if provided; fallback to UI state
