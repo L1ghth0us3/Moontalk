@@ -790,7 +790,7 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
 
         {/* Controls removed: particles */}
 
-        <button className="px-3 py-2 rounded-lg border border-neutral-300 hover:bg-neutral-50" onClick={onTranslate}>Translate</button>
+        {/* Translate button removed: output updates live as you type */}
 
         {/* Favorites + Guide side-by-side */}
         <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3 items-start">
@@ -1005,7 +1005,19 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
           </div>
         </div>
         <div className="text-xl font-semibold mb-3 min-h-10">
-          {result?.surface || "(nothing yet)"}
+          {(() => {
+            const surface = result?.surface || "";
+            if (!surface) return "(nothing yet)";
+            const joiners = new Set<string>(Object.values((t2Settings?.coordinators as any) || { AND:'ʋa', OR:'ra', NOR:'ra', BUT:'ma' }));
+            const pron = new Set(["ɪ","tɪ","su","tu","se","te"]);
+            const toks = surface.split(/\s+/);
+            for (let i=0;i<toks.length;i++){
+              if (pron.has(toks[i]) && (i===0 || joiners.has(toks[i-1]))){
+                toks[i] = `(${toks[i]})`;
+              }
+            }
+            return toks.join(' ');
+          })()}
         </div>
 
         {/* Variant toggles (only when relevant) */}
