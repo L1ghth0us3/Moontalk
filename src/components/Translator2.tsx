@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Root, Noun } from "../types";
 import { buildFinite, withHabitual, withNegation, withProgressive } from "../lib/morphology";
+import { translate as translateLib } from "../lib/translator2";
 import RootEditor from "./editors/RootEditor";
 import NounEditor from "./editors/NounEditor";
 import FiniteForms from "./FiniteForms";
@@ -77,14 +78,8 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
     englishInput: ""
   });
   const subject = ui.subject;
-  const verbRootId = ui.verbRootId;
-  const tense = ui.tense;
-  const neg = ui.neg;
-  const prog = ui.prog;
   const hab = ui.hab;
   const question = ui.question;
-  const objects = ui.objects;
-  const particles = ui.particles;
 
   const [result, setResult] = useState<Result | null>(null);
   const [faves, setFaves] = useLocalStorageState<{id:string; input:string; surface:string; at:number}[]>(LS_KEYS.translator2Faves, []);
@@ -184,11 +179,7 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
   }
 
   const intakeTokens = useMemo(() => normalizeAndTokenize(englishInput), [englishInput]);
-  const intakePronoun = useMemo(() => detectPronoun(intakeTokens), [intakeTokens]);
-  const bePositions = useMemo(() => intakeTokens
-    .map((t, idx) => ({ idx, token: t }))
-    .filter(x => lemmatizeBe(x.token.text) === 'be')
-    .map(x => x.idx), [intakeTokens]);
+  // analysis of intake pronoun and be-positions now provided by lib/translator2
   // Shared constants/helpers for intake + generator
   const PREP_TO_PARTICLE: Record<string, string> = { with: 'ri', to: 'ith', from: 'ʌs', in: 'la', at: 'la' };
   const SPECIAL = new Set([ 'will','did','not','never','there','used' ]);
@@ -740,55 +731,12 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
   // UI helpers removed with simplified left panel
 
   function onTranslate(){
-    // Prefer building from English intake if provided; fallback to UI state
-    const clauseSplit = englishInput.trim() ? detectClauseCoordination(intakeTokens) : null;
-    const built = (!clauseSplit && englishInput.trim()) ? buildFrameFromEnglish(intakeTokens) : null;
-    const frame: SemanticFrame = built?.frame ?? { subject, verbRootId, tense, neg, prog, hab, question, objects, particles };
-    const verb = verbsLex.find(v => v.id === frame.verbRootId) || null;
-    const objWords = frame.objects.map(oid => nounsLex.find(n => n.id === oid)?.word || "?");
-    const warnings: string[] = [];
-    if (!frame.subject) warnings.push("Missing subject");
-    if (!verb) warnings.push("No verb selected");
-
-    let gen = generateHuntspeak(frame, built?.clauseType ?? 'transitive', intakeTokens);
-    let surface = gen.surface || [
-      "[Experimental]",
-      frame.subject,
-      verb ? `(${verb.c1}${verb.c2}${verb.c3} • ${verb.gloss||"verb"})` : "(no‑verb)",
-      objWords.length ? `→ ${objWords.join(", ")}` : "",
-      frame.question ? "?" : "",
-    ].filter(Boolean).join(" ");
-
-    // Clause coordination: translate each side independently and join with coordinator
-    if (clauseSplit){
-      const leftBuilt = buildFrameFromEnglish(clauseSplit.left);
-      const rightBuilt = buildFrameFromEnglish(clauseSplit.right);
-      const leftGen = generateHuntspeak(leftBuilt.frame, leftBuilt.clauseType, clauseSplit.left);
-      const rightGen = generateHuntspeak(rightBuilt.frame, rightBuilt.clauseType, clauseSplit.right);
-      const joinMap: Record<'AND'|'OR'|'NOR'|'BUT', string> = (t2Settings?.coordinators ?? { AND:'ʋa', OR:'ra', NOR:'ra', BUT:'ma' }) as Record<'AND'|'OR'|'NOR'|'BUT', string>;
-      surface = [leftGen.surface, joinMap[clauseSplit.type] || { AND:'ʋa', OR:'ra', NOR:'ra', BUT:'ma' }[clauseSplit.type], rightGen.surface].join(' ');
-      gen = { surface, variants: [] };
-    }
-
+    const r = translateLib(englishInput, rootsLocal, nounsLocal);
     const res: Result = {
-      surface,
-      variants: gen.variants,
-      analysis: {
-        frame,
-        intake: {
-          input: englishInput,
-          tokens: intakeTokens,
-          tokensFlat: intakeTokens.map(t=>t.text),
-          pronoun: intakePronoun,
-          bePositions,
-        },
-        clause: built?.clauseType ?? 'manual',
-        resolutionLog: built?.resolutionLog || [],
-        coordination: detectCoordination(intakeTokens),
-        clauseCoordination: clauseSplit ? { type: clauseSplit.type, left: clauseSplit.left.map(t=>t.text), right: clauseSplit.right.map(t=>t.text) } : null,
-        verbsAll: detectAllVerbs(intakeTokens).map(v=>({ id:v.id, root:`${v.c1}${v.c2}${v.c3}`, gloss:v.gloss })),
-      },
-      warnings: [...warnings, ...(built?.warnings || [])],
+      surface: r.surface,
+      variants: r.variants,
+      analysis: r.analysis,
+      warnings: r.warnings,
     };
     setResult(res);
   }
