@@ -128,4 +128,15 @@ describe('Translator 2.0 (pure API)', () => {
     expect(out.surface).toContain('hʌiru');
     expect(out.surface.includes('dray')).toBe(false);
   });
+
+  // Coordination + particles ordering
+  it('Coordination: I live in shroud and hunt with traps', () => {
+    const out = translate('I live in shroud and hunt with traps', DEFAULT_ROOTS, DEFAULT_NOUNS);
+    // Expected: subject + live + la shroud + ʋa + hunt + ri trap
+    expect(out.surface).toContain('ɪ');
+    expect(out.surface).toMatch(/\bla\s+sharūd\b/);
+    expect(out.surface.includes(' ʋa ')).toBe(true);
+    expect(out.surface).toMatch(/\bkɪlab\b/);
+    expect(out.surface).toMatch(/\bri\s+maklūb\b/);
+  });
 });

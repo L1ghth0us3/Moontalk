@@ -173,11 +173,12 @@ export function translate(input: string, roots: Root[], nouns: Noun[]): T2Result
     if(sj.form) parts.push(sj.form);
     if(verbRoot) parts.push(conj(verbRoot, sj, frame.tense, {prog:frame.prog,hab:frame.hab,neg:frame.neg}));
     if(frame.objects[0]){ const n = ns.find(n=>n.id===frame.objects[0]); if(n) parts.push(n.word); }
-    // basic preps: in token order
-    for(const k of Object.keys(PREP)){
-      if(!words.includes(k)) continue;
-      const idx = words.indexOf(k);
-      const w2 = words[idx+1]; if(!w2) continue;
+    // basic preps: scan tokens in order to preserve PP order
+    for (let i=0;i<tokens.length;i++){
+      const w = tokens[i].text;
+      const part = PREP[w];
+      if (!part) continue;
+      const w2 = tokens[i+1]?.text; if (!w2) continue;
       const base = norm(w2.endsWith('s')&&w2.length>3&&!w2.endsWith('ss')? w2.slice(0,-1): w2);
       let n = ns.find(n=> norm(n.word)===base )
         || ns.find(n=> (n.synonyms||[]).map(norm).includes(base) )
@@ -187,13 +188,34 @@ export function translate(input: string, roots: Root[], nouns: Noun[]): T2Result
           || ns.find(n=> (n.synonyms||[]).map(norm).some(s=>edit1(base,s)))
           || ns.find(n=> splitItems(n.gloss).some(s=>edit1(base,s)));
       }
-      if(n){ parts.push(PREP[k]); parts.push(n.word); }
+      if(n){ parts.push(part); parts.push(n.word); }
     }
   }
   if(frame.question) parts.push('qa?');
 
+  let surface = parts.join(' ').trim();
   const analysis = { frame, intake: { input, tokens, tokensFlat: tokens.map(t=>t.text) }, clause, resolutionLog: resLog };
   const warnings: string[] = [];
   if(!frame.verbRootId) warnings.push('Unknown verb');
-  return { surface: parts.join(' ').trim(), variants, analysis, warnings };
+
+  // Simple clause coordination for 'and': split tokens once and join translations with ʋa, drop repeated subject on right
+  const andIdx = words.indexOf('and');
+  if (andIdx > 0 && andIdx < tokens.length-1){
+    const leftTokens = tokens.slice(0, andIdx);
+    const rightTokens = tokens.slice(andIdx+1);
+    const leftInput = leftTokens.map(t=>t.text).join(' ');
+    const rightInput = rightTokens.map(t=>t.text).join(' ');
+    const left = translate(leftInput, roots, nouns);
+    const right = translate(rightInput, roots, nouns);
+    // If right starts with same subject as left, drop it
+    const subjForm = (s: string|undefined)=> s==='I'?'ɪ':s==='we'?'tɪ':s==='you'?'su':s==='they'?'te':'se';
+    const lFrame = (left.analysis?.frame as unknown) as { subject?: string } | undefined;
+    const lSubj = lFrame?.subject;
+    const sf = subjForm(lSubj);
+    let rSurf = right.surface;
+    if (sf && (rSurf===sf || rSurf.startsWith(sf+' '))){ rSurf = rSurf.slice(sf.length).trimStart(); }
+    surface = [left.surface, 'ʋa', rSurf].join(' ');
+  }
+
+  return { surface, variants, analysis, warnings };
 }
