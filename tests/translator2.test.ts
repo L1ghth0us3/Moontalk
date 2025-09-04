@@ -30,17 +30,23 @@ describe('Translator 2.0 (pure API)', () => {
   });
   it('Transitive: They smell forest', () => {
     const out = translate('They smell forest', DEFAULT_ROOTS, DEFAULT_NOUNS);
-    expect(out.surface.split(/\s+/).length).toBeGreaterThanOrEqual(3);
+    expect(out.surface).toMatch(/^te\b/);
+    expect(out.surface).toContain('ʋæʋi');
+    expect(out.surface.includes('jæula')).toBe(false);
   });
 
   // Intransitive
   it('Intransitive: He sits', () => {
     const out = translate('He sits', DEFAULT_ROOTS, DEFAULT_NOUNS);
     expect(out.surface).toMatch(/^se\b/);
+    expect(out.surface.split(/\s+/).length).toBe(2);
+    expect(out.surface.includes('turalu')).toBe(false);
   });
   it('Intransitive: We move', () => {
     const out = translate('We move', DEFAULT_ROOTS, DEFAULT_NOUNS);
     expect(out.surface).toMatch(/^tɪ\s/);
+    expect(out.surface.split(/\s+/).length).toBe(2);
+    expect(out.surface.includes('kæʃ')).toBe(false);
   });
 
   // Copula / Equatives
@@ -70,11 +76,13 @@ describe('Translator 2.0 (pure API)', () => {
     const out = translate('I move to home', DEFAULT_ROOTS, DEFAULT_NOUNS);
     expect(out.surface).toMatch(/\sith\s/);
     expect(out.surface).toContain('teʋikay');
+    expect(out.surface.includes('kæʃ')).toBe(false);
   });
   it('Particles: FROM forest', () => {
     const out = translate('They come from forest', DEFAULT_ROOTS, DEFAULT_NOUNS);
     expect(out.surface).toMatch(/\sʌs\s/);
     expect(out.surface).toContain('ʋæʋi');
+    expect(out.surface.includes('teʋikay')).toBe(false);
   });
   it('Particles: IN water', () => {
     const out = translate('She is in water', DEFAULT_ROOTS, DEFAULT_NOUNS);
@@ -110,9 +118,10 @@ describe('Translator 2.0 (pure API)', () => {
 
   // Phrasal verb
   it('Phrasal: draw near + NP', () => {
-    const out = translate('She draw near home', DEFAULT_ROOTS, DEFAULT_NOUNS);
+    const out = translate('She draw near cave', DEFAULT_ROOTS, DEFAULT_NOUNS);
     expect(out.surface).toMatch(/^se\s/);
-    // Ensure phrasal verb resolved to approach root
     expect(out.surface).toContain('qerab');
+    expect(out.surface).toContain('hʌiru');
+    expect(out.surface.includes('dray')).toBe(false);
   });
 });

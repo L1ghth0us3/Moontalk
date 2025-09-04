@@ -43,11 +43,11 @@ export default function DevTestRunner(){
     check('Transitive', 'You hunt prey', (s)=>/^su\s/.test(s) && s.includes('dray'), 'You hunt prey');
     check('Transitive', 'We did hunt prey', (s)=>/^tɪ\s/.test(s) && s.includes('dray'), 'We did hunt prey');
     check('Transitive', 'They will hunt prey', (s)=>/^te\s/.test(s) && s.includes('dray'), 'They will hunt prey');
-    check('Transitive', 'They smell forest', (s)=>s.split(/\s+/).length>=3 && /\bte\b/.test(s), 'They smell forest');
+    check('Transitive', 'They smell forest', (s)=>/\bte\b/.test(s) && s.includes('ʋæʋi') && !s.includes('jæula'), 'They smell forest');
 
     // Intransitives
-    check('Intransitive', 'He sits', (s)=>/^se\s/.test(s) && s.split(/\s+/).length>=2, 'He sits');
-    check('Intransitive', 'We move', (s)=>/^tɪ\s/.test(s) && s.split(/\s+/).length>=2, 'We move');
+    check('Intransitive', 'He sits', (s)=>/^se\s/.test(s) && s.split(/\s+/).length===2 && !s.includes('turalu'), 'He sits');
+    check('Intransitive', 'We move', (s)=>/^tɪ\s/.test(s) && s.split(/\s+/).length===2 && !s.includes('kæʃ'), 'We move');
 
     // Copula / Equatives
     check('Copula', 'I am a hunter (zero)', 'ɪ kalāb', 'I am a hunter');
@@ -58,8 +58,8 @@ export default function DevTestRunner(){
 
     // Particles: with/to/from/in
     check('Particles', 'We will hunt with bow', /\bri\b/, 'We will hunt with bow');
-    check('Particles', 'I move to home', (s)=>/\sith\s/.test(s) && s.includes('teʋikay'), 'I move to home');
-    check('Particles', 'They come from forest', (s)=>/\sʌs\s/.test(s) && s.includes('ʋæʋi'), 'They come from forest');
+    check('Particles', 'I move to home', (s)=>/\sith\s/.test(s) && s.includes('teʋikay') && !s.includes('kæʃ'), 'I move to home');
+    check('Particles', 'They come from forest', (s)=>/\sʌs\s/.test(s) && s.includes('ʋæʋi') && !s.includes('teʋikay'), 'They come from forest');
     check('Particles', 'She is in water', (s)=>s.includes(' la ') && s.includes(' ʌmas'), 'She is in water');
 
     // Negation
@@ -72,7 +72,7 @@ export default function DevTestRunner(){
     check('Aspect', 'Question: We hunt prey?', (s)=>s.endsWith('qa?') && s.includes('dray'), 'We hunt prey?');
 
     // Multi-word verb phrase
-    check('Phrasal', 'She draw near cave', (s)=>/^se\s/.test(s) && s.includes('qerab'), 'She draw near cave');
+    check('Phrasal', 'She draw near cave', (s)=>/^se\s/.test(s) && s.includes('qerab') && s.includes('hʌiru') && !s.includes('dray'), 'She draw near cave');
 
     setResults(out);
     setRunning(false);
