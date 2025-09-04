@@ -23,6 +23,7 @@ Moontalk is a small, client‑only web app for composing role‑play friendly se
 - Build: `npm run build`
 - Preview prod: `npm run preview`
 - Lint: `npm run lint`
+- Gate (build+lint+tests): `npm run codex`
 
 ## Version Overview
 - 1.6‑dev (current): expanded Dev test runner (grouped scenarios), ongoing test coverage; lazy‑loaded Dev runner; general hardening.
