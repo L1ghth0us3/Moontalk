@@ -2,7 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.4.0-next] - Unreleased
+## [1.6.0-next] - Unreleased
+- Dev: expand in‑app Dev test runner with grouped scenarios and richer assertions; continue broadening Vitest coverage.
+- Build: small hardening and DX improvements under `1.6-dev`.
+
+## [1.5.0] - 2025-09-04
+- Workflow: introduce Codex helper (`npm run codex`) and `.githooks/post-commit` auto‑push. Gate = build + lint + status, with optional commit/push.
+- Dev Tools: add “Dev: Live Tests” popup with live translator checks; show expected vs got and copyable summary.
+- Tests: add Vitest config and baseline Translator 2.0 API tests.
+- UI Utils: context‑menu provider + clipboard helpers; toast provider for ephemeral notifications.
+- Data: refresh seeds and defaults for roots and nouns.
+- Build Fix: lazy‑load the Dev test runner to satisfy strict TS build (no `require` in TSX).
+- Docs: update `AGENT_ONBOARDING.md` and README for workflow, branching, and testing.
+
+## [1.4.0] - 2025-09-03
  - Rebrand: app name is now Moontalk (the language remains Huntspeak). Updated titles, header, info page, and docs; reverted any language mentions that were incorrectly changed to Night‑tongue back to Huntspeak.
  - Experimental: Translator 2.0 — added third tab with a fresh translator surface. Defines internal contracts (LexiconEntryVerb/Noun, SemanticFrame, Result), two‑panel layout, and a stub Translate action that echoes inputs and shows a JSON analysis.
 
@@ -15,6 +28,15 @@ All notable changes to this project will be documented in this file.
 - Noun lexing: shared `lexNoun` used by Talk Pad and Translator; Talk Pad “to/from” now translate like dropdown nouns.
 - Unknown tokens: show as red, clickable with tooltip; clicking opens add‑as‑Noun/Verb dialog (prefills English). Implemented in Talk Pad and Translator; hover underline added.
 - Derivations: info page cheat‑sheet expanded to match in‑app patterns with friendlier explanations.
+
+## [1.2.0] - 2025-09-02
+
+- Roots/Nouns editors: expand (⛶) modal now wider, responsive, and scrollable; quick filter + persistent search in compact view; double-click list to expand
+- Roots expanded: Edit below list (left), Finite Forms and Derivations integrated on right; Derivations in 4×2 layout on large screens
+- Derivations: click a card to save as noun (word/gloss/synonyms); theme-aware hover; themed popover; click-off to close
+- Talk Pad: searchable dropdowns (fuzzy) for Verb, Object, and With; Object uses noun dropdown; qa? question suffix
+- Morphology: progressive uses C2' (apostrophe); shared Neg/Prog/Hab sync and clickable badge
+- Data: import/export + Hard Reset in Data popup with red danger styling
 
 ## [1.1.0] - 2025-09-02
 
@@ -36,12 +58,3 @@ All notable changes to this project will be documented in this file.
 - Selected Root/Noun highlight adjustments per theme
 - Finite Forms: dynamic spacing and denser layout
 - Code comments and structure cleanup
-
-## [1.2.0] - 2025-09-02
-
-- Roots/Nouns editors: expand (⛶) modal now wider, responsive, and scrollable; quick filter + persistent search in compact view; double-click list to expand
-- Roots expanded: Edit below list (left), Finite Forms and Derivations integrated on right; Derivations in 4×2 layout on large screens
-- Derivations: click a card to save as noun (word/gloss/synonyms); theme-aware hover; themed popover; click-off to close
-- Talk Pad: searchable dropdowns (fuzzy) for Verb, Object, and With; Object uses noun dropdown; qa? question suffix
-- Morphology: progressive uses C2' (apostrophe); shared Neg/Prog/Hab sync and clickable badge
-- Data: import/export + Hard Reset in Data popup with red danger styling

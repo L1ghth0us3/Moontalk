@@ -25,8 +25,9 @@ Moontalk is a small, client‑only web app for composing role‑play friendly se
 - Lint: `npm run lint`
 
 ## Version Overview
-- 1.5‑dev (current): modular context‑menu (provider + clipboard utils); type tightening; stricter import validation.
-- 1.4.0 (next): introduces experimental Translator 2.0 surface; rebrand to “Moontalk”; info page refreshed.
+- 1.6‑dev (current): expanded Dev test runner (grouped scenarios), ongoing test coverage; lazy‑loaded Dev runner; general hardening.
+- 1.5.0: Codex workflow helper + auto‑push hook; context‑menu provider and clipboard utils; toast provider; Dev “Live Tests” popup; Vitest config and baseline API tests; seeds/defaults refresh.
+- 1.4.0: introduces experimental Translator 2.0 surface; rebrand to “Moontalk”; info page refreshed.
 - 1.3.0: particles WITH→ri, TO→ith, FROM→ʌs, IN/AT→la; copula handling incl. zero‑copula; stricter EN→root matching; shared noun lexing; red unknown‑token add flow; “What is this” page.
 - 1.2.0: expanded editors (responsive modals, search); derivations save‑as‑noun; searchable dropdowns; progressive C2’.
 - 1.1.0: Talk Pad object noun, question marker, shared morph toggles with optional sync; Data popup (Import/Export, Hard Reset); themes.
