@@ -1,50 +1,9 @@
 import type { Root, Noun } from "../types";
 import { buildFinite, withHabitual, withNegation, withProgressive } from "./morphology";
+import type { T2SemanticFrame, T2Options, T2Result } from "./translator2/types";
+import { tokenize, norm, edit1, splitItems, stemVerb } from "./translator2/tokens";
 
-export type T2SemanticFrame = {
-  subject: "I"|"you"|"he"|"she"|"we"|"they";
-  verbRootId: string | null;
-  tense: "present" | "past" | "future";
-  neg: boolean; prog: boolean; hab: boolean; question: boolean;
-  objects: string[]; // noun IDs
-  particles: string[]; // mapped codes: ri/ith/ʌs/la
-};
-export type T2Result = {
-  surface: string;
-  variants: string[];
-  analysis: Record<string, unknown>;
-  warnings: string[];
-};
-
-export type T2Options = {
-  particles?: Partial<Record<'WITH'|'TO'|'FROM'|'IN_AT', string>>;
-  coordinators?: Partial<Record<'AND'|'OR'|'NOR'|'BUT', string>>;
-  flags?: { enableCoordination?: boolean };
-};
-
-function norm(s: string){ return s.toLowerCase().trim(); }
-function isWordChar(ch: string){ return /[A-Za-z0-9]/.test(ch); }
-function tokenize(s: string){
-  const out: { text:string; start:number; end:number }[] = [];
-  let i=0; const n=s.length;
-  while(i<n){
-    const ch=s[i];
-    if (ch==='?'){ out.push({text:'?',start:i,end:i+1}); i++; continue; }
-    if (!isWordChar(ch)&&ch!==' '){ i++; continue; }
-    if (ch===' '){ i++; continue; }
-    const st=i; while(i<n && isWordChar(s[i])) i++; const ed=i;
-    const w = s.slice(st,ed).toLowerCase(); if (w==='a'||w==='an'||w==='the') continue; out.push({text:w,start:st,end:ed});
-  }
-  return out;
-}
-function edit1(a:string,b:string){ if(a===b)return true; const la=a.length,lb=b.length; if(Math.abs(la-lb)>1)return false; let i=0,j=0,d=0; while(i<la&&j<lb){ if(a[i]===b[j]){i++;j++;continue;} if(++d>1)return false; if(la>lb)i++; else if(lb>la)j++; else {i++;j++;} } return d+(la-i)+(lb-j)<=1; }
-function splitItems(s:string){ return (s||'').split(/[;,]/).map(x=>norm(x)).filter(Boolean); }
-function stemVerb(w:string){
-  if (w.endsWith('ing') && w.length>4) return w.slice(0,-3);
-  if (w.endsWith('ed') && w.length>3) return w.slice(0,-2);
-  if (w.endsWith('s') && w.length>3 && !w.endsWith('ss')) return w.slice(0,-1);
-  return w;
-}
+export type { T2SemanticFrame, T2Options, T2Result };
 
 export function translate(input: string, roots: Root[], nouns: Noun[], opts?: T2Options): T2Result {
   // Lex maps
