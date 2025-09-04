@@ -3,10 +3,12 @@
 Use this file to get productive fast. It summarizes the architecture, where to make changes, and how to verify work. Keep this close when adding features or refactoring.
 
 ## Runbook
-- `npm run codex`: One-shot build → lint → status/diff. Optional commit/push.
+- `npm run codex`: One-shot build → lint → test → status/diff. Optional commit/push with intent caching.
   - Examples:
     - Validate only: `npm run codex`
     - Commit + push: `npm run codex -- -m "feat: add X" --push`
+    - WIP while fixing: `npm run codex -- -m "feat: add X" --wip` (creates small WIP commits if gate fails; intent cached at `.git/.codex_intent`)
+    - Finalize WIPs into intent message: `npm run codex -- --finalize --push` (squashes consecutive WIPs to the cached intent, clears cache)
     - On `main` (discouraged): `npm run codex -- --allow-main -m "hotfix: …" --push`
 - `npm run dev`: Start Vite dev server with HMR.
 - `npm run build`: Type-check then build for production.
@@ -15,11 +17,11 @@ Use this file to get productive fast. It summarizes the architecture, where to m
 
 > Mandatory workflow for Codex agents (do not skip):
 > Prefer `npm run codex` for a single, precise gate:
-> 1) `npm run codex` — runs build and lint; shows status and diff.
-> 2) Fix any build errors (blocking) and relevant lint issues; re-run.
-> 3) When green, COMMIT IMMEDIATELY using the helper (safety rule):
->    `npm run codex -- -m "<type(scope): message>" --push`
->    This performs `git add -A`, `git commit`, and push (sets upstream if needed).
+> 1) `npm run codex` — runs build, lint, and tests; shows status and diff.
+> 2) Fix any gate errors and re-run; optionally use `--wip` to checkpoint progress while failing.
+> 3) When green, COMMIT using cached intent: `npm run codex -- -m "<type(scope): message>" --push`.
+>    Intent is stored at `.git/.codex_intent` and cleared after a successful commit.
+>    You can also use `--finalize` later to squash WIPs into the cached intent.
 > This replaces the manual build → lint → commit cycle after each instruction. Always commit after a green gate unless the user explicitly asks to hold.
 > You can still run `npm run build` and `npm run lint` directly if needed.
 
