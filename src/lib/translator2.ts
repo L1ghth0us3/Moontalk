@@ -1,7 +1,8 @@
 import type { Root, Noun } from "../types";
 import { buildFinite, withHabitual, withNegation, withProgressive } from "./morphology";
 import type { T2SemanticFrame, T2Options, T2Result } from "./translator2/types";
-import { tokenize, norm, edit1, splitItems, stemVerb } from "./translator2/tokens";
+import { tokenize } from "./translator2/tokens";
+import { findVerbByPhrase, findVerbByToken, findNounByTokens } from "./translator2/match";
 
 export type { T2SemanticFrame, T2Options, T2Result };
 
@@ -48,22 +49,10 @@ export function translate(input: string, roots: Root[], nouns: Noun[], opts?: T2
     const w=tokens[i].text; if(w==='?'||PRON.has(w)||SPECIAL.has(w)||PREP[w]||isBe(w)) continue;
     const two = tokens[i+1]?.text ? `${w} ${tokens[i+1].text}` : '';
     if(two){
-      const exact = verbs.find(v=> splitItems(v.gloss).includes(two) || v.synonyms.map(norm).includes(norm(two)) );
+      const exact = findVerbByPhrase(verbs, two);
       if(exact){ verb=exact; resLog.push(`verb '${two}' → '${exact.c1}${exact.c2}${exact.c3}' via phrase-exact`); break; }
     }
-    const base = norm(stemVerb(w));
-    // synonyms exact
-    let hit = verbs.find(v=> v.synonyms.map(norm).includes(base) );
-    if(hit){ verb=hit; resLog.push(`verb '${w}' → '${hit.c1}${hit.c2}${hit.c3}' via synonym-exact`); break; }
-    // gloss exact
-    hit = verbs.find(v=> splitItems(v.gloss).includes(base) );
-    if(hit){ verb=hit; resLog.push(`verb '${w}' → '${hit.c1}${hit.c2}${hit.c3}' via gloss-exact`); break; }
-    // fuzzy — restrict to reasonably long tokens to avoid short collisions
-    if (base.length >= 5) {
-      hit = verbs.find(v=> v.synonyms.map(norm).some(s=>edit1(base,s)) ) || verbs.find(v=> splitItems(v.gloss).some(s=>edit1(base,s)) );
-    } else {
-      hit = undefined;
-    }
+    const hit = findVerbByToken(verbs, w, true);
     if(hit){ verb=hit; resLog.push(`verb '${w}' → '${hit.c1}${hit.c2}${hit.c3}' via fuzzy(≤1)`); break; }
   }
   // objects (skip nouns governed by preps)
@@ -77,14 +66,10 @@ export function translate(input: string, roots: Root[], nouns: Noun[], opts?: T2
       if (w==='?'||PRON.has(w)||SPECIAL.has(w)||PREP[w]||isBe(w)) continue;
       const two = tokens[i+1]?.text ? `${w} ${tokens[i+1].text}` : '';
       if (two){
-        const exact = verbs.find(v=> splitItems(v.gloss).includes(two) || v.synonyms.map(norm).includes(norm(two)) );
+        const exact = findVerbByPhrase(verbs, two);
         if (exact && exact.id === verb.id){ matchedVerbStart = i; matchedVerbSpan = 2; break; }
       }
-      const base = norm(stemVerb(w));
-      let hit = verbs.find(v=> v.synonyms.map(norm).includes(base) ) || verbs.find(v=> splitItems(v.gloss).includes(base));
-      if (!hit && base.length>=5){
-        hit = verbs.find(v=> v.synonyms.map(norm).some(s=>edit1(base,s)) ) || verbs.find(v=> splitItems(v.gloss).some(s=>edit1(base,s)) );
-      }
+      const hit = findVerbByToken(verbs, w, true);
       if (hit && hit.id === verb.id){ matchedVerbStart = i; matchedVerbSpan = 1; break; }
     }
   }
@@ -93,21 +78,8 @@ export function translate(input: string, roots: Root[], nouns: Noun[], opts?: T2
     const w=tokens[i].text; if(w==='?'||PRON.has(w)||SPECIAL.has(w)||PREP[w]||isBe(w)) continue;
     if (matchedVerbStart >= 0 && i >= matchedVerbStart && i < matchedVerbStart + matchedVerbSpan) continue;
     const prev=i>0?tokens[i-1].text:''; if(prev && PREP[prev]) continue;
-    const base1 = norm(w.endsWith('s')&&w.length>3&&!w.endsWith('ss')? w.slice(0,-1): w);
-    // prefer exact word
-    let n = ns.find(n=> norm(n.word)===base1 );
-    if(!n){
-      // synonyms/gloss exact
-      n = ns.find(n=> (n.synonyms||[]).map(norm).includes(base1) ) || ns.find(n=> splitItems(n.gloss).includes(base1) );
-    }
-    if(!n){
-      // fuzzy — restrict to reasonably long tokens to avoid short collisions (e.g., sit↔shit, move↔love, cave↔crave)
-      if (base1.length >= 5){
-        n = ns.find(n=> edit1(base1, norm(n.word)) ) || ns.find(n=> (n.synonyms||[]).map(norm).some(s=>edit1(base1,s)) ) || ns.find(n=> splitItems(n.gloss).some(s=>edit1(base1,s)) );
-      }
-      if(n) resLog.push(`noun '${w}' → '${n.word}' via fuzzy(≤1)`);
-    }
-    if(n) frame.objects.push(n.id);
+    const mn = findNounByTokens(ns, w, tokens[i+1]?.text);
+    if (mn.noun){ frame.objects.push(mn.noun.id); if (mn.span===2) i++; }
   }
   // clause and verb id
   const clause: 'copular'|'existential'|'transitive' = words[0]==='there' ? 'existential' : (!verb && frame.objects.length>0 ? 'copular' : 'transitive');
@@ -148,15 +120,8 @@ export function translate(input: string, roots: Root[], nouns: Noun[], opts?: T2
       const part = PREP[w];
       if (!part) continue;
       const w2 = tokens[i+1]?.text; if (!w2) continue;
-      const base = norm(w2.endsWith('s')&&w2.length>3&&!w2.endsWith('ss')? w2.slice(0,-1): w2);
-      let n = ns.find(n=> norm(n.word)===base )
-        || ns.find(n=> (n.synonyms||[]).map(norm).includes(base) )
-        || ns.find(n=> splitItems(n.gloss).includes(base) );
-      if(!n && base.length>=5){
-        n = ns.find(n=> edit1(base, norm(n.word)))
-          || ns.find(n=> (n.synonyms||[]).map(norm).some(s=>edit1(base,s)))
-          || ns.find(n=> splitItems(n.gloss).some(s=>edit1(base,s)));
-      }
+      const found = findNounByTokens(ns, w2, tokens[i+2]?.text);
+      const n = found.noun;
       if(n){ parts.push(part); parts.push(n.word); }
     }
   }
