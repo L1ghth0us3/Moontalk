@@ -1,5 +1,5 @@
 import React from 'react';
-import { translate } from '../../lib/translator2';
+import { translate } from '../../lib/translator2/index';
 import { DEFAULT_ROOTS, DEFAULT_NOUNS } from '../../data/defaults';
 
 type Result = {

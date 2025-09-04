@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Root, Noun } from "../types";
 import { buildFinite, withHabitual, withNegation, withProgressive } from "../lib/morphology";
-import { translate as translateLib } from "../lib/translator2";
+import { translate as translateLib } from "../lib/translator2/index";
 import RootEditor from "./editors/RootEditor";
 import NounEditor from "./editors/NounEditor";
 import FiniteForms from "./FiniteForms";

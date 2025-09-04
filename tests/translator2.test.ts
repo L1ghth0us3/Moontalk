@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { translate } from '../src/lib/translator2';
+import { translate } from '../src/lib/translator2/index';
 import { DEFAULT_ROOTS, DEFAULT_NOUNS } from '../src/data/defaults';
 
 describe('Translator 2.0 (pure API)', () => {
