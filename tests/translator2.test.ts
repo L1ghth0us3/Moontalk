@@ -116,6 +116,41 @@ describe('Translator 2.0 (pure API)', () => {
     expect(out.surface).toContain(' ra ');
   });
 
+  // NP lists within a PP
+  it('NP list (PP): I hunt with trap and knife', () => {
+    const out = translate('I hunt with trap and knife', DEFAULT_ROOTS, DEFAULT_NOUNS);
+    // Expect: subject + verb + ri + maklūb ʋa kʌy
+    expect(out.surface).toMatch(/^ɪ\s/);
+    expect(out.surface).toContain(' kɪlab ');
+    expect(out.surface).toContain(' ri ');
+    expect(out.surface).toMatch(/ri\s+maklūb\s+ʋa\s+kʌy/);
+  });
+  it('NP list (PP, either/or): I hunt with either trap or knife', () => {
+    const out = translate('I hunt with either trap or knife', DEFAULT_ROOTS, DEFAULT_NOUNS);
+    expect(out.surface).toContain(' ri ');
+    // OR/NOR default joiner is ra
+    expect(out.surface).toMatch(/ri\s+maklūb\s+ra\s+kʌy/);
+  });
+  it('NP list (PP, neither/nor): I hunt with neither trap nor knife', () => {
+    const out = translate('I hunt with neither trap nor knife', DEFAULT_ROOTS, DEFAULT_NOUNS);
+    // NOR uses same default joiner as OR ('ra'); ensure both nouns present
+    expect(out.surface).toMatch(/ri\s+maklūb\s+ra\s+kʌy/);
+  });
+  it('NP list (PP, not only/but): I hunt with not only trap but knife', () => {
+    const out = translate('I hunt with not only trap but knife', DEFAULT_ROOTS, DEFAULT_NOUNS);
+    // BUT default joiner is ma
+    expect(out.surface).toMatch(/ri\s+maklūb\s+ma\s+kʌy/);
+  });
+
+  // Direct object NP list
+  it('NP list (object): I strike hunter and prey', () => {
+    const out = translate('I strike hunter and prey', DEFAULT_ROOTS, DEFAULT_NOUNS);
+    // ɪ dɪrak kalāb ʋa dray
+    expect(out.surface).toMatch(/^ɪ\s/);
+    expect(out.surface).toContain(' dɪrak ');
+    expect(out.surface).toMatch(/kalāb\s+ʋa\s+dray/);
+  });
+
   // Negation
   it('Negation: I do not hunt (k- assimilation)', () => {
     const out = translate('I do not hunt', DEFAULT_ROOTS, DEFAULT_NOUNS);

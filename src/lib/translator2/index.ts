@@ -21,6 +21,7 @@ export function translate(input: string, roots: Root[], nouns: Noun[], opts?: T2
   const clause = built.clause;
   const tokens = built.tokens;
   const words = built.words;
+  const wordAt = (i:number)=> tokens[i]?.text;
 
   const parts: string[] = [] as string[];
   const variants: string[] = [];
@@ -39,11 +40,74 @@ export function translate(input: string, roots: Root[], nouns: Noun[], opts?: T2
   } else {
     if(sj.form) parts.push(sj.form);
     if(verbRoot) parts.push(conjFinite(verbRoot, sj, frame.tense, {prog:frame.prog,hab:frame.hab,neg:frame.neg}, false, buildFinite, withProgressive, withHabitual, withNegation));
-    if(frame.objects[0]){ const n = ns.find(n=>n.id===frame.objects[0]); if(n) parts.push(n.word); }
+    // Direct object — support NP lists (A and B / either A or B / neither A nor B / not only A but B)
+    const pushJoined = (ids: string[], join: 'AND'|'OR'|'NOR'|'BUT') => {
+      const j = coords[join] || coords.AND;
+      ids.forEach((id, idx) => { const w = ns.find(n=>n.id===id)?.word; if(!w) return; if(idx>0) parts.push(j); parts.push(w); });
+    };
+    const collectNounList = (startIdx: number): { ids: string[]; type: 'AND'|'OR'|'NOR'|'BUT'; end: number } | null => {
+      let i = startIdx; const ids: string[] = [];
+      let either=false, neither=false, notOnly=false; let type: 'AND'|'OR'|'NOR'|'BUT' = 'AND';
+      const readOne = (): boolean => {
+        const w1 = wordAt(i); if(!w1) return false;
+        const hit = findNounByTokens(ns, w1, wordAt(i+1));
+        if (hit.noun){ ids.push(hit.noun.id); i += hit.span; return true; }
+        return false;
+      };
+      // allow leading markers (either/neither/not only)
+      while (true){ const w = wordAt(i); const w2 = wordAt(i+1);
+        if (w==='either'){ either=true; i++; continue; }
+        if (w==='neither'){ neither=true; i++; continue; }
+        if (w==='not' && w2==='only'){ notOnly=true; i+=2; continue; }
+        break;
+      }
+      if (!readOne()) return null;
+      // read coordinator and next item(s)
+      while(true){
+        const w = wordAt(i);
+        if (w==='and' || w==='or' || w==='nor' || w==='but' || (w==='as' && wordAt(i+1)==='well' && wordAt(i+2)==='as') || w==='plus'){
+          if (w==='and' || w==='plus' || (w==='as' && wordAt(i+1)==='well' && wordAt(i+2)==='as')){ type = 'AND'; i += (w==='as'?3:1); }
+          else if (w==='or'){ type = either ? 'OR' : 'OR'; i++; }
+          else if (w==='nor'){ type = neither ? 'NOR' : 'NOR'; i++; }
+          else if (w==='but'){ type = notOnly ? 'BUT' : 'BUT'; i++; }
+          // optional 'also' after but
+          if (wordAt(i)==='also') i++;
+          // next item required
+          if (!readOne()) break;
+          continue;
+        }
+        break;
+      }
+      return { ids, type, end: i };
+    };
+
+    if(frame.objects[0]){
+      // find the first occurrence of the base object in token stream and attempt list collection
+      let handledObj = false;
+      for (let i=0;i<tokens.length;i++){
+        const w = tokens[i]?.text; if(!w) continue;
+        // skip prepositional nouns
+        const prev = tokens[i-1]?.text; if (prev && PREP[prev]) continue;
+        const found = findNounByTokens(ns, w, tokens[i+1]?.text);
+        if (found.noun && found.noun.id===frame.objects[0]){
+          const lst = collectNounList(i);
+          if (lst && lst.ids.length>=2){ pushJoined(lst.ids, lst.type); handledObj = true; }
+          break;
+        }
+      }
+      if (!handledObj){ const n = ns.find(n=>n.id===frame.objects[0]); if(n) parts.push(n.word); }
+    }
     for (let i=0;i<tokens.length;i++){
       const w = tokens[i].text;
       const part = PREP[w];
       if (!part) continue;
+      // Support NP lists after a preposition
+      const lst = collectNounList(i+1);
+      if (lst && lst.ids.length>=1){
+        parts.push(part);
+        if (lst.ids.length>=2) pushJoined(lst.ids, lst.type); else { const wId = lst.ids[0]; const w = ns.find(n=>n.id===wId)?.word; if (w) parts.push(w); }
+        i = lst.end-1; continue;
+      }
       const w2 = tokens[i+1]?.text; if (!w2) continue;
       const found = findNounByTokens(ns, w2, tokens[i+2]?.text);
       const n = found.noun;
