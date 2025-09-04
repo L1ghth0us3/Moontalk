@@ -5,13 +5,14 @@ All notable changes to this project will be documented in this file.
 ## [1.6.0-next] - Unreleased
 - Dev: expanded in‑app Dev test runner (grouped scenarios, expected vs got, details panel with clause/frame/tokens/logs).
 - Tests: broadened Vitest coverage across particles, PP order, and simple coordination; added queen/with and shroud+traps cases.
-- Translator 2.0 (lib): major logic fixes and refactor groundwork
+- Translator 2.0 (lib): major logic fixes and refactor groundwork → public API moved to `src/lib/translator2/index.ts`
   - Matching: prevent short fuzzy collisions (sit↔shit, move↔love, cave↔crave); skip verb tokens when collecting nouns; strict copula by k–r–n.
   - Forms: handle 3sg -s verb stemming (e.g., sits → sit).
   - Particles: resolve complements via word/synonyms/gloss (+ safe fuzzy≥5), and preserve PP order in surface.
   - Coordination: simple AND split with subject elision on right; configurable joiner.
   - Options: `translate(input, roots, nouns, opts)` accepts particles/coordinators/flags.
-  - Modularization start: extracted `tokens.ts`, `match.ts`, `types.ts`; component now calls the lib `translate()`.
+  - Modularization: extracted `tokens.ts`, `match.ts`, `frames.ts`, `realize.ts`, `types.ts`; component calls the lib `translate()`.
+  - Public API: moved `translate()` to `src/lib/translator2/index.ts`; removed legacy `src/lib/translator2.ts`; imports updated.
 - Defaults: added verb root for “live; dwell” (f–th–h) to resolve “live” from built-ins.
 
 ## [1.5.0] - 2025-09-04

@@ -15,10 +15,10 @@ Status: in progress (branch `refactor/translator2`)
 Split `src/lib/translator2.ts` into smaller modules under `src/lib/translator2/`:
 - [x] `tokens.ts`: normalize/tokenize, pronoun detection, be‑forms, plural trimming, 3sg -s stemmer.
 - [x] `match.ts`: verb/noun resolution (exact → synonyms → gloss → fuzzy≥5) + consumed‑span tracking.
-- [ ] `frames.ts`: build semantic frame (tense/neg/prog/hab/question), clause type.
-- [ ] `realize.ts`: subject forms, conjugation, PP ordering, subject elision on coordination.
+- [x] `frames.ts`: build semantic frame (tense/neg/prog/hab/question), clause type.
+- [x] `realize.ts`: subject forms, conjugation, PP ordering, subject elision on coordination.
 - [x] `types.ts`: shared internal types for frames/results.
-- [ ] `index.ts`: export `translate()`; glue options and analysis logs.
+- [x] `index.ts`: public API — moved `translate()` here; removed legacy `src/lib/translator2.ts`.
 
 ## Phase 3 — Features & Cleanup
 - Coordination
@@ -45,7 +45,7 @@ Split `src/lib/translator2.ts` into smaller modules under `src/lib/translator2/`
 - Keep tests green; add tests before changing behavior.
 
 ## Acceptance Criteria
-- Translator 2.0 component is a UI shell; all logic lives in lib.
-- Behavior equals or improves current tests and Dev checks.
-- Options allow UI mapping overrides without code changes.
-- Code is modular, typed, and easily testable.
+- Translator 2.0 component is a UI shell; all logic lives in lib (Done).
+- Behavior equals or improves current tests and Dev checks (Ongoing; 23 tests passing).
+- Options allow UI mapping overrides without code changes (Done).
+- Code is modular, typed, and easily testable (Phase 2 core done; optional polish ongoing).
