@@ -69,6 +69,24 @@ export default function MoontalkApp(){
     } catch { void 0; }
   }, []);
 
+  // One-time noun migration: ensure new default nouns are present by word
+  useEffect(() => {
+    try {
+      const stored = lsGet<Noun[] | null>(LS_KEYS.nouns, null as unknown as Noun[] | null);
+      if (Array.isArray(stored)) {
+        const present = new Set(stored.map(n => (n.word||'').toLowerCase()));
+        const missing = DEFAULT_NOUNS.filter(n => n.word && !present.has(n.word.toLowerCase()));
+        if (missing.length) {
+          const next = [...stored, ...missing];
+          lsSet(LS_KEYS.nouns, next);
+          location.reload();
+        }
+      } else {
+        lsSet(LS_KEYS.nouns, DEFAULT_NOUNS);
+      }
+    } catch { void 0; }
+  }, []);
+
   // Keep a valid selected root when the roots list changes (e.g. delete).
   useEffect(()=>{
     if (!selectedId && roots[0]) setSelectedId(roots[0].id);
