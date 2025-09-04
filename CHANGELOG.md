@@ -13,6 +13,9 @@ All notable changes to this project will be documented in this file.
   - Options: `translate(input, roots, nouns, opts)` accepts particles/coordinators/flags.
   - Modularization: extracted `tokens.ts`, `match.ts`, `frames.ts`, `realize.ts`, `types.ts`; component calls the lib `translate()`.
   - Public API: moved `translate()` to `src/lib/translator2/index.ts`; removed legacy `src/lib/translator2.ts`; imports updated.
+  - Coordination (Phase 3 start): multi‑clause split on AND/OR/NOR/BUT with configurable joiners and right‑side subject elision; preserved PP order.
+  - Pronoun fix: map 3pl `they` → `te` for correct finite forms.
+  - Tests: added multiple‑AND and OR coordination cases; suite now at 25 green tests.
 - Defaults: added verb root for “live; dwell” (f–th–h) to resolve “live” from built-ins.
 
 ## [1.5.0] - 2025-09-04

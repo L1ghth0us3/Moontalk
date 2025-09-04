@@ -22,8 +22,8 @@ Split `src/lib/translator2.ts` into smaller modules under `src/lib/translator2/`
 
 ## Phase 3 — Features & Cleanup
 - Coordination
-  - Support multiple joiners (and/or/nor/but), keep per‑clause tense/aspect
-  - Improve NP/VP list detection and join using options.mappings
+  - [x] Support multiple joiners (and/or/nor/but), keep per‑clause settings; joiners configurable via options
+  - [ ] Improve NP/VP list detection and join using options mappings (either/neither, not only … but)
 - Existential expletive (optional)
   - Proper parse + generator; add tests and re‑enable in Dev modal
 - Analysis
@@ -46,6 +46,6 @@ Split `src/lib/translator2.ts` into smaller modules under `src/lib/translator2/`
 
 ## Acceptance Criteria
 - Translator 2.0 component is a UI shell; all logic lives in lib (Done).
-- Behavior equals or improves current tests and Dev checks (Ongoing; 23 tests passing).
+- Behavior equals or improves current tests and Dev checks (Ongoing; 25 tests passing).
 - Options allow UI mapping overrides without code changes (Done).
 - Code is modular, typed, and easily testable (Phase 2 core done; optional polish ongoing).
