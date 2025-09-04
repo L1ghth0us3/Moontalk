@@ -72,6 +72,10 @@ describe('Translator 2.0 (pure API)', () => {
     const out = translate('We will hunt with bow', DEFAULT_ROOTS, DEFAULT_NOUNS);
     expect(out.surface).toMatch(/\bri\b/);
   });
+  it('Particles: WITH the queen', () => {
+    const out = translate('I hunt with the queen', DEFAULT_ROOTS, DEFAULT_NOUNS);
+    expect(out.surface).toBe('ɪ kɪlab ri kin');
+  });
   it('Particles: TO home', () => {
     const out = translate('I move to home', DEFAULT_ROOTS, DEFAULT_NOUNS);
     expect(out.surface).toMatch(/\sith\s/);

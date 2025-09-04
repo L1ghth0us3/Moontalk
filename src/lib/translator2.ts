@@ -178,7 +178,15 @@ export function translate(input: string, roots: Root[], nouns: Noun[]): T2Result
       if(!words.includes(k)) continue;
       const idx = words.indexOf(k);
       const w2 = words[idx+1]; if(!w2) continue;
-      const n = ns.find(n=> norm(n.word)===norm(w2) ) || ns.find(n=> splitItems(n.gloss).includes(norm(w2)) );
+      const base = norm(w2.endsWith('s')&&w2.length>3&&!w2.endsWith('ss')? w2.slice(0,-1): w2);
+      let n = ns.find(n=> norm(n.word)===base )
+        || ns.find(n=> (n.synonyms||[]).map(norm).includes(base) )
+        || ns.find(n=> splitItems(n.gloss).includes(base) );
+      if(!n && base.length>=5){
+        n = ns.find(n=> edit1(base, norm(n.word)))
+          || ns.find(n=> (n.synonyms||[]).map(norm).some(s=>edit1(base,s)))
+          || ns.find(n=> splitItems(n.gloss).some(s=>edit1(base,s)));
+      }
       if(n){ parts.push(PREP[k]); parts.push(n.word); }
     }
   }
