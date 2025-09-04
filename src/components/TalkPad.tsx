@@ -7,8 +7,8 @@ import { lexNoun } from "../lib/lex";
 import { LS_KEYS, useLocalStorageState } from "../lib/storage";
 import { buildFinite, withHabitual, withNegation, withProgressive } from "../lib/morphology";
 
-// Helper: best‑effort clipboard copy; ignore failures (e.g., permissions).
-const clip = async (text: string) => { try { await navigator.clipboard.writeText(text); } catch { void 0; } };
+// Helper: best‑effort clipboard copy; show toast on success.
+const clip = async (text: string) => { try { await navigator.clipboard.writeText(text); } catch { void 0; } finally { try { window.dispatchEvent(new CustomEvent('huntspeak-toast', { detail: { message: 'Saved to clipboard successfully' } })); } catch { void 0; } } };
 
 /**
  * Guided sentence builder.

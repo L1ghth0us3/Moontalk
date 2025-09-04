@@ -819,7 +819,7 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
                 <div className="flex flex-col gap-1">
                   {faves.map(f => (
                     <div key={f.id} className="flex items-center gap-2 text-sm">
-                      <button className="px-2 py-1 rounded border border-neutral-300 hover:bg-neutral-50" onClick={()=>{ try { navigator.clipboard.writeText(f.surface); } catch { void 0; } }}>Copy</button>
+                      <button className="px-2 py-1 rounded border border-neutral-300 hover:bg-neutral-50" onClick={()=>{ try { navigator.clipboard.writeText(f.surface); } catch { void 0; } finally { try { window.dispatchEvent(new CustomEvent('huntspeak-toast', { detail: { message: 'Saved to clipboard successfully' } })); } catch { void 0; } } }}>Copy</button>
                       <button className="px-2 py-1 rounded border border-neutral-300 hover:bg-neutral-50" title="Remove favorite" onClick={()=> setFaves(prev=>prev.filter(x=>x.id!==f.id))}>★</button>
                       <div className="truncate" title={f.input ? `${f.surface} — ${f.input}` : f.surface}>{f.surface}{f.input ? ` — ${f.input}` : ''}</div>
                     </div>
@@ -1060,7 +1060,7 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
               const exists = surface && faves.some(f => f.surface===surface && f.input===inputLine);
               return exists ? '★ Favorite' : '☆ Favorite';
             })()}</button>
-            <button className="px-2 py-1 rounded border border-neutral-300 hover:bg-neutral-50 text-sm" onClick={() => { try { navigator.clipboard.writeText(result?.surface || ""); } catch { void 0; } }}>Copy</button>
+            <button className="px-2 py-1 rounded border border-neutral-300 hover:bg-neutral-50 text-sm" onClick={() => { try { navigator.clipboard.writeText(result?.surface || ""); } catch { void 0; } finally { try { window.dispatchEvent(new CustomEvent('huntspeak-toast', { detail: { message: 'Saved to clipboard successfully' } })); } catch { void 0; } } }}>Copy</button>
             <button className="px-2 py-1 rounded border border-neutral-300 hover:bg-neutral-50 text-sm" onClick={()=>setShowJSON(v=>!v)}>{showJSON ? 'Hide JSON' : 'Show JSON'}</button>
             <button className="px-2 py-1 rounded border border-neutral-300 hover:bg-neutral-50 text-sm" onClick={()=>setT2SettingsOpen(true)}>Settings</button>
           </div>
@@ -1118,7 +1118,7 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
               {/* Row 1: copula + Prog/Hab/Neg permutations */}
               <div className="flex flex-wrap gap-2 mb-2">
                 {[...variants, ...permSurfaces].map((v,i)=> (
-                  <button key={i} className="inline-flex items-center gap-2 px-2 py-1 rounded-full border border-neutral-300 text-sm hover:bg-neutral-50" onClick={()=>{ try { navigator.clipboard.writeText(v.value); } catch { void 0; } }} title="Click to copy">
+                  <button key={i} className="inline-flex items-center gap-2 px-2 py-1 rounded-full border border-neutral-300 text-sm hover:bg-neutral-50" onClick={()=>{ try { navigator.clipboard.writeText(v.value); } catch { void 0; } finally { try { window.dispatchEvent(new CustomEvent('huntspeak-toast', { detail: { message: 'Saved to clipboard successfully' } })); } catch { void 0; } } }} title="Click to copy">
                     <span className="opacity-70">{v.label}:</span>
                     <span className="font-medium">{v.value}</span>
                   </button>
@@ -1127,7 +1127,7 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
               {/* Row 2: Tense variants */}
               <div className="flex flex-wrap gap-2">
                 {tenseSurfaces.map((v,i)=> (
-                  <button key={i} className="inline-flex items-center gap-2 px-2 py-1 rounded-full border border-neutral-300 text-sm hover:bg-neutral-50" onClick={()=>{ try { navigator.clipboard.writeText(v.value); } catch { void 0; } }} title="Click to copy">
+                  <button key={i} className="inline-flex items-center gap-2 px-2 py-1 rounded-full border border-neutral-300 text-sm hover:bg-neutral-50" onClick={()=>{ try { navigator.clipboard.writeText(v.value); } catch { void 0; } finally { try { window.dispatchEvent(new CustomEvent('huntspeak-toast', { detail: { message: 'Saved to clipboard successfully' } })); } catch { void 0; } } }} title="Click to copy">
                     <span className="opacity-70">{v.label}:</span>
                     <span className="font-medium">{v.value}</span>
                   </button>
@@ -1334,7 +1334,7 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
                     className="px-3 py-1 rounded-lg border border-neutral-300 hover:bg-neutral-50"
                     onClick={()=>{
                       const line = (tests||[]).map(t => `${t.pass? 'PASS':'FAIL'} ${t.name}: expected=${t.expected}; got=${t.got}${t.note?`; note=${t.note}`:''}`).join(' | ');
-                      try { navigator.clipboard.writeText(line); } catch { void 0; }
+                      try { navigator.clipboard.writeText(line); } catch { void 0; } finally { try { window.dispatchEvent(new CustomEvent('huntspeak-toast', { detail: { message: 'Saved to clipboard successfully' } })); } catch { void 0; } }
                     }}
                     title="Copy plain text (single line)"
                   >Copy Plain</button>
@@ -1349,7 +1349,7 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
                       title="Click to copy this result as plain text"
                       onClick={()=>{
                         const line = `${t.pass? 'PASS':'FAIL'} ${t.name}: expected=${t.expected}; got=${t.got}${t.note?`; note=${t.note}`:''}`;
-                        try { navigator.clipboard.writeText(line); } catch { void 0; }
+                        try { navigator.clipboard.writeText(line); } catch { void 0; } finally { try { window.dispatchEvent(new CustomEvent('huntspeak-toast', { detail: { message: 'Saved to clipboard successfully' } })); } catch { void 0; } }
                       }}
                     >
                       {t.pass ? '✓' : '✗'} {t.name}: expected “{t.expected}” got “{t.got}”{t.note?` — ${t.note}`:''}

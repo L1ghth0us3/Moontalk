@@ -7,7 +7,7 @@ export async function copyText(text: string){
       ta.value = text; ta.style.position = 'fixed'; ta.style.left = '-1000px';
       document.body.appendChild(ta); ta.select(); document.execCommand('copy');
       document.body.removeChild(ta);
-    } catch { /* ignore */ }
+    } catch { void 0; }
   }
+  try { window.dispatchEvent(new CustomEvent('huntspeak-toast', { detail: { message: 'Saved to clipboard successfully' } })); } catch { void 0; }
 }
-

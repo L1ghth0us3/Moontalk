@@ -3,17 +3,33 @@
 Use this file to get productive fast. It summarizes the architecture, where to make changes, and how to verify work. Keep this close when adding features or refactoring.
 
 ## Runbook
+- `npm run codex`: One-shot build → lint → status/diff. Optional commit/push.
+  - Examples:
+    - Validate only: `npm run codex`
+    - Commit + push: `npm run codex -- -m "feat: add X" --push`
+    - On `main` (discouraged): `npm run codex -- --allow-main -m "hotfix: …" --push`
 - `npm run dev`: Start Vite dev server with HMR.
 - `npm run build`: Type-check then build for production.
 - `npm run preview`: Preview the production build.
 - `npm run lint`: ESLint across the project.
 
 > Mandatory workflow for Codex agents (do not skip):
-> 1) Run `npm run build`.
-> 2) Then run `npm run lint`.
-> 3) Fix all build errors and lint warnings relevant to your change.
-> 4) Only then `git add -A` + `git commit -m "..."`.
-> Repeat this build → lint → commit cycle after every instruction/step.
+> Prefer `npm run codex` for a single, precise gate:
+> 1) `npm run codex` — runs build and lint; shows status and diff.
+> 2) Fix any build errors (blocking) and relevant lint issues; re-run.
+> 3) When green, COMMIT IMMEDIATELY using the helper (safety rule):
+>    `npm run codex -- -m "<type(scope): message>" --push`
+>    This performs `git add -A`, `git commit`, and push (sets upstream if needed).
+> This replaces the manual build → lint → commit cycle after each instruction. Always commit after a green gate unless the user explicitly asks to hold.
+> You can still run `npm run build` and `npm run lint` directly if needed.
+
+### Codex Helper Script Notes
+- Location: `scripts/codex-workflow.mjs`; npm alias: `npm run codex`.
+- Output: prints clear STEP lines and ✅/❌ for success/failure for Build, Lint, Status, Commit, Push.
+- Safety: blocks on `main` unless `--allow-main` is passed.
+- Hooks: ensures `core.hooksPath` is `.githooks`; post-commit auto‑push may still push after your commit.
+- Disable auto‑push locally per-commit: `NO_AUTO_PUSH=1 npm run codex -- -m "wip"`.
+- Commit policy: After every instruction/tasklet and a green gate, create a small, scoped commit via the helper; keep diffs focused and revertible.
 
 ## Architecture
 - Entry: `src/main.tsx` → `src/App.tsx` (simple pathname switch) → `src/MoontalkApp.tsx` (app shell)
@@ -89,11 +105,10 @@ Use this file to get productive fast. It summarizes the architecture, where to m
    - `git switch 1.4-dev` (or the current `*-dev` branch). If missing, create it from `main`: `git switch -c 1.4-dev origin/main`.
 2) Implement a small, focused change
    - Edit code.
-   - Run `npm run build`, then `npm run lint`. Fix issues until both pass.
+   - Run `npm run codex` (build+lint). Fix issues until green.
    - Validate behavior quickly in `npm run dev` if UI/logic changed.
 3) Stage and commit immediately when the step is complete
-   - `git add -A`
-   - `git commit -m "feat: add Translator 2.0 intake tokenizer"`
+   - `npm run codex -- -m "feat: add Translator 2.0 intake tokenizer" --push`
 4) Iterate in small steps
    - Repeat implement → validate → commit after each instruction/tasklet.
 5) Push dev branch as needed (optional for collaboration/review)

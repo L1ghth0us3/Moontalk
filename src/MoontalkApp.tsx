@@ -10,6 +10,7 @@ import Translator2 from "./components/Translator2";
 import { useLocalStorageState, LS_KEYS, lsGet, lsSet } from "./lib/storage";
 import FiniteForms from "./components/FiniteForms";
 import { ContextMenuProvider } from "./lib/contextMenu";
+import { ToastProvider } from "./lib/toast";
 
 /**
  * Application shell
@@ -233,6 +234,7 @@ export default function MoontalkApp(){
   }
 
   return (
+    <ToastProvider>
     <ContextMenuProvider>
     <div className="p-6 2xl:p-10 max-w-none mx-auto font-sans">
       <header className="mb-6">
@@ -418,5 +420,6 @@ export default function MoontalkApp(){
       </>
     )}
     </ContextMenuProvider>
+    </ToastProvider>
   );
 }

@@ -4,8 +4,8 @@ import { stripArticles, lexNoun } from "../lib/lex";
 import type { Noun, Root } from "../types";
 import { findRootByEnglish, withHabitual, withNegation, withProgressive } from "../lib/morphology";
 
-// Helper: best‑effort clipboard copy; ignore failures.
-const clip = async (text: string) => { try { await navigator.clipboard.writeText(text); } catch { void 0; } };
+// Helper: best‑effort clipboard copy; show toast on success.
+const clip = async (text: string) => { try { await navigator.clipboard.writeText(text); } catch { void 0; } finally { try { window.dispatchEvent(new CustomEvent('huntspeak-toast', { detail: { message: 'Saved to clipboard successfully' } })); } catch { void 0; } } };
 
 /**
  * Naive English → Huntspeak translator for single‑verb clauses.
