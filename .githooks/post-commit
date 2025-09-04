@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Auto-push current branch to origin after each commit.
+# Respects NO_AUTO_PUSH=1 to disable locally.
+
+[ "${NO_AUTO_PUSH:-0}" = "1" ] && exit 0
+
+# Skip during merges/rebases or detached HEAD
+if git rev-parse -q --verify MERGE_HEAD >/dev/null 2>&1; then exit 0; fi
+branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo HEAD)
+[ "$branch" = "HEAD" ] && exit 0
+
+# Require an 'origin' remote
+if ! git remote get-url origin >/dev/null 2>&1; then
+  echo "post-commit: no 'origin' remote; skipping push" >&2
+  exit 0
+fi
+
+# Push current branch; set upstream if missing
+if git rev-parse --abbrev-ref --symbolic-full-name @{u} >/dev/null 2>&1; then
+  git push origin "$branch" || true
+else
+  git push -u origin "$branch" || true
+fi
+
+# If this commit has tags pointing at it, push them too
+tags=$(git tag --points-at HEAD || true)
+if [ -n "$tags" ]; then
+  for t in $tags; do
+    git push origin "$t" || true
+  done
+fi
+
+exit 0
+
