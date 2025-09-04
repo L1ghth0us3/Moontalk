@@ -731,7 +731,11 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
   // UI helpers removed with simplified left panel
 
   function onTranslate(){
-    const r = translateLib(englishInput, rootsLocal, nounsLocal);
+    const r = translateLib(englishInput, rootsLocal, nounsLocal, {
+      particles: t2Settings?.particles,
+      coordinators: t2Settings?.coordinators,
+      flags: { enableCoordination: true },
+    });
     const res: Result = {
       surface: r.surface,
       variants: r.variants,

@@ -16,6 +16,12 @@ export type T2Result = {
   warnings: string[];
 };
 
+export type T2Options = {
+  particles?: Partial<Record<'WITH'|'TO'|'FROM'|'IN_AT', string>>;
+  coordinators?: Partial<Record<'AND'|'OR'|'NOR'|'BUT', string>>;
+  flags?: { enableCoordination?: boolean };
+};
+
 function norm(s: string){ return s.toLowerCase().trim(); }
 function isWordChar(ch: string){ return /[A-Za-z0-9]/.test(ch); }
 function tokenize(s: string){
@@ -40,12 +46,16 @@ function stemVerb(w:string){
   return w;
 }
 
-export function translate(input: string, roots: Root[], nouns: Noun[]): T2Result {
+export function translate(input: string, roots: Root[], nouns: Noun[], opts?: T2Options): T2Result {
   // Lex maps
   const verbs = roots.map(r=>({ id:r.id,c1:r.c1,c2:r.c2,c3:r.c3,gloss:r.gloss||'',synonyms:(r.synonyms||[]) as string[] }));
   const ns = nouns.map(n=>({ id:n.id, word:n.word, gloss:n.gloss||'', synonyms:(n.synonyms||[]) as string[] }));
 
-  const PREP: Record<string,string> = { with:'ri', to:'ith', from:'ʌs', in:'la', at:'la' };
+  const PART_DEF = { WITH:'ri', TO:'ith', FROM:'ʌs', IN_AT:'la' } as const;
+  const partMap = { ...PART_DEF, ...(opts?.particles||{}) } as Record<'WITH'|'TO'|'FROM'|'IN_AT', string>;
+  const PREP: Record<string,string> = { with:partMap.WITH, to:partMap.TO, from:partMap.FROM, in:partMap.IN_AT, at:partMap.IN_AT };
+  const COORD_DEF = { AND:'ʋa', OR:'ra', NOR:'ra', BUT:'ma' } as const;
+  const coords = { ...COORD_DEF, ...(opts?.coordinators||{}) } as Record<'AND'|'OR'|'NOR'|'BUT', string>;
   const SPECIAL = new Set(['will','did','not','never','there','used']);
   const PRON = new Set(['i','you','he','she','we','they']);
   const tokens = tokenize(input||'');
@@ -154,7 +164,7 @@ export function translate(input: string, roots: Root[], nouns: Noun[]): T2Result
     if(flags.neg) v = withNegation(v);
     return v;
   };
-  const parts: string[] = [];
+  const parts: string[] = [] as string[];
   const variants: string[] = [];
   const sj = subj(frame.subject);
   const verbRoot = frame.verbRootId ? roots.find(r=>r.id===frame.verbRootId) : null;
@@ -200,13 +210,13 @@ export function translate(input: string, roots: Root[], nouns: Noun[]): T2Result
 
   // Simple clause coordination for 'and': split tokens once and join translations with ʋa, drop repeated subject on right
   const andIdx = words.indexOf('and');
-  if (andIdx > 0 && andIdx < tokens.length-1){
+  if ((opts?.flags?.enableCoordination ?? true) && andIdx > 0 && andIdx < tokens.length-1){
     const leftTokens = tokens.slice(0, andIdx);
     const rightTokens = tokens.slice(andIdx+1);
     const leftInput = leftTokens.map(t=>t.text).join(' ');
     const rightInput = rightTokens.map(t=>t.text).join(' ');
-    const left = translate(leftInput, roots, nouns);
-    const right = translate(rightInput, roots, nouns);
+    const left = translate(leftInput, roots, nouns, opts);
+    const right = translate(rightInput, roots, nouns, opts);
     // If right starts with same subject as left, drop it
     const subjForm = (s: string|undefined)=> s==='I'?'ɪ':s==='we'?'tɪ':s==='you'?'su':s==='they'?'te':'se';
     const lFrame = (left.analysis?.frame as unknown) as { subject?: string } | undefined;
@@ -214,7 +224,7 @@ export function translate(input: string, roots: Root[], nouns: Noun[]): T2Result
     const sf = subjForm(lSubj);
     let rSurf = right.surface;
     if (sf && (rSurf===sf || rSurf.startsWith(sf+' '))){ rSurf = rSurf.slice(sf.length).trimStart(); }
-    surface = [left.surface, 'ʋa', rSurf].join(' ');
+    surface = [left.surface, coords.AND, rSurf].join(' ');
   }
 
   return { surface, variants, analysis, warnings };
