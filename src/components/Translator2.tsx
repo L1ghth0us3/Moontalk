@@ -45,6 +45,7 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
   // Local copies so embedded editors can update lexicon without affecting parent
   const [rootsLocal, setRootsLocal] = useState<Root[]>(roots);
   const [nounsLocal, setNounsLocal] = useState<Noun[]>(nouns);
+  const [nounsKey, setNounsKey] = useState(0);
   const [selectedRootId, setSelectedRootId] = useState<string | null>(rootsLocal[0]?.id ?? null);
   const [selectedNounId, setSelectedNounId] = useState<string | null>(nounsLocal[0]?.id ?? null);
   useEffect(() => {
@@ -865,6 +866,7 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
           </div>
           <div>
             <NounEditor
+              key={nounsKey}
               initial={nounsLocal}
               onChange={setNounsLocal}
               selectedId={selectedNounId}
@@ -884,7 +886,11 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
                   <FiniteForms root={root} />
                   <RenderDerivations root={root} onCreateNoun={(n)=>{
                     const id = Math.random().toString(36).slice(2,10);
-                    setNounsLocal(prev => [{ id, word: n.word, gloss: n.gloss || "", synonyms: n.synonyms || [] }, ...prev]);
+                    const newNoun = { id, word: n.word, gloss: n.gloss || "", synonyms: n.synonyms || [] };
+                    const next = [newNoun, ...nounsLocal];
+                    setNounsLocal(next);
+                    try { localStorage.setItem(LS_KEYS.nouns, JSON.stringify(next)); } catch { /* ignore */ }
+                    setNounsKey(k=>k+1);
                   }} />
                 </>
               );
