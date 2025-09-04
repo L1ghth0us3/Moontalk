@@ -94,6 +94,28 @@ describe('Translator 2.0 (pure API)', () => {
     expect(out.surface).toContain(' ʌmas');
   });
 
+  // Coordination — multiple AND
+  it('Coordination: I live in shroud and hunt with traps and smell forest', () => {
+    const out = translate('I live in shroud and hunt with traps and smell forest', DEFAULT_ROOTS, DEFAULT_NOUNS);
+    // three segments joined by ʋa
+    const s = out.surface;
+    const countVa = (s.match(/\sʋa\s/g)||[]).length;
+    expect(countVa).toBe(2);
+    expect(s).toMatch(/\bla\s+sharūd\b/);
+    expect(s).toMatch(/\bkɪlab\b/);
+    expect(s).toMatch(/\bri\s+maklūb\b/);
+    expect(s).toContain('χ'); // smell verb present
+    expect(s).toContain('ʋæʋi'); // forest
+  });
+
+  // Coordination — OR
+  it('Coordination: I hunt with bow or with knife', () => {
+    const out = translate('I hunt with bow or with knife', DEFAULT_ROOTS, DEFAULT_NOUNS);
+    expect(out.surface).toContain(' ri ');
+    // default OR joiner is ra
+    expect(out.surface).toContain(' ra ');
+  });
+
   // Negation
   it('Negation: I do not hunt (k- assimilation)', () => {
     const out = translate('I do not hunt', DEFAULT_ROOTS, DEFAULT_NOUNS);

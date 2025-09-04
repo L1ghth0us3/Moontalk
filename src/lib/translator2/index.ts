@@ -57,21 +57,40 @@ export function translate(input: string, roots: Root[], nouns: Noun[], opts?: T2
   const warnings: string[] = [];
   if(!frame.verbRootId) warnings.push('Unknown verb');
 
-  const andIdx = words.indexOf('and');
-  if ((opts?.flags?.enableCoordination ?? true) && andIdx > 0 && andIdx < tokens.length-1){
-    const leftTokens = tokens.slice(0, andIdx);
-    const rightTokens = tokens.slice(andIdx+1);
-    const leftInput = leftTokens.map(t=>t.text).join(' ');
-    const rightInput = rightTokens.map(t=>t.text).join(' ');
-    const left = translate(leftInput, roots, nouns, opts);
-    const right = translate(rightInput, roots, nouns, opts);
-    const subjForm = (s: string|undefined)=> s==='I'?'ɪ':s==='we'?'tɪ':s==='you'?'su':s==='they'?'te':'se';
-    const lFrame = (left.analysis?.frame as unknown) as { subject?: string } | undefined;
-    const lSubj = lFrame?.subject;
-    const sf = subjForm(lSubj);
-    let rSurf = right.surface;
-    if (sf && (rSurf===sf || rSurf.startsWith(sf+' '))){ rSurf = rSurf.slice(sf.length).trimStart(); }
-    surface = [left.surface, coords.AND, rSurf].join(' ');
+  if (opts?.flags?.enableCoordination ?? true){
+    const splitPoints: Array<{ idx:number; type:'AND'|'OR'|'NOR'|'BUT' }> = [];
+    for (let i=0;i<words.length;i++){
+      const w = words[i];
+      if (w==='and') splitPoints.push({ idx:i, type:'AND' });
+      else if (w==='or') splitPoints.push({ idx:i, type:'OR' });
+      else if (w==='nor') splitPoints.push({ idx:i, type:'NOR' });
+      else if (w==='but') splitPoints.push({ idx:i, type:'BUT' });
+    }
+    if (splitPoints.length){
+      const spans: Array<{ start:number; end:number; type?: 'AND'|'OR'|'NOR'|'BUT' }> = [];
+      let start = 0;
+      for (const s of splitPoints){ spans.push({ start, end: s.idx, type: s.type }); start = s.idx+1; }
+      spans.push({ start, end: tokens.length });
+      // Translate each segment with coordination disabled to avoid re-splitting
+      const segs = spans.map(sp => {
+        const segTokens = tokens.slice(sp.start, sp.end);
+        const inputSeg = segTokens.map(t=>t.text).join(' ');
+        return { out: translate(inputSeg, roots, nouns, { ...opts, flags: { ...(opts?.flags||{}), enableCoordination: false } }), type: sp.type };
+      });
+      // Subject elision on the right based on the first segment's subject
+      const subjForm = (s: string|undefined)=> s==='I'?'ɪ':s==='we'?'tɪ':s==='you'?'su':s==='they'?'te':'se';
+      const lFrame = (segs[0].out.analysis?.frame as unknown) as { subject?: string } | undefined;
+      const baseSubj = subjForm(lFrame?.subject);
+      const pieces: string[] = [];
+      pieces.push(segs[0].out.surface);
+      for (let i=1;i<segs.length;i++){
+        const join = coords[segs[i-1].type || 'AND'];
+        let surf = segs[i].out.surface;
+        if (baseSubj && (surf===baseSubj || surf.startsWith(baseSubj+' '))){ surf = surf.slice(baseSubj.length).trimStart(); }
+        pieces.push(join, surf);
+      }
+      surface = pieces.join(' ');
+    }
   }
 
   return { surface, variants, analysis, warnings };
