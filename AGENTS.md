@@ -48,6 +48,9 @@
   - `fix(translator2): handle 3sg -s except 'ss'`
   - `docs: clarify codex --finalize behavior`
 
+Instruction
+- Before committing with intent, review the previous commit on your branch, confirm what changed, and ensure the commit message (subject/body) summarizes everything changed since that commit.
+
 ## Security & Configuration Tips
 - Client-only app; do not commit secrets. Avoid adding `.env` values unless needed; prefer `import.meta.env` with Vite prefixes if introduced.
 - App persists data in `localStorage` (`huntspeak_*` keys). When changing storage shape, provide migration or a safe reset path.
