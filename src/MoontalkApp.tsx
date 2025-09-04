@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import type { Noun, Root } from "./types";
 import { DEFAULT_NOUNS, DEFAULT_ROOTS } from "./data/defaults";
 import RootEditor from "./components/editors/RootEditor";
@@ -30,6 +30,7 @@ import { ToastProvider } from "./lib/toast";
  * - All modals and popovers avoid global state; they are local to their components.
  */
 export default function MoontalkApp(){
+  const DevTestRunnerLazy = lazy(() => import('./components/dev/DevTestRunner'));
   const [roots, setRoots] = useState<Root[]>(DEFAULT_ROOTS);
   const [nouns, setNouns] = useState<Noun[]>(DEFAULT_NOUNS);
   const [selectedId, setSelectedId] = useLocalStorageState<string|null>(LS_KEYS.selectedRoot, roots[0]?.id || null);
@@ -39,6 +40,7 @@ export default function MoontalkApp(){
   const [systemDark, setSystemDark] = useState<boolean>(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [dataOpen, setDataOpen] = useState(false);
+  const [devOpen, setDevOpen] = useState(false);
   const [composerTab, setComposerTab] = useLocalStorageState<'talk'|'translator'|'translator2'>("huntspeak_composer_tab", 'talk');
   const [confirmResetOpen, setConfirmResetOpen] = useState(false);
   const [syncMorph, setSyncMorph] = useLocalStorageState<boolean>(LS_KEYS.morphSync, true);
@@ -264,6 +266,7 @@ export default function MoontalkApp(){
           <nav aria-label="Main" className="flex items-center gap-2">
             <a className="px-3 py-2 rounded-xl border border-neutral-300 hover:bg-neutral-50" href="/what-is-this">What is this</a>
             <button className="px-3 py-2 rounded-xl border border-neutral-300 hover:bg-neutral-50" onClick={()=>setDataOpen(true)}>Data</button>
+            <button className="px-3 py-2 rounded-xl border border-neutral-300 hover:bg-neutral-50" onClick={()=>setDevOpen(true)} title="Developer diagnostics">Dev</button>
             <button className="px-3 py-2 rounded-xl border border-neutral-300 hover:bg-neutral-50" onClick={()=>setSettingsOpen(true)}>Settings</button>
           </nav>
         </div>
@@ -358,6 +361,25 @@ export default function MoontalkApp(){
           </div>
         </>
       )}
+    {devOpen && (
+      <>
+        <div className="fixed inset-0 bg-black/50 z-40"></div>
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4" onClick={(e)=>{ if (e.target===e.currentTarget) setDevOpen(false); }}>
+          <div className="w-full max-w-2xl rounded-2xl border border-neutral-200 bg-white fantasy-card p-5">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xl font-semibold">Dev: Live Tests</h3>
+              <button className="px-3 py-1 rounded-lg border border-neutral-300 hover:bg-neutral-50" onClick={()=>setDevOpen(false)}>Close</button>
+            </div>
+            <div className="space-y-3">
+              {/* Inline runner */}
+              <Suspense fallback={null}>
+                <DevTestRunnerLazy />
+              </Suspense>
+            </div>
+          </div>
+        </div>
+      </>
+    )}
     {settingsOpen && (
       <>
         <div className="fixed inset-0 bg-black/50 z-40"></div>
