@@ -265,7 +265,7 @@ export default function MoontalkApp(){
                 aria-pressed={composerTab==='translator'}
                 className={`px-3 py-2 rounded-xl border transition ${composerTab==='translator' ? 'ring-2 ring-blue-300 border-blue-500 font-semibold' : 'border-neutral-300 hover:bg-neutral-50'}`}
                 onClick={()=>setComposerTab('translator')}
-              >Free Translator</button>
+              >Translator [Legacy]</button>
               <button
                 aria-pressed={composerTab==='translator2'}
                 className={`px-3 py-2 rounded-xl border transition ${composerTab==='translator2' ? 'ring-2 ring-blue-300 border-blue-500 font-semibold' : 'border-neutral-300 hover:bg-neutral-50'}`}

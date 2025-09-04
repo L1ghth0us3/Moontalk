@@ -25,6 +25,15 @@ type TrState = { en: string; hs: string; hsParts?: Part[] }
 export default function FreeTranslator({ roots, nouns, showCollapse = false, embedded = false, onCreateNoun, onCreateRoot, forceCopula = false }: { roots: Root[]; nouns: Noun[]; showCollapse?: boolean; embedded?: boolean; onCreateNoun?: (n: { word: string; gloss?: string; synonyms?: string[] }) => void; onCreateRoot?: (r: { c1: string; c2: string; c3: string; gloss?: string; synonyms?: string[] }) => void; forceCopula?: boolean }){
   const [tr, setTr] = useLocalStorageState<TrState>(LS_KEYS.translator, { en: "", hs: "" });
   const [collapsed, setCollapsed] = useLocalStorageState<boolean>('huntspeak_collapse_translator', false);
+  // Particle mapping from Translator 2.0 settings (fallback to defaults)
+  type T2Settings = { coordinators: Record<'AND'|'OR'|'NOR'|'BUT', string>; particles: Record<'WITH'|'TO'|'FROM'|'IN_AT', string> };
+  const [t2Settings] = useLocalStorageState<T2Settings>(LS_KEYS.translator2Settings, { coordinators: { AND:'ʋa', OR:'ra', NOR:'ra', BUT:'ma' }, particles: { WITH:'ri', TO:'ith', FROM:'ʌs', IN_AT:'la' } });
+  const partCode = (en: 'with'|'to'|'from'|'in'|'at') => {
+    const cur = (t2Settings?.particles || {}) as Record<'WITH'|'TO'|'FROM'|'IN_AT', string>;
+    const DEF = { WITH:'ri', TO:'ith', FROM:'ʌs', IN_AT:'la' } as const;
+    const key = en==='with'?'WITH':en==='to'?'TO':en==='from'?'FROM':'IN_AT';
+    return cur[key] || DEF[key];
+  };
   // Experimental add flow for unknown tokens
   const [addOpen, setAddOpen] = React.useState<null | { en: string; step: 'choose'|'noun'|'verb' }>(null);
   const [nounDraft, setNounDraft] = React.useState<{ word: string; gloss: string; syn: string }>({ word: "", gloss: "", syn: "" });
@@ -165,9 +174,9 @@ export default function FreeTranslator({ roots, nouns, showCollapse = false, emb
       parts.push({ text: subj.form });
       if (verbToken) parts.push({ text: verbToken, u: true, en: verbToken });
       if (object) { const objOut = lexNoun(nouns, object); parts.push({ text: objOut, u: objOut === object, en: object }); }
-      if (withMatch) { parts.push({ text: "ri" }); const v = withMatch[1].trim(); const w = lexNoun(nouns, v); parts.push({ text: w, u: w === v, en: v }); }
-      if (toMatch)   { parts.push({ text: "ith" }); const v = toMatch[1].trim();   const w = lexNoun(nouns, v); parts.push({ text: w, u: w === v, en: v }); }
-      if (fromMatch) { parts.push({ text: "ʌs" }); const v = fromMatch[1].trim(); const w = lexNoun(nouns, v); parts.push({ text: w, u: w === v, en: v }); }
+      if (withMatch) { parts.push({ text: partCode('with') }); const v = withMatch[1].trim(); const w = lexNoun(nouns, v); parts.push({ text: w, u: w === v, en: v }); }
+      if (toMatch)   { parts.push({ text: partCode('to') }); const v = toMatch[1].trim();   const w = lexNoun(nouns, v); parts.push({ text: w, u: w === v, en: v }); }
+      if (fromMatch) { parts.push({ text: partCode('from') }); const v = fromMatch[1].trim(); const w = lexNoun(nouns, v); parts.push({ text: w, u: w === v, en: v }); }
       setTr(s0 => ({ ...s0, hs: parts.map(p=>p.text).join(" "), hsParts: parts }));
       return;
     }
@@ -176,9 +185,9 @@ export default function FreeTranslator({ roots, nouns, showCollapse = false, emb
     parts2.push({ text: subj.form });
     parts2.push({ text: verb });
     if (object) { const objOut = lexNoun(nouns, object); parts2.push({ text: objOut, u: objOut === object, en: object }); }
-    if (withMatch) { parts2.push({ text: "ri" }); const v = withMatch[1].trim(); const w = lexNoun(nouns, v); parts2.push({ text: w, u: w === v, en: v }); }
-    if (toMatch)   { parts2.push({ text: "ith" }); const v = toMatch[1].trim();   const w = lexNoun(nouns, v); parts2.push({ text: w, u: w === v, en: v }); }
-    if (fromMatch) { parts2.push({ text: "ʌs" }); const v = fromMatch[1].trim(); const w = lexNoun(nouns, v); parts2.push({ text: w, u: w === v, en: v }); }
+    if (withMatch) { parts2.push({ text: partCode('with') }); const v = withMatch[1].trim(); const w = lexNoun(nouns, v); parts2.push({ text: w, u: w === v, en: v }); }
+    if (toMatch)   { parts2.push({ text: partCode('to') }); const v = toMatch[1].trim();   const w = lexNoun(nouns, v); parts2.push({ text: w, u: w === v, en: v }); }
+    if (fromMatch) { parts2.push({ text: partCode('from') }); const v = fromMatch[1].trim(); const w = lexNoun(nouns, v); parts2.push({ text: w, u: w === v, en: v }); }
     setTr(s=>({ ...s, hs: parts2.map(p=>p.text).join(" "), hsParts: parts2 }));
   }
 
