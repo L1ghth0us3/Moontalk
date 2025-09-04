@@ -44,6 +44,7 @@ Use this file to get productive fast. It summarizes the architecture, where to m
 - Data & helpers:
   - `lib/morphology.ts`: finite building + progressive/habitual/negation.
   - `lib/lex.ts`: shared noun lex + normalization for Talk Pad and Translator.
+  - Translator 2.0 library: see `src/lib/translator2/README.md` for public API and internals. Use `src/lib/translator2/index.ts` to import `translate()` and types.
   - `lib/storage.ts`: localStorage keys + hook.
   - `types.ts`: `Root`, `Noun`, `PRONOUNS`, `TENSES`.
   - `data/defaults.ts`: seed Roots/Nouns.
