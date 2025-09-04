@@ -24,11 +24,8 @@ export const DEFAULT_ROOTS: Root[] = mergeRoots.filter(r => {
 }).map(r => ({ id: uid(), c1: r.c1, c2: r.c2, c3: r.c3, gloss: r.gloss, synonyms: r.synonyms ? Array.from(r.synonyms) : [] }));
 
 const N0 = [
-  { word: "mallūb", gloss: "trap, snare", synonyms: [] },
   { word: "kalāb", gloss: "hunter", synonyms: [] },
   { word: "kalis", gloss: "scent trail", synonyms: [] },
-  { word: "Shroud", gloss: "the Shroud (place)", synonyms: [] },
-  { word: "prey", gloss: "prey", synonyms: [] },
 ] as const;
 const mergeNouns = [...SEED_NOUNS, ...N0];
 const seenN = new Set<string>();
