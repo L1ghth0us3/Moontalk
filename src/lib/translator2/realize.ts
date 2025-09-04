@@ -10,8 +10,11 @@ export function hsSubjectFor(subj: string | null | undefined): HSSubj {
     case 'you(pl)': return { form: 'tu', subjV: 'u' };
     case 'he':
     case 'she':
+      return { form: 'se', subjV: 'e' };
     case 'they':
-    default: return { form: 'se', subjV: 'e' };
+      return { form: 'te', subjV: 'e' };
+    default:
+      return { form: 'se', subjV: 'e' };
   }
 }
 
@@ -24,4 +27,3 @@ export function conjFinite(root: Root, subj: HSSubj, t: 'present'|'past'|'future
   if (flags.neg) v = withNegation(v);
   return v;
 }
-
