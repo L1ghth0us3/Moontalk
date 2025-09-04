@@ -145,8 +145,20 @@ Use this file to get productive fast. It summarizes the architecture, where to m
 - When moving/renaming files, commit moves atomically to preserve history.
 
 ## Validation
-- No test runner configured yet. Prefer adding Vitest + React Testing Library.
-- Until tests: `npm run build` for type safety and spin `npm run dev` for a smoke run.
+- Vitest is configured and part of the codex gate. Use:
+  - `npm run test` (run once) / `npm run test:watch`
+  - `npm run codex` will run build → lint → tests before committing.
+- Prefer adding tests alongside changes; keep the suite green.
+
+## Translator 2.0 Tips (from recent work)
+- Testing Unicode: Avoid regex word boundaries (e.g., `/\b/`) with non‑ASCII like `ɪ`. Prefer space‑based anchors (e.g., `/^ɪ\s/`) or token checks.
+- Fuzzy guardrails: Do not fuzzy‑match short tokens (< 5 chars) to prevent collisions (sit↔shit, move↔love, cave↔crave).
+- Copula detection: Identify the copula strictly by the k–r–n signature (not gloss snippets like “be sorry”).
+- Verb 3sg ‑s: Strip simple trailing `s` (except `ss`) before matching (e.g., `sits` → `sit`).
+- Particle order: Preserve PP order by scanning tokens left‑to‑right instead of emitting particles in a fixed precedence order.
+- Coordination: When joining clauses (AND/OR/NOR/BUT), elide repeated subjects on the right (e.g., `ɪ … ʋa …`).
+- Dev modal diagnostics: Use the Dev “Live Tests” modal; details include clause, frame, tokens, and resolution log for quick debugging.
+- Single source of truth: Import `translate()` from `src/lib/translator2/index.ts`. Do not duplicate translator logic in components; render the lib’s `surface` + `analysis`.
 
 ## Practical Recipes and Gotchas (from prior work)
 
