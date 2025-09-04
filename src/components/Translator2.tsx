@@ -99,6 +99,17 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
     particles: { WITH: 'ri', TO: 'ith', FROM: 'ʌs', IN_AT: 'la' },
   });
   const [t2SettingsOpen, setT2SettingsOpen] = useState(false);
+  // Particle code resolver based on current settings
+  const particleCodeFor = useMemo(() => {
+    const DEF = { WITH:'ri', TO:'ith', FROM:'ʌs', IN_AT:'la' } as const;
+    const keyByEn: Record<string, keyof typeof DEF> = { with:'WITH', to:'TO', from:'FROM', in:'IN_AT', at:'IN_AT' };
+    return (en: string): string | undefined => {
+      const cur = (t2Settings?.particles || {}) as Partial<Record<keyof typeof DEF, string>>;
+      const k = keyByEn[en];
+      if (!k) return undefined;
+      return cur[k] || DEF[k];
+    };
+  }, [t2Settings]);
 
   // ===== English intake (normalizer + tokenizer) =====
   type IntakeToken = { text: string; start: number; end: number };
@@ -452,8 +463,11 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
 
     // Detect particles
     const particles: string[] = [];
-    for (const p of Object.keys(PREP_TO_PARTICLE)){
-      if (words.includes(p)) particles.push(PREP_TO_PARTICLE[p]);
+    for (const p of ['with','to','from','in','at']){
+      if (words.includes(p)){
+        const code = particleCodeFor(p);
+        if (code) particles.push(code);
+      }
     }
 
     const copulaId = findCopulaRootId();
@@ -560,7 +574,7 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
     const pairs: Array<{ part: string; nounId: string; en: string }> = [];
     for (let i=0;i<tokens.length;i++){
       const w = tokens[i].text;
-      const code = PREP_TO_PARTICLE[w];
+      const code = particleCodeFor(w);
       if (!code) continue;
       // Find next noun-like token
       for (let j=i+1;j<tokens.length;j++){
@@ -608,9 +622,10 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
         if (idx===0) parts.push(w);
       });
       // Place with la (map from pairs if present, else try to attach la to last noun if available)
-      const laPair = pairs.find(p=>p.part==='la');
-      if (laPair) { parts.push('la'); parts.push(wordOfNounId(laPair.nounId)); }
-      else if (frame.objects.length>1) { parts.push('la'); parts.push(wordOfNounId(frame.objects[1])); }
+      const laPair = pairs.find(p=>p.part==='la' || p.part===(t2Settings?.particles?.IN_AT || 'la'));
+      const LA = (t2Settings?.particles?.IN_AT || 'la');
+      if (laPair) { parts.push(LA); parts.push(wordOfNounId(laPair.nounId)); }
+      else if (frame.objects.length>1) { parts.push(LA); parts.push(wordOfNounId(frame.objects[1])); }
     } else if (clause === 'copular'){
       // Equatives: present + non-neg → zero-copula; else conjugated copula
       const zero = frame.tense==='present' && !frame.neg;
