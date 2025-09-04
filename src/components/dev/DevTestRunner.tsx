@@ -58,6 +58,7 @@ export default function DevTestRunner(){
           {(results||[]).map((t,i)=> (
             <div key={i} className={t.pass ? 'text-emerald-700' : 'text-red-700'}>
               {t.pass ? '✓' : '✗'} {t.name}
+              <div className="text-neutral-600 text-xs">expected: {t.expected}</div>
               <div className="text-neutral-600 text-xs">got: {t.got}</div>
             </div>
           ))}
@@ -66,4 +67,3 @@ export default function DevTestRunner(){
     </div>
   );
 }
-
