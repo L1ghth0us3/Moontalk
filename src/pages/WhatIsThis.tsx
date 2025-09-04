@@ -14,7 +14,7 @@ export default function WhatIsThis(){
       const b = document.body;
       b.classList.remove('theme-fantasy','theme-plain','theme-dark');
       b.classList.add(effective==='fantasy' ? 'theme-fantasy' : effective==='dark' ? 'theme-dark' : 'theme-plain');
-    } catch {}
+    } catch { void 0; }
   }, []);
 
   const sections = [

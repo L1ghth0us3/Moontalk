@@ -43,7 +43,7 @@ export function lsGet<T>(key: string, fallback: T): T {
  * - Safe to call in effects; no exceptions will bubble to React.
  */
 export function lsSet(key: string, value: unknown) {
-  try { window.localStorage.setItem(key, JSON.stringify(value)); } catch {}
+  try { window.localStorage.setItem(key, JSON.stringify(value)); } catch { /* ignore */ }
 }
 
 import { useEffect, useRef, useState } from "react";

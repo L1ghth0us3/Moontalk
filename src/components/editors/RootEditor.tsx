@@ -49,7 +49,7 @@ export default function RootEditor({ initial, onChange, selectedId, onSelect, sh
   const [dupGlossGroups, setDupGlossGroups] = useState<Array<{ term: string; ids: string[] }>>([]);
   function normalizeGlossTerms(raw: string): string[] {
     if (!raw) return [];
-    let s = raw.replace(/\([^)]*\)/g, '');
+    const s = raw.replace(/\([^)]*\)/g, '');
     const parts = s.split(/[;,]/);
     const STOP = new Set(['the','a','an','to']);
     const out: string[] = [];

@@ -4,15 +4,16 @@ import type { Root } from "../types";
 
 // Non‑finite / binyanim‑style derivation patterns from a triliteral root.
 // Each pattern builds a lexical derivative and a short English explanation.
-const DERIVATIONS = [
-  { key: "agent", label: "agent (CaCāC)", build: (r: Root) => `${r.c1}a${r.c2}ā${r.c3}` },
-  { key: "place", label: "place (miCCaC)", build: (r: Root) => `mi${r.c1}${r.c2}a${r.c3}` },
-  { key: "instrument", label: "instrument (maCCūC)", build: (r: Root) => `ma${r.c1}${r.c2}ū${r.c3}` },
-  { key: "middle", label: "middle/reflexive (t'-CaCCaC)", build: (r: Root) => `t'${r.c1}a${r.c2}${r.c2}a${r.c3}` },
-  { key: "caus", label: "causative (χa-CiCēC)", build: (r: Root) => `χa${r.c1}i${r.c2}ē${r.c3}` },
-  { key: "intens", label: "intensive (CuCCaC)", build: (r: Root) => `${r.c1}u${r.c2}${r.c2}a${r.c3}` },
-  { key: "pass", label: "passive (n-CaCaC)", build: (r: Root) => `n${r.c1}a${r.c2}a${r.c3}` },
-  { key: "concept", label: "general concept (CaCiC)", build: (r: Root) => `${r.c1}a${r.c2}i${r.c3}` },
+type DerivationKey = 'agent'|'place'|'instrument'|'middle'|'caus'|'intens'|'pass'|'concept';
+const DERIVATIONS: Array<{ key: DerivationKey; label: string; build: (r: Root) => string }> = [
+  { key: 'agent', label: "agent (CaCāC)", build: (r: Root) => `${r.c1}a${r.c2}ā${r.c3}` },
+  { key: 'place', label: "place (miCCaC)", build: (r: Root) => `mi${r.c1}${r.c2}a${r.c3}` },
+  { key: 'instrument', label: "instrument (maCCūC)", build: (r: Root) => `ma${r.c1}${r.c2}ū${r.c3}` },
+  { key: 'middle', label: "middle/reflexive (t'-CaCCaC)", build: (r: Root) => `t'${r.c1}a${r.c2}${r.c2}a${r.c3}` },
+  { key: 'caus', label: "causative (χa-CiCēC)", build: (r: Root) => `χa${r.c1}i${r.c2}ē${r.c3}` },
+  { key: 'intens', label: "intensive (CuCCaC)", build: (r: Root) => `${r.c1}u${r.c2}${r.c2}a${r.c3}` },
+  { key: 'pass', label: "passive (n-CaCaC)", build: (r: Root) => `n${r.c1}a${r.c2}a${r.c3}` },
+  { key: 'concept', label: "general concept (CaCiC)", build: (r: Root) => `${r.c1}a${r.c2}i${r.c3}` },
 ];
 
 /**
@@ -47,7 +48,7 @@ export default function RenderDerivations({ root, showCollapse = false, onCreate
   const pastPart = (v: string) => v.includes(" ") ? v : (/e$/i.test(v) ? v + "d" : /y$/i.test(v) ? v.slice(0, -1) + "ied" : v + "ed");
   const agentN = (v: string) => v.includes(" ") ? `one who ${v}` : (/e$/i.test(v) ? v.slice(0, -1) + "er" : v + "er");
 
-  const explain: Record<string, string> = {
+  const explain: Record<DerivationKey, string> = {
     agent:    `one who ${base} (“${agentN(base)}”)`,
     place:    `place/ground for ${gerund(base)}`,
     instrument:`tool for ${gerund(base)}`,
@@ -80,7 +81,7 @@ export default function RenderDerivations({ root, showCollapse = false, onCreate
             <div
               key={d.key}
               className="relative rounded-2xl border border-neutral-200 p-3 cursor-pointer transition derivation-card"
-              onClick={()=>{ if (!onCreateNoun) return; setOpenKey(k=> k===d.key ? null : d.key); setDraft({ word: form, gloss: (explain as any)[d.key] || "", syn: "" }); }}
+              onClick={()=>{ if (!onCreateNoun) return; setOpenKey(k=> k===d.key ? null : d.key); setDraft({ word: form, gloss: explain[d.key] || "", syn: "" }); }}
             >
               <div className="flex items-start justify-between gap-2">
                 <div>
@@ -88,7 +89,7 @@ export default function RenderDerivations({ root, showCollapse = false, onCreate
                   <div className="text-lg font-semibold mt-1">{form}</div>
                 </div>
               </div>
-              <div className="text-sm text-neutral-600 mt-1">{(explain as any)[d.key]}</div>
+              <div className="text-sm text-neutral-600 mt-1">{explain[d.key]}</div>
               {isOpen && (
                 <div className="absolute right-0 top-full mt-2 z-50 w-64 rounded-xl border popover-panel shadow-xl p-3" onClick={e=>e.stopPropagation()}>
                   <div className="text-sm font-medium mb-2">Save as noun</div>

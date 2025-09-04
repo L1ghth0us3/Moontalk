@@ -5,7 +5,7 @@ import type { Noun, Root } from "../types";
 import { findRootByEnglish, withHabitual, withNegation, withProgressive } from "../lib/morphology";
 
 // Helper: best‑effort clipboard copy; ignore failures.
-const clip = async (text: string) => { try { await navigator.clipboard.writeText(text); } catch {} };
+const clip = async (text: string) => { try { await navigator.clipboard.writeText(text); } catch { void 0; } };
 
 /**
  * Naive English → Huntspeak translator for single‑verb clauses.

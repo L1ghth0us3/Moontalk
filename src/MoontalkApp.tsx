@@ -50,7 +50,7 @@ export default function MoontalkApp(){
   // signatures are missing, merge them into storage and reload to propagate.
   useEffect(() => {
     try {
-      const stored = lsGet<Root[] | null>(LS_KEYS.roots, null as any);
+      const stored = lsGet<Root[] | null>(LS_KEYS.roots, null as unknown as Root[] | null);
       if (Array.isArray(stored)) {
         const sig = (r: Root) => `${r.c1}-${r.c2}-${r.c3}`.toLowerCase();
         const present = new Set(stored.map(sig));
@@ -65,7 +65,7 @@ export default function MoontalkApp(){
         // First-time: seed defaults to storage for consistency.
         lsSet(LS_KEYS.roots, DEFAULT_ROOTS);
       }
-    } catch {}
+    } catch { void 0; }
   }, []);
 
   // Keep a valid selected root when the roots list changes (e.g. delete).
@@ -82,16 +82,18 @@ export default function MoontalkApp(){
   useEffect(()=>{
     if (typeof window === 'undefined' || !('matchMedia' in window)) return;
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
-    const apply = () => setSystemDark(!!mq.matches);
-    apply();
-    mq.addEventListener?.('change', apply as any);
-    // Fallback for older browsers
-    // @ts-ignore
-    mq.addListener && mq.addListener(apply);
+    setSystemDark(!!mq.matches);
+    const onChange = (e: MediaQueryListEvent) => { void e; setSystemDark(!!mq.matches); };
+    if ('addEventListener' in mq) {
+      mq.addEventListener('change', onChange);
+    }
+    const legacy = mq as MediaQueryList & { addListener?: (cb: (e: MediaQueryListEvent)=>void)=>void; removeListener?: (cb: (e: MediaQueryListEvent)=>void)=>void };
+    if (legacy.addListener) legacy.addListener(onChange);
     return () => {
-      mq.removeEventListener?.('change', apply as any);
-      // @ts-ignore
-      mq.removeListener && mq.removeListener(apply);
+      if ('removeEventListener' in mq) {
+        mq.removeEventListener('change', onChange);
+      }
+      if (legacy.removeListener) legacy.removeListener(onChange);
     };
   }, []);
 
@@ -186,14 +188,22 @@ export default function MoontalkApp(){
     const reader = new FileReader();
     reader.onload = () => {
       try {
-        const data = JSON.parse(String(reader.result));
-        if (!data || !Array.isArray(data.roots) || !Array.isArray(data.nouns)) { alert('Import failed: invalid JSON format.'); return; }
-        const cleanRoots = data.roots
-          .filter((x:any)=>x && x.c1 && x.c2 && x.c3)
-          .map((x:any)=>({ id: String(x.id||Math.random().toString(36).slice(2,10)), c1:String(x.c1), c2:String(x.c2), c3:String(x.c3), gloss:String(x.gloss||''), synonyms:Array.isArray(x.synonyms)?x.synonyms.map((s:any)=>String(s)):[] }));
-        const cleanNouns = data.nouns
-          .filter((x:any)=>x && x.word)
-          .map((x:any)=>({ id:String(x.id||Math.random().toString(36).slice(2,10)), word:String(x.word), gloss:String(x.gloss||''), synonyms:Array.isArray(x.synonyms)?x.synonyms.map((s:any)=>String(s)):[] }));
+        const raw = JSON.parse(String(reader.result)) as unknown;
+        type ImportRoot = { id?: unknown; c1?: unknown; c2?: unknown; c3?: unknown; gloss?: unknown; synonyms?: unknown };
+        type ImportNoun = { id?: unknown; word?: unknown; gloss?: unknown; synonyms?: unknown };
+        const isObj = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object';
+        const toStr = (v: unknown, fallback = ''): string => typeof v === 'string' ? v : String(v ?? fallback);
+        const toStrArr = (v: unknown): string[] => Array.isArray(v) ? v.map(s => String(s)) : [];
+        const data = isObj(raw) ? raw as Record<string, unknown> : {};
+        const rootsIn = Array.isArray(data.roots) ? (data.roots as unknown[]) : [];
+        const nounsIn = Array.isArray(data.nouns) ? (data.nouns as unknown[]) : [];
+        if (!rootsIn || !nounsIn) { alert('Import failed: invalid JSON format.'); return; }
+        const cleanRoots = rootsIn
+          .filter((x): x is ImportRoot => isObj(x) && 'c1' in x && 'c2' in x && 'c3' in x)
+          .map(x=>({ id: toStr((x as ImportRoot).id ?? Math.random().toString(36).slice(2,10)), c1: toStr((x as ImportRoot).c1), c2: toStr((x as ImportRoot).c2), c3: toStr((x as ImportRoot).c3), gloss: toStr((x as ImportRoot).gloss), synonyms: toStrArr((x as ImportRoot).synonyms) }));
+        const cleanNouns = nounsIn
+          .filter((x): x is ImportNoun => isObj(x) && 'word' in x)
+          .map(x=>({ id: toStr((x as ImportNoun).id ?? Math.random().toString(36).slice(2,10)), word: toStr((x as ImportNoun).word), gloss: toStr((x as ImportNoun).gloss), synonyms: toStrArr((x as ImportNoun).synonyms) }));
         localStorage.setItem(LS_KEYS.roots, JSON.stringify(cleanRoots));
         localStorage.setItem(LS_KEYS.nouns, JSON.stringify(cleanNouns));
         // Reload to propagate freshly imported data through the app state.
@@ -208,7 +218,7 @@ export default function MoontalkApp(){
     const id = Math.random().toString(36).slice(2,10);
     const nn: Noun = { id, word: n.word, gloss: n.gloss || "", synonyms: n.synonyms || [] };
     const next = [nn, ...nouns];
-    try { localStorage.setItem(LS_KEYS.nouns, JSON.stringify(next)); } catch {}
+    try { localStorage.setItem(LS_KEYS.nouns, JSON.stringify(next)); } catch { void 0; }
     setNouns(next);
     setNounsKey(k=>k+1);
   }
@@ -217,7 +227,7 @@ export default function MoontalkApp(){
     const id = Math.random().toString(36).slice(2,10);
     const rr: Root = { id, c1: r.c1, c2: r.c2, c3: r.c3, gloss: r.gloss || "", synonyms: r.synonyms || [] };
     const next = [rr, ...roots];
-    try { localStorage.setItem(LS_KEYS.roots, JSON.stringify(next)); } catch {}
+    try { localStorage.setItem(LS_KEYS.roots, JSON.stringify(next)); } catch { void 0; }
     setRoots(next);
     setSelectedId(id);
   }
@@ -400,7 +410,7 @@ export default function MoontalkApp(){
               <button className="px-3 py-2 rounded-lg border border-neutral-300 hover:bg-neutral-50" onClick={()=>setConfirmResetOpen(false)}>Cancel</button>
               <button
                 className="px-3 py-2 rounded-lg border border-red-300 text-red-700 hover:bg-red-50"
-                onClick={()=>{ try { localStorage.clear(); } catch {} finally { location.reload(); } }}
+                onClick={()=>{ try { localStorage.clear(); } catch { void 0; } finally { location.reload(); } }}
               >Reset Everything</button>
             </div>
           </div>

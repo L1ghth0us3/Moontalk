@@ -8,7 +8,7 @@ import { LS_KEYS, useLocalStorageState } from "../lib/storage";
 import { buildFinite, withHabitual, withNegation, withProgressive } from "../lib/morphology";
 
 // Helper: best‑effort clipboard copy; ignore failures (e.g., permissions).
-const clip = async (text: string) => { try { await navigator.clipboard.writeText(text); } catch {} };
+const clip = async (text: string) => { try { await navigator.clipboard.writeText(text); } catch { void 0; } };
 
 /**
  * Guided sentence builder.

@@ -1,22 +1,5 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-
-type MenuItem = {
-  label: string;
-  action: () => void;
-};
-
-type Ctx = {
-  showAt: (x: number, y: number, items: MenuItem[]) => void;
-  hide: () => void;
-};
-
-const Context = createContext<Ctx | null>(null);
-
-export function useContextMenu(){
-  const ctx = useContext(Context);
-  if (!ctx) throw new Error('useContextMenu must be used within ContextMenuProvider');
-  return ctx;
-}
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ContextMenuCtx, type MenuItem } from './context';
 
 export function ContextMenuProvider({ children }: { children: React.ReactNode }){
   const [open, setOpen] = useState(false);
@@ -51,10 +34,10 @@ export function ContextMenuProvider({ children }: { children: React.ReactNode })
     return () => { window.removeEventListener('keydown', onKey); window.removeEventListener('mousedown', onClick); };
   }, [open, hide]);
 
-  const value = useMemo<Ctx>(() => ({ showAt, hide }), [showAt, hide]);
+  const value = useMemo(() => ({ showAt, hide }), [showAt, hide]);
 
   return (
-    <Context.Provider value={value}>
+    <ContextMenuCtx.Provider value={value}>
       {children}
       {open && (
         <div
@@ -75,19 +58,6 @@ export function ContextMenuProvider({ children }: { children: React.ReactNode })
           ))}
         </div>
       )}
-    </Context.Provider>
+    </ContextMenuCtx.Provider>
   );
-}
-
-export async function copyText(text: string){
-  try {
-    await navigator.clipboard.writeText(text);
-  } catch {
-    try {
-      const ta = document.createElement('textarea');
-      ta.value = text; ta.style.position = 'fixed'; ta.style.left = '-1000px';
-      document.body.appendChild(ta); ta.select(); document.execCommand('copy');
-      document.body.removeChild(ta);
-    } catch {}
-  }
 }

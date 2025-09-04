@@ -45,7 +45,7 @@ export default function NounEditor({ initial, onChange, selectedId, onSelect, sh
   function normalizeGlossTerms(raw: string): string[] {
     if (!raw) return [];
     // Remove parenthetical content
-    let s = raw.replace(/\([^)]*\)/g, '');
+    const s = raw.replace(/\([^)]*\)/g, '');
     // Split by semicolons/commas
     const parts = s.split(/[;,]/);
     const STOP = new Set(['the','a','an','to']);
@@ -71,7 +71,7 @@ export default function NounEditor({ initial, onChange, selectedId, onSelect, sh
         const { id } = JSON.parse(e.newValue);
         if (id){ onSelect(id); setExpanded(true); }
         localStorage.removeItem(LS_KEYS.nounsFocus);
-      } catch {}
+      } catch { void 0; }
     }
     window.addEventListener('storage', onStorage);
     return () => window.removeEventListener('storage', onStorage);
@@ -119,14 +119,14 @@ export default function NounEditor({ initial, onChange, selectedId, onSelect, sh
   }, [nouns]);
 
   function buildCollisions(currentNouns: Noun[]): { col: Set<string>; colDetail: Record<string, Array<{ form: string; root: string; gloss: string; pron: string; tense: string }>> }{
-    const roots: Root[] = lsGet<Root[]>(LS_KEYS.roots, [] as any);
+    const roots: Root[] = lsGet<Root[]>(LS_KEYS.roots, [] as Root[]);
     const formMap = new Map<string, Array<{ form: string; root: string; gloss: string; pron: string; tense: string }>>();
     for (const r of roots){
       const rootSig = `${r.c1}${r.c2}${r.c3}`;
       const gloss = r.gloss || '';
       for (const p of PRONOUNS){
         for (const t of TENSES){
-          const f = buildFinite(r as any, p.subjV, t.vowel);
+          const f = buildFinite(r, p.subjV, t.vowel);
           const key = f.toLowerCase();
           const arr = formMap.get(key) || [];
           arr.push({ form: f, root: rootSig, gloss, pron: p.form, tense: t.label });
