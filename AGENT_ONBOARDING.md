@@ -27,7 +27,7 @@ Use this file to get productive fast. It summarizes the architecture, where to m
 
 ### Codex Helper Script Notes
 - Location: `scripts/codex-workflow.mjs`; npm alias: `npm run codex`.
-- Output: prints clear STEP lines and ✅/❌ for success/failure for Build, Lint, Status, Commit, Push.
+- Output: prints clear STEP lines and ✅/❌ for success/failure for Build, Lint, Tests, Status, Commit, Push.
 - Safety: blocks on `main` unless `--allow-main` is passed.
 - Hooks: ensures `core.hooksPath` is `.githooks`; post-commit auto‑push may still push after your commit.
 - Disable auto‑push locally per-commit: `NO_AUTO_PUSH=1 npm run codex -- -m "wip"`.
