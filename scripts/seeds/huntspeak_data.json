@@ -1,0 +1,950 @@
+{
+  "roots": [
+    {
+      "id": "lh9l6vsy",
+      "c1": "ʋ",
+      "c2": "m",
+      "c3": "",
+      "gloss": "follow; chase",
+      "synonyms": [
+        "follow",
+        "chase",
+        "pursue",
+        "escort"
+      ]
+    },
+    {
+      "id": "cpxeojcs",
+      "c1": "m",
+      "c2": "d",
+      "c3": "",
+      "gloss": "sleep; rest",
+      "synonyms": []
+    },
+    {
+      "id": "wz7iuwol",
+      "c1": "v",
+      "c2": "l",
+      "c3": "d",
+      "gloss": "think; ponder",
+      "synonyms": [
+        "think",
+        "ponder",
+        "believe",
+        "imagine"
+      ]
+    },
+    {
+      "id": "ev2eqwg1",
+      "c1": "n",
+      "c2": "d",
+      "c3": "m",
+      "gloss": "apologize; be sorry",
+      "synonyms": [
+        "apologize",
+        "sorry"
+      ]
+    },
+    {
+      "id": "r9wdbmuh",
+      "c1": "s",
+      "c2": "v",
+      "c3": " ",
+      "gloss": "speak; talk; say",
+      "synonyms": [
+        "speak",
+        "talk",
+        "say"
+      ]
+    },
+    {
+      "id": "e8188tm7",
+      "c1": "b",
+      "c2": "v",
+      "c3": "r",
+      "gloss": "feel; sense",
+      "synonyms": [
+        "feel",
+        "sense"
+      ]
+    },
+    {
+      "id": "ddza2lrx",
+      "c1": "r",
+      "c2": "χ",
+      "c3": "d",
+      "gloss": "to lose (an object)",
+      "synonyms": [
+        "lose",
+        "misplace"
+      ]
+    },
+    {
+      "id": "7gct9qri",
+      "c1": "b",
+      "c2": "ʃ",
+      "c3": " ",
+      "gloss": "pray; worship",
+      "synonyms": [
+        "pray",
+        "worship"
+      ]
+    },
+    {
+      "id": "vo44qwj4",
+      "c1": "n",
+      "c2": "t",
+      "c3": "r",
+      "gloss": "cook",
+      "synonyms": [
+        "cook"
+      ]
+    },
+    {
+      "id": "rt4lt0gt",
+      "c1": "l",
+      "c2": "t",
+      "c3": "ʃ",
+      "gloss": "carry; transport",
+      "synonyms": [
+        "carry",
+        "transport",
+        "haul"
+      ]
+    },
+    {
+      "id": "7w3cxt0p",
+      "c1": "b",
+      "c2": "v",
+      "c3": "l",
+      "gloss": "turn; spin;",
+      "synonyms": [
+        "turn",
+        "spin",
+        "twist",
+        "rotate"
+      ]
+    },
+    {
+      "id": "hph40g7y",
+      "c1": "r",
+      "c2": "ʃ",
+      "c3": "k",
+      "gloss": "throw; hurl",
+      "synonyms": [
+        "throw",
+        "hurl"
+      ]
+    },
+    {
+      "id": "jq1ug3vd",
+      "c1": "n",
+      "c2": "m",
+      "c3": "d",
+      "gloss": "move; walk",
+      "synonyms": [
+        "move",
+        "walk"
+      ]
+    },
+    {
+      "id": "hb5q9fzx",
+      "c1": "h",
+      "c2": "χ",
+      "c3": "d",
+      "gloss": "give; hand over",
+      "synonyms": [
+        "give",
+        "hand over"
+      ]
+    },
+    {
+      "id": "m3ln227q",
+      "c1": "v",
+      "c2": "s",
+      "c3": "t",
+      "gloss": "see; watch; observe",
+      "synonyms": [
+        "see",
+        "watch",
+        "observe"
+      ]
+    },
+    {
+      "id": "022p7toe",
+      "c1": "d",
+      "c2": "n",
+      "c3": "b",
+      "gloss": "sit; squat",
+      "synonyms": [
+        "sit",
+        "squat"
+      ]
+    },
+    {
+      "id": "8r0d3bg8",
+      "c1": "b",
+      "c2": "th",
+      "c3": "d",
+      "gloss": "study; read",
+      "synonyms": [
+        "study",
+        "read"
+      ]
+    },
+    {
+      "id": "myaunqy5",
+      "c1": "r",
+      "c2": "s",
+      "c3": "ʃ",
+      "gloss": "fight; brawl",
+      "synonyms": [
+        "fight",
+        "brawl"
+      ]
+    },
+    {
+      "id": "0zcrpbvw",
+      "c1": "l",
+      "c2": "b",
+      "c3": " ",
+      "gloss": "eat",
+      "synonyms": [
+        "eat",
+        "consume",
+        "devour"
+      ]
+    },
+    {
+      "id": "7p362d69",
+      "c1": "m",
+      "c2": "v",
+      "c3": "t",
+      "gloss": "trust; to trust",
+      "synonyms": [
+        "trust",
+        "entrust"
+      ]
+    },
+    {
+      "id": "gwy3z3vl",
+      "c1": "d",
+      "c2": "k",
+      "c3": "b",
+      "gloss": "fear; to fear",
+      "synonyms": [
+        "fear",
+        "scare"
+      ]
+    },
+    {
+      "id": "iegjzdl3",
+      "c1": "k",
+      "c2": "r",
+      "c3": "d",
+      "gloss": "want; crave; desire",
+      "synonyms": [
+        "want",
+        "crave",
+        "desire"
+      ]
+    },
+    {
+      "id": "33wsc4wi",
+      "c1": "th",
+      "c2": "n",
+      "c3": "n",
+      "gloss": "have",
+      "synonyms": [
+        "have",
+        "own",
+        "possess"
+      ]
+    },
+    {
+      "id": "lk42ax45",
+      "c1": "v",
+      "c2": "k",
+      "c3": "ʃ",
+      "gloss": "love; adore",
+      "synonyms": [
+        "love",
+        "adore"
+      ]
+    },
+    {
+      "id": "rp3xkay0",
+      "c1": "k",
+      "c2": "l",
+      "c3": "b",
+      "gloss": "hunt; track",
+      "synonyms": [
+        "hunt",
+        "track",
+        "stalk"
+      ]
+    },
+    {
+      "id": "2vapdwgz",
+      "c1": "χ",
+      "c2": "r",
+      "c3": "q",
+      "gloss": "smell; catch scent",
+      "synonyms": [
+        "smell",
+        "scent"
+      ]
+    },
+    {
+      "id": "4op1nn1a",
+      "c1": "s",
+      "c2": "r",
+      "c3": "q",
+      "gloss": "hide; lie in wait",
+      "synonyms": [
+        "hide",
+        "ambush",
+        "wait"
+      ]
+    },
+    {
+      "id": "cafj01zw",
+      "c1": "d",
+      "c2": "r",
+      "c3": "k",
+      "gloss": "strike; bring down",
+      "synonyms": [
+        "strike",
+        "hit",
+        "kill"
+      ]
+    },
+    {
+      "id": "f9w1ve6y",
+      "c1": "q",
+      "c2": "r",
+      "c3": "b",
+      "gloss": "draw near; approach",
+      "synonyms": [
+        "approach",
+        "near",
+        "come"
+      ]
+    },
+    {
+      "id": "s9d3tyt9",
+      "c1": "t",
+      "c2": "r",
+      "c3": "f",
+      "gloss": "hear; detect",
+      "synonyms": [
+        "hear",
+        "detect",
+        "listen"
+      ]
+    },
+    {
+      "id": "l64f8n2s",
+      "c1": "k",
+      "c2": "r",
+      "c3": "n",
+      "gloss": "be; exist",
+      "synonyms": [
+        "be",
+        "exist",
+        "copula"
+      ]
+    }
+  ],
+  "nouns": [
+    {
+      "id": "8svekmrg",
+      "word": "yuya",
+      "gloss": "Grass",
+      "synonyms": [
+        "grass"
+      ]
+    },
+    {
+      "id": "ivcila4t",
+      "word": "yum",
+      "gloss": "the Mouth (bodypart)",
+      "synonyms": [
+        "mouth"
+      ]
+    },
+    {
+      "id": "02euyvm1",
+      "word": "yes",
+      "gloss": "the Same (comparitive noun)",
+      "synonyms": [
+        "same",
+        "identical",
+        "equal",
+        "equivalent"
+      ]
+    },
+    {
+      "id": "rkxdxg0z",
+      "word": "yʌl",
+      "gloss": "Meeting; Assembly",
+      "synonyms": [
+        "meeting",
+        "assembly",
+        "gathering",
+        "confluence"
+      ]
+    },
+    {
+      "id": "03tm1akq",
+      "word": "jæula",
+      "gloss": "Smell; Scent",
+      "synonyms": [
+        "smell",
+        "scent",
+        "aroma",
+        "fragrance",
+        "odor"
+      ]
+    },
+    {
+      "id": "x64cr0p5",
+      "word": "yasa",
+      "gloss": "Sound",
+      "synonyms": [
+        "sound"
+      ]
+    },
+    {
+      "id": "kl80x7ib",
+      "word": "ʋeid",
+      "gloss": "Earth; Soil"
+    },
+    {
+      "id": "dean43yn",
+      "word": "ʋʌmal",
+      "gloss": "Name; Title",
+      "synonyms": [
+        "name",
+        "title"
+      ]
+    },
+    {
+      "id": "lu04k9rg",
+      "word": "ʋæʋi",
+      "gloss": "Forest; Woods",
+      "synonyms": [
+        "forest",
+        "woods",
+        "woodland",
+        "grove",
+        "thicket"
+      ]
+    },
+    {
+      "id": "zhq6qlwa",
+      "word": "tyævu",
+      "gloss": "Person; Individual",
+      "synonyms": [
+        "person",
+        "individual"
+      ]
+    },
+    {
+      "id": "t3bbdjw3",
+      "word": "tye",
+      "gloss": "Animal; Creature",
+      "synonyms": [
+        "animal",
+        "creature",
+        "beast"
+      ]
+    },
+    {
+      "id": "ruxqyf2n",
+      "word": "turalu",
+      "gloss": "Excrement; Poop",
+      "synonyms": [
+        "excrement",
+        "poop",
+        "shit",
+        "droppings"
+      ]
+    },
+    {
+      "id": "8444fsyj",
+      "word": "tul",
+      "gloss": "Piece; Unit",
+      "synonyms": [
+        "piece",
+        "unit",
+        "bit"
+      ]
+    },
+    {
+      "id": "bo5zskqd",
+      "word": "teʋikay",
+      "gloss": "Home; Birthplace",
+      "synonyms": [
+        "home",
+        "birthplace"
+      ]
+    },
+    {
+      "id": "xbt49brh",
+      "word": "tai",
+      "gloss": "Foot (bodypart)",
+      "synonyms": [
+        "foot"
+      ]
+    },
+    {
+      "id": "3ay0rlyv",
+      "word": "sæna",
+      "gloss": "Butt; Bottom (bodypart)",
+      "synonyms": [
+        "butt",
+        "bottom",
+        "ass",
+        "behind"
+      ]
+    },
+    {
+      "id": "07qhiy6t",
+      "word": "shikʌ",
+      "gloss": "Wind; Breeze",
+      "synonyms": [
+        "wind",
+        "breeze",
+        "gust"
+      ]
+    },
+    {
+      "id": "sewimo78",
+      "word": "riek",
+      "gloss": "Sky; Heaven",
+      "synonyms": [
+        "sky",
+        "heaven"
+      ]
+    },
+    {
+      "id": "94fd93tw",
+      "word": "ra'dyævu",
+      "gloss": "Child; Young Person (lit.)",
+      "synonyms": [
+        "child",
+        "kid",
+        "cub"
+      ]
+    },
+    {
+      "id": "xgvei5jd",
+      "word": "kuʌʃ",
+      "gloss": "Nose",
+      "synonyms": [
+        "nose",
+        "snout"
+      ]
+    },
+    {
+      "id": "6a41ezxw",
+      "word": "kin",
+      "gloss": "the Queen; Monarch",
+      "synonyms": [
+        "queen",
+        "monarch"
+      ]
+    },
+    {
+      "id": "0053gjqf",
+      "word": "kɪ",
+      "gloss": "Yes",
+      "synonyms": [
+        "yes",
+        "affirmative"
+      ]
+    },
+    {
+      "id": "9y5e10ii",
+      "word": "kʌy",
+      "gloss": "Knife; Dagger",
+      "synonyms": [
+        "knife",
+        "dagger",
+        "shank",
+        "shiv"
+      ]
+    },
+    {
+      "id": "7dhscvzh",
+      "word": "kæʃ",
+      "gloss": "Heart; Love",
+      "synonyms": [
+        "heart",
+        "love"
+      ]
+    },
+    {
+      "id": "698kvw4q",
+      "word": "kæn",
+      "gloss": "Fang; Tooth",
+      "synonyms": [
+        "fang",
+        "tooth"
+      ]
+    },
+    {
+      "id": "xunxjtnl",
+      "word": "kæin",
+      "gloss": "Mother; Matron; Matriarch",
+      "synonyms": [
+        "mother",
+        "mom",
+        "mommy",
+        "matron; matriarch"
+      ]
+    },
+    {
+      "id": "65qllbme",
+      "word": "kateχ",
+      "gloss": "Time",
+      "synonyms": [
+        "time"
+      ]
+    },
+    {
+      "id": "nqoehse0",
+      "word": "kɑχæ",
+      "gloss": "Stone; Rock",
+      "synonyms": [
+        "stone",
+        "rock"
+      ]
+    },
+    {
+      "id": "ep4vy3cj",
+      "word": "nætum",
+      "gloss": "the Night (Temporal)",
+      "synonyms": [
+        "night",
+        "nighttime"
+      ]
+    },
+    {
+      "id": "gvk8n9hj",
+      "word": "næli",
+      "gloss": "Mind; Soul",
+      "synonyms": [
+        "mind",
+        "soul",
+        "psyche",
+        "spirit"
+      ]
+    },
+    {
+      "id": "eqe4m9mp",
+      "word": "mɪdam",
+      "gloss": "The Morning (Temporal)",
+      "synonyms": [
+        "morning"
+      ]
+    },
+    {
+      "id": "04ejnf6f",
+      "word": "mʌiʃ",
+      "gloss": "Sleep; Rest",
+      "synonyms": [
+        "sleep",
+        "rest",
+        "nap",
+        "napping",
+        "slumber"
+      ]
+    },
+    {
+      "id": "2a4mjkxr",
+      "word": "liʃ",
+      "gloss": "Thing; Object; Item",
+      "synonyms": [
+        "thing",
+        "object",
+        "item",
+        "piece",
+        "something",
+        "stuff"
+      ]
+    },
+    {
+      "id": "33rbydd3",
+      "word": "let",
+      "gloss": "Hand",
+      "synonyms": [
+        "hand"
+      ]
+    },
+    {
+      "id": "hu26m5yk",
+      "word": "lævi",
+      "gloss": "Skin; Pelt; Leather",
+      "synonyms": [
+        "skin",
+        "pelt",
+        "leather"
+      ]
+    },
+    {
+      "id": "qhnzqocj",
+      "word": "inek",
+      "gloss": "Color",
+      "synonyms": [
+        "color"
+      ]
+    },
+    {
+      "id": "1hzknxbw",
+      "word": "iχal",
+      "gloss": "Death",
+      "synonyms": [
+        "death"
+      ]
+    },
+    {
+      "id": "qjjrv5zv",
+      "word": "idʋa",
+      "gloss": "the Ear",
+      "synonyms": [
+        "ear"
+      ]
+    },
+    {
+      "id": "3jwbofuc",
+      "word": "iæku",
+      "gloss": "Hair; Bloodline",
+      "synonyms": [
+        "hair",
+        "bloodline",
+        "lineage"
+      ]
+    },
+    {
+      "id": "gywd6jze",
+      "word": "hʌiru",
+      "gloss": "Cavern; Grotto",
+      "synonyms": [
+        "cave",
+        "cavern",
+        "grotto"
+      ]
+    },
+    {
+      "id": "k4prvgcm",
+      "word": "hakar",
+      "gloss": "Group; Cluster",
+      "synonyms": [
+        "group",
+        "cluster",
+        "bunch",
+        "batch"
+      ]
+    },
+    {
+      "id": "l6qdt1mr",
+      "word": "eʋum",
+      "gloss": "Food; Meat",
+      "synonyms": [
+        "food",
+        "meat",
+        "provisions"
+      ]
+    },
+    {
+      "id": "nzr6hw6b",
+      "word": "eʋi",
+      "gloss": "Eye; Sight; Vision",
+      "synonyms": [
+        "eye",
+        "sight",
+        "vision"
+      ]
+    },
+    {
+      "id": "2wlmg01d",
+      "word": "erelæ",
+      "gloss": "Footprint",
+      "synonyms": [
+        "footprint"
+      ]
+    },
+    {
+      "id": "qpfoic9o",
+      "word": "eala",
+      "gloss": "Bow; Archer",
+      "synonyms": [
+        "Bow; Archery; Archer"
+      ]
+    },
+    {
+      "id": "tdirog5o",
+      "word": "dima",
+      "gloss": "the Life",
+      "synonyms": [
+        "life"
+      ]
+    },
+    {
+      "id": "tuogdtk3",
+      "word": "χela",
+      "gloss": "Blood; Tribe; Clan",
+      "synonyms": [
+        "blood",
+        "tribe",
+        "clan"
+      ]
+    },
+    {
+      "id": "us5rxq3j",
+      "word": "χʌl",
+      "gloss": "Fire; Flame",
+      "synonyms": [
+        "fire",
+        "flame",
+        "inferno"
+      ]
+    },
+    {
+      "id": "3z9kxokz",
+      "word": "χʌka",
+      "gloss": "Heat; Warmth",
+      "synonyms": [
+        "heat",
+        "warmth"
+      ]
+    },
+    {
+      "id": "73vklzog",
+      "word": "χarau",
+      "gloss": "This (FIX THESE)",
+      "synonyms": [
+        "this"
+      ]
+    },
+    {
+      "id": "i3dr9eqm",
+      "word": "χadi",
+      "gloss": "Power; Control",
+      "synonyms": [
+        "power",
+        "authority",
+        "control"
+      ]
+    },
+    {
+      "id": "qytuliou",
+      "word": "bil",
+      "gloss": "the Back (body part)",
+      "synonyms": [
+        "back",
+        "rear"
+      ]
+    },
+    {
+      "id": "22xhnxew",
+      "word": "ʌmas",
+      "gloss": "Water",
+      "synonyms": [
+        "water"
+      ]
+    },
+    {
+      "id": "xgrg24og",
+      "word": "æse",
+      "gloss": "Star",
+      "synonyms": [
+        "star"
+      ]
+    },
+    {
+      "id": "gywgul5n",
+      "word": "æryɑ",
+      "gloss": "the Sun",
+      "synonyms": [
+        "sun"
+      ]
+    },
+    {
+      "id": "nbcko6qj",
+      "word": "ædi",
+      "gloss": "the Day (temporal)",
+      "synonyms": [
+        "day"
+      ]
+    },
+    {
+      "id": "xkscd7oc",
+      "word": "ayi",
+      "gloss": "Claw",
+      "synonyms": [
+        "claw"
+      ]
+    },
+    {
+      "id": "uct2asuq",
+      "word": "aimina",
+      "gloss": "Face; Visage",
+      "synonyms": [
+        "face",
+        "visage"
+      ]
+    },
+    {
+      "id": "2xigjhtb",
+      "word": "ʃiæ",
+      "gloss": "moon",
+      "synonyms": [
+        "moon"
+      ]
+    },
+    {
+      "id": "w3l0e7da",
+      "word": "maklūb",
+      "gloss": "trap, snare",
+      "synonyms": [
+        "trap"
+      ]
+    },
+    {
+      "id": "pebepuqd",
+      "word": "kalāb",
+      "gloss": "hunter",
+      "synonyms": [
+        "hunter"
+      ]
+    },
+    {
+      "id": "62pwxa2l",
+      "word": "kalis",
+      "gloss": "scent trail",
+      "synonyms": [
+        "scent"
+      ]
+    },
+    {
+      "id": "k5nyh9g3",
+      "word": "sharūd",
+      "gloss": "the Shroud, Gridania (place)",
+      "synonyms": [
+        "shroud",
+        "gridania"
+      ]
+    },
+    {
+      "id": "feg16ut4",
+      "word": "dray",
+      "gloss": "prey",
+      "synonyms": [
+        "prey"
+      ]
+    }
+  ]
+}

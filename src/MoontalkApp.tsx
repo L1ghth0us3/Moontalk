@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import type { Noun, Root } from "./types";
 import { DEFAULT_NOUNS, DEFAULT_ROOTS } from "./data/defaults";
 import RootEditor from "./components/editors/RootEditor";
@@ -9,6 +9,8 @@ import FreeTranslator from "./components/FreeTranslator";
 import Translator2 from "./components/Translator2";
 import { useLocalStorageState, LS_KEYS, lsGet, lsSet } from "./lib/storage";
 import FiniteForms from "./components/FiniteForms";
+import { ContextMenuProvider } from "./lib/contextMenu";
+import { ToastProvider } from "./lib/toast";
 
 /**
  * Application shell
@@ -28,6 +30,7 @@ import FiniteForms from "./components/FiniteForms";
  * - All modals and popovers avoid global state; they are local to their components.
  */
 export default function MoontalkApp(){
+  const DevTestRunnerLazy = lazy(() => import('./components/dev/DevTestRunner'));
   const [roots, setRoots] = useState<Root[]>(DEFAULT_ROOTS);
   const [nouns, setNouns] = useState<Noun[]>(DEFAULT_NOUNS);
   const [selectedId, setSelectedId] = useLocalStorageState<string|null>(LS_KEYS.selectedRoot, roots[0]?.id || null);
@@ -37,6 +40,7 @@ export default function MoontalkApp(){
   const [systemDark, setSystemDark] = useState<boolean>(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [dataOpen, setDataOpen] = useState(false);
+  const [devOpen, setDevOpen] = useState(false);
   const [composerTab, setComposerTab] = useLocalStorageState<'talk'|'translator'|'translator2'>("huntspeak_composer_tab", 'talk');
   const [confirmResetOpen, setConfirmResetOpen] = useState(false);
   const [syncMorph, setSyncMorph] = useLocalStorageState<boolean>(LS_KEYS.morphSync, true);
@@ -49,7 +53,7 @@ export default function MoontalkApp(){
   // signatures are missing, merge them into storage and reload to propagate.
   useEffect(() => {
     try {
-      const stored = lsGet<Root[] | null>(LS_KEYS.roots, null as any);
+      const stored = lsGet<Root[] | null>(LS_KEYS.roots, null as unknown as Root[] | null);
       if (Array.isArray(stored)) {
         const sig = (r: Root) => `${r.c1}-${r.c2}-${r.c3}`.toLowerCase();
         const present = new Set(stored.map(sig));
@@ -64,7 +68,25 @@ export default function MoontalkApp(){
         // First-time: seed defaults to storage for consistency.
         lsSet(LS_KEYS.roots, DEFAULT_ROOTS);
       }
-    } catch {}
+    } catch { void 0; }
+  }, []);
+
+  // One-time noun migration: ensure new default nouns are present by word
+  useEffect(() => {
+    try {
+      const stored = lsGet<Noun[] | null>(LS_KEYS.nouns, null as unknown as Noun[] | null);
+      if (Array.isArray(stored)) {
+        const present = new Set(stored.map(n => (n.word||'').toLowerCase()));
+        const missing = DEFAULT_NOUNS.filter(n => n.word && !present.has(n.word.toLowerCase()));
+        if (missing.length) {
+          const next = [...stored, ...missing];
+          lsSet(LS_KEYS.nouns, next);
+          location.reload();
+        }
+      } else {
+        lsSet(LS_KEYS.nouns, DEFAULT_NOUNS);
+      }
+    } catch { void 0; }
   }, []);
 
   // Keep a valid selected root when the roots list changes (e.g. delete).
@@ -81,16 +103,18 @@ export default function MoontalkApp(){
   useEffect(()=>{
     if (typeof window === 'undefined' || !('matchMedia' in window)) return;
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
-    const apply = () => setSystemDark(!!mq.matches);
-    apply();
-    mq.addEventListener?.('change', apply as any);
-    // Fallback for older browsers
-    // @ts-ignore
-    mq.addListener && mq.addListener(apply);
+    setSystemDark(!!mq.matches);
+    const onChange = (e: MediaQueryListEvent) => { void e; setSystemDark(!!mq.matches); };
+    if ('addEventListener' in mq) {
+      mq.addEventListener('change', onChange);
+    }
+    const legacy = mq as MediaQueryList & { addListener?: (cb: (e: MediaQueryListEvent)=>void)=>void; removeListener?: (cb: (e: MediaQueryListEvent)=>void)=>void };
+    if (legacy.addListener) legacy.addListener(onChange);
     return () => {
-      mq.removeEventListener?.('change', apply as any);
-      // @ts-ignore
-      mq.removeListener && mq.removeListener(apply);
+      if ('removeEventListener' in mq) {
+        mq.removeEventListener('change', onChange);
+      }
+      if (legacy.removeListener) legacy.removeListener(onChange);
     };
   }, []);
 
@@ -104,6 +128,13 @@ export default function MoontalkApp(){
     b.classList.remove('theme-fantasy','theme-plain','theme-dark');
     b.classList.add(effective==='fantasy' ? 'theme-fantasy' : effective==='dark' ? 'theme-dark' : 'theme-plain');
   }, [theme, systemDark]);
+
+  // Disable the native context menu across the app; we will show custom menus as needed.
+  useEffect(() => {
+    function onCtx(e: MouseEvent){ e.preventDefault(); }
+    document.addEventListener('contextmenu', onCtx);
+    return () => document.removeEventListener('contextmenu', onCtx);
+  }, []);
 
   const selected = roots.find(r=>r.id===selectedId) || null;
   const [showCollapse, setShowCollapse] = useLocalStorageState<boolean>('huntspeak_show_collapse', false);
@@ -178,14 +209,22 @@ export default function MoontalkApp(){
     const reader = new FileReader();
     reader.onload = () => {
       try {
-        const data = JSON.parse(String(reader.result));
-        if (!data || !Array.isArray(data.roots) || !Array.isArray(data.nouns)) { alert('Import failed: invalid JSON format.'); return; }
-        const cleanRoots = data.roots
-          .filter((x:any)=>x && x.c1 && x.c2 && x.c3)
-          .map((x:any)=>({ id: String(x.id||Math.random().toString(36).slice(2,10)), c1:String(x.c1), c2:String(x.c2), c3:String(x.c3), gloss:String(x.gloss||''), synonyms:Array.isArray(x.synonyms)?x.synonyms.map((s:any)=>String(s)):[] }));
-        const cleanNouns = data.nouns
-          .filter((x:any)=>x && x.word)
-          .map((x:any)=>({ id:String(x.id||Math.random().toString(36).slice(2,10)), word:String(x.word), gloss:String(x.gloss||''), synonyms:Array.isArray(x.synonyms)?x.synonyms.map((s:any)=>String(s)):[] }));
+        const raw = JSON.parse(String(reader.result)) as unknown;
+        type ImportRoot = { id?: unknown; c1?: unknown; c2?: unknown; c3?: unknown; gloss?: unknown; synonyms?: unknown };
+        type ImportNoun = { id?: unknown; word?: unknown; gloss?: unknown; synonyms?: unknown };
+        const isObj = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object';
+        const toStr = (v: unknown, fallback = ''): string => typeof v === 'string' ? v : String(v ?? fallback);
+        const toStrArr = (v: unknown): string[] => Array.isArray(v) ? v.map(s => String(s)) : [];
+        const data = isObj(raw) ? raw as Record<string, unknown> : {};
+        const rootsIn = Array.isArray(data.roots) ? (data.roots as unknown[]) : [];
+        const nounsIn = Array.isArray(data.nouns) ? (data.nouns as unknown[]) : [];
+        if (!rootsIn || !nounsIn) { alert('Import failed: invalid JSON format.'); return; }
+        const cleanRoots = rootsIn
+          .filter((x): x is ImportRoot => isObj(x) && 'c1' in x && 'c2' in x && 'c3' in x)
+          .map(x=>({ id: toStr((x as ImportRoot).id ?? Math.random().toString(36).slice(2,10)), c1: toStr((x as ImportRoot).c1), c2: toStr((x as ImportRoot).c2), c3: toStr((x as ImportRoot).c3), gloss: toStr((x as ImportRoot).gloss), synonyms: toStrArr((x as ImportRoot).synonyms) }));
+        const cleanNouns = nounsIn
+          .filter((x): x is ImportNoun => isObj(x) && 'word' in x)
+          .map(x=>({ id: toStr((x as ImportNoun).id ?? Math.random().toString(36).slice(2,10)), word: toStr((x as ImportNoun).word), gloss: toStr((x as ImportNoun).gloss), synonyms: toStrArr((x as ImportNoun).synonyms) }));
         localStorage.setItem(LS_KEYS.roots, JSON.stringify(cleanRoots));
         localStorage.setItem(LS_KEYS.nouns, JSON.stringify(cleanNouns));
         // Reload to propagate freshly imported data through the app state.
@@ -200,7 +239,7 @@ export default function MoontalkApp(){
     const id = Math.random().toString(36).slice(2,10);
     const nn: Noun = { id, word: n.word, gloss: n.gloss || "", synonyms: n.synonyms || [] };
     const next = [nn, ...nouns];
-    try { localStorage.setItem(LS_KEYS.nouns, JSON.stringify(next)); } catch {}
+    try { localStorage.setItem(LS_KEYS.nouns, JSON.stringify(next)); } catch { void 0; }
     setNouns(next);
     setNounsKey(k=>k+1);
   }
@@ -209,13 +248,14 @@ export default function MoontalkApp(){
     const id = Math.random().toString(36).slice(2,10);
     const rr: Root = { id, c1: r.c1, c2: r.c2, c3: r.c3, gloss: r.gloss || "", synonyms: r.synonyms || [] };
     const next = [rr, ...roots];
-    try { localStorage.setItem(LS_KEYS.roots, JSON.stringify(next)); } catch {}
+    try { localStorage.setItem(LS_KEYS.roots, JSON.stringify(next)); } catch { void 0; }
     setRoots(next);
     setSelectedId(id);
   }
 
   return (
-    <>
+    <ToastProvider>
+    <ContextMenuProvider>
     <div className="p-6 2xl:p-10 max-w-none mx-auto font-sans">
       <header className="mb-6">
         <div className="flex items-center justify-between gap-4">
@@ -226,6 +266,7 @@ export default function MoontalkApp(){
           <nav aria-label="Main" className="flex items-center gap-2">
             <a className="px-3 py-2 rounded-xl border border-neutral-300 hover:bg-neutral-50" href="/what-is-this">What is this</a>
             <button className="px-3 py-2 rounded-xl border border-neutral-300 hover:bg-neutral-50" onClick={()=>setDataOpen(true)}>Data</button>
+            <button className="px-3 py-2 rounded-xl border border-neutral-300 hover:bg-neutral-50" onClick={()=>setDevOpen(true)} title="Developer diagnostics">Dev</button>
             <button className="px-3 py-2 rounded-xl border border-neutral-300 hover:bg-neutral-50" onClick={()=>setSettingsOpen(true)}>Settings</button>
           </nav>
         </div>
@@ -242,17 +283,21 @@ export default function MoontalkApp(){
                 onClick={()=>setComposerTab('talk')}
               >Talk Pad</button>
               <button
-                aria-pressed={composerTab==='translator'}
-                className={`px-3 py-2 rounded-xl border transition ${composerTab==='translator' ? 'ring-2 ring-blue-300 border-blue-500 font-semibold' : 'border-neutral-300 hover:bg-neutral-50'}`}
-                onClick={()=>setComposerTab('translator')}
-              >Free Translator</button>
-              <button
                 aria-pressed={composerTab==='translator2'}
                 className={`px-3 py-2 rounded-xl border transition ${composerTab==='translator2' ? 'ring-2 ring-blue-300 border-blue-500 font-semibold' : 'border-neutral-300 hover:bg-neutral-50'}`}
                 onClick={()=>setComposerTab('translator2')}
               >Translator 2.0</button>
             </div>
-            {composerTab==='talk' ? (<TalkPadCollapse />) : (<TranslatorCollapse />)}
+            <div className="flex items-center gap-3">
+              {/* Subtle link to legacy translator, visually de-emphasized */}
+              <button
+                aria-pressed={composerTab==='translator'}
+                className={`text-xs px-2 py-1 rounded border transition ${composerTab==='translator' ? 'border-neutral-300 bg-neutral-50' : 'border-transparent text-neutral-500 hover:underline'}`}
+                onClick={()=>setComposerTab('translator')}
+                title="Open legacy translator"
+              >Translator [Legacy]</button>
+              {composerTab==='talk' ? (<TalkPadCollapse />) : (<TranslatorCollapse />)}
+            </div>
           </div>
           {composerTab==='talk' ? (
             <TalkPadBody />
@@ -316,6 +361,25 @@ export default function MoontalkApp(){
           </div>
         </>
       )}
+    {devOpen && (
+      <>
+        <div className="fixed inset-0 bg-black/50 z-40"></div>
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4" onClick={(e)=>{ if (e.target===e.currentTarget) setDevOpen(false); }}>
+          <div className="w-full max-w-2xl rounded-2xl border border-neutral-200 bg-white fantasy-card p-5">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xl font-semibold">Dev: Live Tests</h3>
+              <button className="px-3 py-1 rounded-lg border border-neutral-300 hover:bg-neutral-50" onClick={()=>setDevOpen(false)}>Close</button>
+            </div>
+            <div className="space-y-3">
+              {/* Inline runner */}
+              <Suspense fallback={null}>
+                <DevTestRunnerLazy />
+              </Suspense>
+            </div>
+          </div>
+        </div>
+      </>
+    )}
     {settingsOpen && (
       <>
         <div className="fixed inset-0 bg-black/50 z-40"></div>
@@ -392,13 +456,14 @@ export default function MoontalkApp(){
               <button className="px-3 py-2 rounded-lg border border-neutral-300 hover:bg-neutral-50" onClick={()=>setConfirmResetOpen(false)}>Cancel</button>
               <button
                 className="px-3 py-2 rounded-lg border border-red-300 text-red-700 hover:bg-red-50"
-                onClick={()=>{ try { localStorage.clear(); } catch {} finally { location.reload(); } }}
+                onClick={()=>{ try { localStorage.clear(); } catch { void 0; } finally { location.reload(); } }}
               >Reset Everything</button>
             </div>
           </div>
         </div>
       </>
     )}
-    </>
+    </ContextMenuProvider>
+    </ToastProvider>
   );
 }

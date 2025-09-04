@@ -3,6 +3,7 @@ import type { Noun, Root } from "../../types";
 import { useLocalStorageState, LS_KEYS, lsGet } from "../../lib/storage";
 import { PRONOUNS, TENSES } from "../../types";
 import { buildFinite } from "../../lib/morphology";
+import { useContextMenu, copyText } from "../../lib/contextMenu";
 
 const uid = () => Math.random().toString(36).slice(2, 10);
 
@@ -14,6 +15,7 @@ const uid = () => Math.random().toString(36).slice(2, 10);
  * - Editing happens in the Expanded modal to keep the compact panel lightweight.
  */
 export default function NounEditor({ initial, onChange, selectedId, onSelect, showCollapse = false }: { initial: Noun[]; onChange: (n: Noun[])=>void; selectedId: string|null; onSelect: (id: string|null)=>void; showCollapse?: boolean; }){
+  const { showAt } = useContextMenu();
   const [nouns, setNouns] = useLocalStorageState<Noun[]>(LS_KEYS.nouns, initial);
   useEffect(()=>{ onChange(nouns); }, [nouns]);
 
@@ -43,7 +45,7 @@ export default function NounEditor({ initial, onChange, selectedId, onSelect, sh
   function normalizeGlossTerms(raw: string): string[] {
     if (!raw) return [];
     // Remove parenthetical content
-    let s = raw.replace(/\([^)]*\)/g, '');
+    const s = raw.replace(/\([^)]*\)/g, '');
     // Split by semicolons/commas
     const parts = s.split(/[;,]/);
     const STOP = new Set(['the','a','an','to']);
@@ -69,7 +71,7 @@ export default function NounEditor({ initial, onChange, selectedId, onSelect, sh
         const { id } = JSON.parse(e.newValue);
         if (id){ onSelect(id); setExpanded(true); }
         localStorage.removeItem(LS_KEYS.nounsFocus);
-      } catch {}
+      } catch { void 0; }
     }
     window.addEventListener('storage', onStorage);
     return () => window.removeEventListener('storage', onStorage);
@@ -117,14 +119,14 @@ export default function NounEditor({ initial, onChange, selectedId, onSelect, sh
   }, [nouns]);
 
   function buildCollisions(currentNouns: Noun[]): { col: Set<string>; colDetail: Record<string, Array<{ form: string; root: string; gloss: string; pron: string; tense: string }>> }{
-    const roots: Root[] = lsGet<Root[]>(LS_KEYS.roots, [] as any);
+    const roots: Root[] = lsGet<Root[]>(LS_KEYS.roots, [] as Root[]);
     const formMap = new Map<string, Array<{ form: string; root: string; gloss: string; pron: string; tense: string }>>();
     for (const r of roots){
       const rootSig = `${r.c1}${r.c2}${r.c3}`;
       const gloss = r.gloss || '';
       for (const p of PRONOUNS){
         for (const t of TENSES){
-          const f = buildFinite(r as any, p.subjV, t.vowel);
+          const f = buildFinite(r, p.subjV, t.vowel);
           const key = f.toLowerCase();
           const arr = formMap.get(key) || [];
           arr.push({ form: f, root: rootSig, gloss, pron: p.form, tense: t.label });
@@ -262,9 +264,16 @@ export default function NounEditor({ initial, onChange, selectedId, onSelect, sh
           <input className="w-full px-3 py-2 rounded-lg border border-neutral-300" placeholder="Search nouns (word, gloss, synonyms)" value={query} onChange={e=>setQuery(e.target.value)} />
         </div>
       )}
+      <div className="mt-2 text-xs text-neutral-500">Tip: Right-click a noun to copy its word or gloss.</div>
       <div className="mt-3 max-h-[20rem] overflow-y-auto space-y-2 pr-1">
         {(showSearch && query ? filtered : nouns).map(n => (
-          <button key={n.id} onClick={() => onSelect(n.id)} onDoubleClick={()=>setExpanded(true)} className={`w-full text-left px-3 py-2 rounded-xl border ${selectedId === n.id ? "border-blue-500 noun-item--selected" : (colliding.has(n.id) ? 'border-amber-300 bg-amber-50' : 'border-neutral-200 hover:bg-neutral-50')}`}>
+          <button key={n.id} onClick={() => onSelect(n.id)} onDoubleClick={()=>setExpanded(true)} onContextMenu={(e)=>{
+            e.preventDefault();
+            showAt(e.clientX, e.clientY, [
+              { label: 'Copy word', action: () => copyText(n.word || '') },
+              { label: 'Copy gloss', action: () => copyText(n.gloss || '') },
+            ]);
+          }} className={`w-full text-left px-3 py-2 rounded-xl border ${selectedId === n.id ? "border-blue-500 noun-item--selected" : (colliding.has(n.id) ? 'border-amber-300 bg-amber-50' : 'border-neutral-200 hover:bg-neutral-50')}`}>
             <div className="flex items-center justify-between gap-2 min-w-0">
               <div className="font-semibold text-lg truncate max-w-full">{n.word}</div>
               <div className="text-xs text-neutral-500 truncate flex-1 min-w-0 text-right">{n.gloss || "(no gloss)"}</div>
@@ -348,9 +357,16 @@ export default function NounEditor({ initial, onChange, selectedId, onSelect, sh
                     </div>
                   </div>
                 )}
+                <div className="mt-2 text-xs text-neutral-500">Tip: Right-click a noun to copy its word or gloss.</div>
                 <div className="mt-3 max-h-[24rem] overflow-y-auto space-y-2 pr-1">
                   {filtered.map(n => (
-                    <button key={n.id} onClick={() => onSelect(n.id)} className={`w-full text-left px-3 py-2 rounded-xl border ${selectedId === n.id ? "border-blue-500 noun-item--selected" : "border-neutral-200 hover:bg-neutral-50"}`}>
+                    <button key={n.id} onClick={() => onSelect(n.id)} onContextMenu={(e)=>{
+                      e.preventDefault();
+                      showAt(e.clientX, e.clientY, [
+                        { label: 'Copy word', action: () => copyText(n.word || '') },
+                        { label: 'Copy gloss', action: () => copyText(n.gloss || '') },
+                      ]);
+                    }} className={`w-full text-left px-3 py-2 rounded-xl border ${selectedId === n.id ? "border-blue-500 noun-item--selected" : "border-neutral-200 hover:bg-neutral-50"}`}>
                       <div className="flex items-center justify-between gap-2 min-w-0">
                         <div className="font-semibold text-lg truncate max-w-full">{n.word}</div>
                         <div className="text-xs text-neutral-500 truncate flex-1 min-w-0 text-right">{n.gloss || "(no gloss)"}</div>

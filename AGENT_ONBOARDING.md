@@ -3,16 +3,33 @@
 Use this file to get productive fast. It summarizes the architecture, where to make changes, and how to verify work. Keep this close when adding features or refactoring.
 
 ## Runbook
+- `npm run codex`: One-shot build → lint → status/diff. Optional commit/push.
+  - Examples:
+    - Validate only: `npm run codex`
+    - Commit + push: `npm run codex -- -m "feat: add X" --push`
+    - On `main` (discouraged): `npm run codex -- --allow-main -m "hotfix: …" --push`
 - `npm run dev`: Start Vite dev server with HMR.
 - `npm run build`: Type-check then build for production.
 - `npm run preview`: Preview the production build.
 - `npm run lint`: ESLint across the project.
 
 > Mandatory workflow for Codex agents (do not skip):
-> 1) Run `npm run build` (and optionally `npm run lint`).
-> 2) Fix all errors/warnings relevant to your change.
-> 3) Only then `git add -A` + `git commit -m "..."`.
-> Repeat this cycle for every step/commit.
+> Prefer `npm run codex` for a single, precise gate:
+> 1) `npm run codex` — runs build and lint; shows status and diff.
+> 2) Fix any build errors (blocking) and relevant lint issues; re-run.
+> 3) When green, COMMIT IMMEDIATELY using the helper (safety rule):
+>    `npm run codex -- -m "<type(scope): message>" --push`
+>    This performs `git add -A`, `git commit`, and push (sets upstream if needed).
+> This replaces the manual build → lint → commit cycle after each instruction. Always commit after a green gate unless the user explicitly asks to hold.
+> You can still run `npm run build` and `npm run lint` directly if needed.
+
+### Codex Helper Script Notes
+- Location: `scripts/codex-workflow.mjs`; npm alias: `npm run codex`.
+- Output: prints clear STEP lines and ✅/❌ for success/failure for Build, Lint, Status, Commit, Push.
+- Safety: blocks on `main` unless `--allow-main` is passed.
+- Hooks: ensures `core.hooksPath` is `.githooks`; post-commit auto‑push may still push after your commit.
+- Disable auto‑push locally per-commit: `NO_AUTO_PUSH=1 npm run codex -- -m "wip"`.
+- Commit policy: After every instruction/tasklet and a green gate, create a small, scoped commit via the helper; keep diffs focused and revertible.
 
 ## Architecture
 - Entry: `src/main.tsx` → `src/App.tsx` (simple pathname switch) → `src/MoontalkApp.tsx` (app shell)
@@ -77,9 +94,10 @@ Use this file to get productive fast. It summarizes the architecture, where to m
 - Treat this as a professional local dev workflow: no uncommitted work between steps; prefer incremental, revertible commits.
 
 #### Pre-commit Gate (must pass before every commit)
-- Run: `npm run build` to type-check and build. Fix all errors before committing.
-- Recommended: `npm run lint` and a quick `npm run dev` smoke (open app, quick clickthrough).
-- Only after a clean build: `git add -A && git commit -m "<type(scope): message>"`.
+- Run: `npm run build` to type-check and build. Fix all errors.
+- Then run: `npm run lint`. Fix all lint issues relevant to your change.
+- Optional but encouraged: quick `npm run dev` smoke (open app, quick clickthrough).
+- Only after a clean build and lint: `git add -A && git commit -m "<type(scope): message>"`.
 
 ### Example Local Git Workflow (professional)
 1) Sync and branch
@@ -87,11 +105,10 @@ Use this file to get productive fast. It summarizes the architecture, where to m
    - `git switch 1.4-dev` (or the current `*-dev` branch). If missing, create it from `main`: `git switch -c 1.4-dev origin/main`.
 2) Implement a small, focused change
    - Edit code.
-   - Run `npm run build` (and optionally `npm run lint`). Fix issues until green.
+   - Run `npm run codex` (build+lint). Fix issues until green.
    - Validate behavior quickly in `npm run dev` if UI/logic changed.
 3) Stage and commit immediately when the step is complete
-   - `git add -A`
-   - `git commit -m "feat: add Translator 2.0 intake tokenizer"`
+   - `npm run codex -- -m "feat: add Translator 2.0 intake tokenizer" --push`
 4) Iterate in small steps
    - Repeat implement → validate → commit after each instruction/tasklet.
 5) Push dev branch as needed (optional for collaboration/review)
@@ -127,6 +144,47 @@ Use this file to get productive fast. It summarizes the architecture, where to m
 ## Validation
 - No test runner configured yet. Prefer adding Vitest + React Testing Library.
 - Until tests: `npm run build` for type safety and spin `npm run dev` for a smoke run.
+
+## Practical Recipes and Gotchas (from prior work)
+
+### UI Styling: List Rows and Theme Safety
+- Avoid bright “default” borders on dark/fantasy themes. Prefer a theme-scoped class (e.g., `.list-item`) and define faint borders + soft hover per theme in `index.css`.
+  - Fantasy: subtle border + soft hover background.
+  - Dark: faint border + soft hover background.
+  - Plain: neutral-200 border + light hover.
+- Keep list rows strictly one line:
+  - Container: `flex items-center min-w-0 flex-nowrap whitespace-nowrap` (or grid with `[1fr auto]`).
+  - Left label (C‑C‑C / noun): `shrink-0`.
+  - Gloss: `flex-1 min-w-0 truncate text-right`.
+  - Copy control: small, borderless, `inline-flex` with `role="button"`; do not use themed `<button>` if it brings heavy styles.
+- Selected/validation borders should override faint defaults (blue/red/amber).
+
+### React State Discipline
+- Never update parent state from inside a child’s render path or within a state updater that runs during render. This triggers React warnings and unstable updates.
+  - Example fix: On delete in `NounEditor`, update only the local list. Let the parent (e.g., `Translator2`/`MoontalkApp`) reconcile selection via effects.
+
+### Duplicate and Collision Detection
+- Fuzzy gloss duplicates (nouns/roots):
+  - Strip anything in parentheses; split on `,` and `;`.
+  - Lowercase, remove non‑letters, collapse spaces; remove stopwords (`the, a, an, to`).
+  - Deduplicate terms within one gloss, then group across items and show clickable chips.
+- Verb‑form ↔ noun collisions (on demand in NounEditor):
+  - Build all finite forms (pronoun × tense) with `buildFinite`; compare to noun words.
+  - Show a concise toast when none; on collisions, show a detailed per‑noun panel that auto‑refreshes after list changes.
+
+### Translator 2.0 Settings and Analysis
+- Keep Translator 2.0 settings local to the Translator 2.0 UI (popup):
+  - Coordinator Mapping (AND/OR/NOR/BUT).
+  - Particles Mapping (EN roles → HS particle): WITH→ri, TO→ith, FROM→ʌs, IN/AT→la.
+  - Analysis should invert the EN→HS mapping to show friendly EN labels.
+  - Keep “no‑collision” results as ephemeral toasts; only render a persistent panel when there are collisions.
+
+### Git Workflow Tips
+- If a revert/merge is in progress and blocks branch switches: use `git revert --quit` (or resolve) before switching branches.
+- Release flow recap:
+  - Merge `*-dev` into `main` with a merge commit (`chore(release): merge 1.x-dev`).
+  - Tag main (e.g., `v1.4.0`) with an annotated tag.
+  - Create and switch to next `*-dev` (e.g., `1.5-dev`) immediately and continue work there.
 
 ## Guardrails
 - Client-only app. Do not add secrets. Prefer `import.meta.env` if needed.

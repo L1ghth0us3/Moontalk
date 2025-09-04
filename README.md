@@ -1,69 +1,43 @@
-# React + TypeScript + Vite
+# Moontalk — RP‑ready Huntspeak app
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Moontalk is a small, client‑only web app for composing role‑play friendly sentences in a conlang nicknamed “Huntspeak.” It ships a guided Talk Pad, a simple Free Translator, a conjugation grid, and quick editors for your verb roots and nouns. Everything persists locally in your browser — no backend, no accounts.
 
-Currently, two official plugins are available:
+## How It Works
+- App shell (`MoontalkApp`) renders panels for Talk Pad, Free Translator, Finite Forms, Derivations, and the Roots/Nouns editors.
+- Data lives in `localStorage` under `huntspeak_*` keys; Import/Export lets you back up or share.
+- Morphology is triliteral: finite forms are built as `C1 + V(pron) + C2 + V(tense) + C3` with optional Progressive (geminate C2), Habitual `-ar`, and Negation `naaq-/naq-`.
+- Copula k–r–n (“be; exist”) behaves like a regular root. Present non‑negated equatives may drop the verb (zero‑copula).
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Features
+- Talk Pad: pick pronoun/root/tense and optional Neg/Prog/Hab; add object + with/to/from; one‑click copy.
+- Free Translator: naive EN→HS for single‑verb clauses; recognizes pronouns, will/did/not, with/to/from; copula/existential/locative/possession rules.
+- Finite Forms: pronoun × tense grid for a selected root.
+- Derivations: binyanim‑style patterns (agent/place/instrument/etc.); click to save as a noun.
+- Editors: Roots and Nouns with fuzzy search, expanded modal, and duplicate/collision helpers.
+- Unknown tokens: show in red with tooltip; click to add as Noun or Verb (prefilled).
+- Theming: Auto/Dark/Plain/Fantasy; right‑click context menus for copy (theme‑aware).
+- Data tools: Import/Export JSON and “Hard Reset” (clears app data only).
 
-## Expanding the ESLint configuration
+## Quick Start
+- Dev server: `npm run dev`
+- Build: `npm run build`
+- Preview prod: `npm run preview`
+- Lint: `npm run lint`
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Version Overview
+- 1.5‑dev (current): modular context‑menu (provider + clipboard utils); type tightening; stricter import validation.
+- 1.4.0 (next): introduces experimental Translator 2.0 surface; rebrand to “Moontalk”; info page refreshed.
+- 1.3.0: particles WITH→ri, TO→ith, FROM→ʌs, IN/AT→la; copula handling incl. zero‑copula; stricter EN→root matching; shared noun lexing; red unknown‑token add flow; “What is this” page.
+- 1.2.0: expanded editors (responsive modals, search); derivations save‑as‑noun; searchable dropdowns; progressive C2’.
+- 1.1.0: Talk Pad object noun, question marker, shared morph toggles with optional sync; Data popup (Import/Export, Hard Reset); themes.
+- 1.0.0: initial app shell with tabs, local persistence, finite forms, and base styling.
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Notes
+- Client‑only: do not paste secrets; all data is stored locally.
+- Exports are plain JSON; when schema changes, the app attempts a minimal migration or provides a safe reset.
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## Auto‑Push Hook
+- Every commit auto‑pushes the current branch (and any tags on that commit) via a `post-commit` hook in `.githooks/`.
+- Enabled by config: `git config core.hooksPath .githooks` (already set in this repo). Run the same after fresh clones.
+- Temporarily disable: set `NO_AUTO_PUSH=1` for that commit, e.g. `NO_AUTO_PUSH=1 git commit -m "wip"`.
+- Permanently disable: `git config --unset core.hooksPath` (or remove/rename `.githooks`).

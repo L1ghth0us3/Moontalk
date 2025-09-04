@@ -45,6 +45,7 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
   // Local copies so embedded editors can update lexicon without affecting parent
   const [rootsLocal, setRootsLocal] = useState<Root[]>(roots);
   const [nounsLocal, setNounsLocal] = useState<Noun[]>(nouns);
+  const [nounsKey, setNounsKey] = useState(0);
   const [selectedRootId, setSelectedRootId] = useState<string | null>(rootsLocal[0]?.id ?? null);
   const [selectedNounId, setSelectedNounId] = useState<string | null>(nounsLocal[0]?.id ?? null);
   useEffect(() => {
@@ -91,12 +92,24 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
   const [testsOpen, setTestsOpen] = useState(false);
   const [showJSON, setShowJSON] = useState(false);
   // Settings: coordinator join words (defaults: AND=ʋa, OR=ra, NOR=ra, BUT=ma)
-  const [t2Settings, setT2Settings] = useLocalStorageState(LS_KEYS.translator2Settings, {
+  type T2Settings = { coordinators: Record<'AND'|'OR'|'NOR'|'BUT', string>; particles: Record<'WITH'|'TO'|'FROM'|'IN_AT', string> };
+  const [t2Settings, setT2Settings] = useLocalStorageState<T2Settings>(LS_KEYS.translator2Settings, {
     coordinators: { AND: 'ʋa', OR: 'ra', NOR: 'ra', BUT: 'ma' },
     // Particles Mapping: English category → HS particle code
     particles: { WITH: 'ri', TO: 'ith', FROM: 'ʌs', IN_AT: 'la' },
   });
   const [t2SettingsOpen, setT2SettingsOpen] = useState(false);
+  // Particle code resolver based on current settings
+  const particleCodeFor = useMemo(() => {
+    const DEF = { WITH:'ri', TO:'ith', FROM:'ʌs', IN_AT:'la' } as const;
+    const keyByEn: Record<string, keyof typeof DEF> = { with:'WITH', to:'TO', from:'FROM', in:'IN_AT', at:'IN_AT' };
+    return (en: string): string | undefined => {
+      const cur = (t2Settings?.particles || {}) as Partial<Record<keyof typeof DEF, string>>;
+      const k = keyByEn[en];
+      if (!k) return undefined;
+      return cur[k] || DEF[k];
+    };
+  }, [t2Settings]);
 
   // ===== English intake (normalizer + tokenizer) =====
   type IntakeToken = { text: string; start: number; end: number };
@@ -450,8 +463,11 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
 
     // Detect particles
     const particles: string[] = [];
-    for (const p of Object.keys(PREP_TO_PARTICLE)){
-      if (words.includes(p)) particles.push(PREP_TO_PARTICLE[p]);
+    for (const p of ['with','to','from','in','at']){
+      if (words.includes(p)){
+        const code = particleCodeFor(p);
+        if (code) particles.push(code);
+      }
     }
 
     const copulaId = findCopulaRootId();
@@ -543,8 +559,9 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
   }
   function tenseVowel(t: 'present'|'past'|'future'){ return t==='present' ? 'a' : t==='past' ? 'e' : 'ʌ'; }
   function conjFinite(root: LexiconEntryVerb, subj: HSSubj, t: 'present'|'past'|'future', flags: { prog:boolean; hab:boolean; neg:boolean }, ignoreProg=false){
-    let v = buildFinite(root as any as Root, subj.subjV, tenseVowel(t));
-    if (!ignoreProg && flags.prog) v = withProgressive(v, root as any as Root);
+    const asRoot: Root = { id: root.id, c1: root.c1, c2: root.c2, c3: root.c3, gloss: root.gloss, synonyms: root.synonyms };
+    let v = buildFinite(asRoot, subj.subjV, tenseVowel(t));
+    if (!ignoreProg && flags.prog) v = withProgressive(v, asRoot);
     if (flags.hab) v = withHabitual(v);
     if (flags.neg) v = withNegation(v);
     return v;
@@ -557,7 +574,7 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
     const pairs: Array<{ part: string; nounId: string; en: string }> = [];
     for (let i=0;i<tokens.length;i++){
       const w = tokens[i].text;
-      const code = PREP_TO_PARTICLE[w];
+      const code = particleCodeFor(w);
       if (!code) continue;
       // Find next noun-like token
       for (let j=i+1;j<tokens.length;j++){
@@ -576,7 +593,7 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
     const coord = detectCoordination(tokens);
     const npLists = coord.lists.filter(l => l.role === 'NP');
     // Use settings-based coordinator mapping; fallback to defaults
-    const COORD_WORD: Record<CoordType, string> = (t2Settings?.coordinators as any) || { AND: 'ʋa', OR: 'ra', NOR: 'ra', BUT: 'ma' };
+    const COORD_WORD: Record<CoordType, string> = (t2Settings?.coordinators ?? { AND: 'ʋa', OR: 'ra', NOR: 'ra', BUT: 'ma' }) as Record<CoordType, string>;
     function listForNounId(id: string | undefined | null){
       if (!id) return null;
       return npLists.find(l => l.items.some(it => it.nounId === id)) || null;
@@ -605,9 +622,10 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
         if (idx===0) parts.push(w);
       });
       // Place with la (map from pairs if present, else try to attach la to last noun if available)
-      const laPair = pairs.find(p=>p.part==='la');
-      if (laPair) { parts.push('la'); parts.push(wordOfNounId(laPair.nounId)); }
-      else if (frame.objects.length>1) { parts.push('la'); parts.push(wordOfNounId(frame.objects[1])); }
+      const laPair = pairs.find(p=>p.part==='la' || p.part===(t2Settings?.particles?.IN_AT || 'la'));
+      const LA = (t2Settings?.particles?.IN_AT || 'la');
+      if (laPair) { parts.push(LA); parts.push(wordOfNounId(laPair.nounId)); }
+      else if (frame.objects.length>1) { parts.push(LA); parts.push(wordOfNounId(frame.objects[1])); }
     } else if (clause === 'copular'){
       // Equatives: present + non-neg → zero-copula; else conjugated copula
       const zero = frame.tense==='present' && !frame.neg;
@@ -747,7 +765,7 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
       const rightBuilt = buildFrameFromEnglish(clauseSplit.right);
       const leftGen = generateHuntspeak(leftBuilt.frame, leftBuilt.clauseType, clauseSplit.left);
       const rightGen = generateHuntspeak(rightBuilt.frame, rightBuilt.clauseType, clauseSplit.right);
-      const joinMap: Record<'AND'|'OR'|'NOR'|'BUT', string> = (t2Settings?.coordinators as any) || { AND:'ʋa', OR:'ra', NOR:'ra', BUT:'ma' };
+      const joinMap: Record<'AND'|'OR'|'NOR'|'BUT', string> = (t2Settings?.coordinators ?? { AND:'ʋa', OR:'ra', NOR:'ra', BUT:'ma' }) as Record<'AND'|'OR'|'NOR'|'BUT', string>;
       surface = [leftGen.surface, joinMap[clauseSplit.type] || { AND:'ʋa', OR:'ra', NOR:'ra', BUT:'ma' }[clauseSplit.type], rightGen.surface].join(' ');
       gen = { surface, variants: [] };
     }
@@ -816,7 +834,7 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
                 <div className="flex flex-col gap-1">
                   {faves.map(f => (
                     <div key={f.id} className="flex items-center gap-2 text-sm">
-                      <button className="px-2 py-1 rounded border border-neutral-300 hover:bg-neutral-50" onClick={()=>{ try { navigator.clipboard.writeText(f.surface); } catch {} }}>Copy</button>
+                      <button className="px-2 py-1 rounded border border-neutral-300 hover:bg-neutral-50" onClick={()=>{ try { navigator.clipboard.writeText(f.surface); } catch { void 0; } finally { try { window.dispatchEvent(new CustomEvent('huntspeak-toast', { detail: { message: 'Saved to clipboard successfully' } })); } catch { void 0; } } }}>Copy</button>
                       <button className="px-2 py-1 rounded border border-neutral-300 hover:bg-neutral-50" title="Remove favorite" onClick={()=> setFaves(prev=>prev.filter(x=>x.id!==f.id))}>★</button>
                       <div className="truncate" title={f.input ? `${f.surface} — ${f.input}` : f.surface}>{f.surface}{f.input ? ` — ${f.input}` : ''}</div>
                     </div>
@@ -863,6 +881,7 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
           </div>
           <div>
             <NounEditor
+              key={nounsKey}
               initial={nounsLocal}
               onChange={setNounsLocal}
               selectedId={selectedNounId}
@@ -882,7 +901,11 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
                   <FiniteForms root={root} />
                   <RenderDerivations root={root} onCreateNoun={(n)=>{
                     const id = Math.random().toString(36).slice(2,10);
-                    setNounsLocal(prev => [{ id, word: n.word, gloss: n.gloss || "", synonyms: n.synonyms || [] }, ...prev]);
+                    const newNoun = { id, word: n.word, gloss: n.gloss || "", synonyms: n.synonyms || [] };
+                    const next = [newNoun, ...nounsLocal];
+                    setNounsLocal(next);
+                    try { localStorage.setItem(LS_KEYS.nouns, JSON.stringify(next)); } catch { /* ignore */ }
+                    setNounsKey(k=>k+1);
                   }} />
                 </>
               );
@@ -1052,7 +1075,7 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
               const exists = surface && faves.some(f => f.surface===surface && f.input===inputLine);
               return exists ? '★ Favorite' : '☆ Favorite';
             })()}</button>
-            <button className="px-2 py-1 rounded border border-neutral-300 hover:bg-neutral-50 text-sm" onClick={() => { try { navigator.clipboard.writeText(result?.surface || ""); } catch {} }}>Copy</button>
+            <button className="px-2 py-1 rounded border border-neutral-300 hover:bg-neutral-50 text-sm" onClick={() => { try { navigator.clipboard.writeText(result?.surface || ""); } catch { void 0; } finally { try { window.dispatchEvent(new CustomEvent('huntspeak-toast', { detail: { message: 'Saved to clipboard successfully' } })); } catch { void 0; } } }}>Copy</button>
             <button className="px-2 py-1 rounded border border-neutral-300 hover:bg-neutral-50 text-sm" onClick={()=>setShowJSON(v=>!v)}>{showJSON ? 'Hide JSON' : 'Show JSON'}</button>
             <button className="px-2 py-1 rounded border border-neutral-300 hover:bg-neutral-50 text-sm" onClick={()=>setT2SettingsOpen(true)}>Settings</button>
           </div>
@@ -1061,7 +1084,7 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
           {(() => {
             const surface = result?.surface || "";
             if (!surface) return "(nothing yet)";
-            const joiners = new Set<string>(Object.values((t2Settings?.coordinators as any) || { AND:'ʋa', OR:'ra', NOR:'ra', BUT:'ma' }));
+            const joiners = new Set<string>(Object.values((t2Settings?.coordinators ?? { AND:'ʋa', OR:'ra', NOR:'ra', BUT:'ma' }) as Record<'AND'|'OR'|'NOR'|'BUT', string>));
             const pron = new Set(["ɪ","tɪ","su","tu","se","te"]);
             const toks = surface.split(/\s+/);
             for (let i=0;i<toks.length;i++){
@@ -1091,8 +1114,7 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
           if (frm.neg || verb) toggles.push({k:'neg',label:'Negation'});
           const permSurfaces: {label:string; value:string}[] = [];
           for (const t of toggles){
-            const mod = { ...frm } as SemanticFrame;
-            (mod as any)[t.k] = !((frm as any)[t.k]);
+            const mod: SemanticFrame = { ...frm, [t.k]: !frm[t.k] } as SemanticFrame;
             const g2 = generateHuntspeak(mod, clause||'transitive', intakeTokens);
             if (g2.surface && g2.surface !== result?.surface) permSurfaces.push({ label: t.label, value: g2.surface });
           }
@@ -1111,7 +1133,7 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
               {/* Row 1: copula + Prog/Hab/Neg permutations */}
               <div className="flex flex-wrap gap-2 mb-2">
                 {[...variants, ...permSurfaces].map((v,i)=> (
-                  <button key={i} className="inline-flex items-center gap-2 px-2 py-1 rounded-full border border-neutral-300 text-sm hover:bg-neutral-50" onClick={()=>{ try { navigator.clipboard.writeText(v.value); } catch {} }} title="Click to copy">
+                  <button key={i} className="inline-flex items-center gap-2 px-2 py-1 rounded-full border border-neutral-300 text-sm hover:bg-neutral-50" onClick={()=>{ try { navigator.clipboard.writeText(v.value); } catch { void 0; } finally { try { window.dispatchEvent(new CustomEvent('huntspeak-toast', { detail: { message: 'Saved to clipboard successfully' } })); } catch { void 0; } } }} title="Click to copy">
                     <span className="opacity-70">{v.label}:</span>
                     <span className="font-medium">{v.value}</span>
                   </button>
@@ -1120,7 +1142,7 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
               {/* Row 2: Tense variants */}
               <div className="flex flex-wrap gap-2">
                 {tenseSurfaces.map((v,i)=> (
-                  <button key={i} className="inline-flex items-center gap-2 px-2 py-1 rounded-full border border-neutral-300 text-sm hover:bg-neutral-50" onClick={()=>{ try { navigator.clipboard.writeText(v.value); } catch {} }} title="Click to copy">
+                  <button key={i} className="inline-flex items-center gap-2 px-2 py-1 rounded-full border border-neutral-300 text-sm hover:bg-neutral-50" onClick={()=>{ try { navigator.clipboard.writeText(v.value); } catch { void 0; } finally { try { window.dispatchEvent(new CustomEvent('huntspeak-toast', { detail: { message: 'Saved to clipboard successfully' } })); } catch { void 0; } } }} title="Click to copy">
                     <span className="opacity-70">{v.label}:</span>
                     <span className="font-medium">{v.value}</span>
                   </button>
@@ -1145,7 +1167,7 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
           const coordSummary = coord.lists.length ? coord.lists.map(l => `${l.role}:${l.type} [${l.items.map(it=>it.text).join(', ')}]`).join(' • ') : '—';
           const resLog = built?.resolutionLog || [];
           const flags = [frm.prog?'Prog':null, frm.hab?'Hab':null, frm.neg?'Neg':null].filter(Boolean).join(', ') || '—';
-    const COORD_WORD: Record<CoordType, string> = (t2Settings?.coordinators as any) || { AND: 'ʋa', OR: 'ra', NOR: 'ra', BUT: 'ma' };
+  const COORD_WORD: Record<CoordType, string> = (t2Settings?.coordinators ?? { AND: 'ʋa', OR: 'ra', NOR: 'ra', BUT: 'ma' }) as Record<CoordType, string>;
           const CLAUSE_WORD: Record<'AND'|'OR'|'NOR'|'BUT', string> = { AND:'ʋa', OR:'ra', NOR:'ra', BUT:'ma' };
           return (
             <div className="rounded-lg border p-2 analysis-panel">
@@ -1211,7 +1233,7 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
 
               {/* Particles row */}
               {(() => {
-                const P_MAP = (t2Settings as any).particles || { WITH:'ri', TO:'ith', FROM:'ʌs', IN_AT:'la' };
+                const P_MAP = (t2Settings as { coordinators: Record<'AND'|'OR'|'NOR'|'BUT', string>; particles?: Record<'WITH'|'TO'|'FROM'|'IN_AT', string> }).particles || { WITH:'ri', TO:'ith', FROM:'ʌs', IN_AT:'la' };
                 const EN_LABEL: Record<string, string> = {
                   WITH: 'with; instrument', TO: 'to; goal', FROM: 'from; source', IN_AT: 'in/at; location'
                 };
@@ -1221,7 +1243,7 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
                   [P_MAP.TO]: { en: EN_LABEL.TO, triggers: ['to'] },
                   [P_MAP.FROM]: { en: EN_LABEL.FROM, triggers: ['from'] },
                   [P_MAP.IN_AT]: { en: EN_LABEL.IN_AT, triggers: ['in','at'] },
-                } as any;
+                } as Record<string, { en: string; triggers: string[] }>;
                 const pairs = pairParticlesWithNounsFromTokens(intakeTokens);
                 if (!pairs.length) return null;
                 // group by particle code
@@ -1327,7 +1349,7 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
                     className="px-3 py-1 rounded-lg border border-neutral-300 hover:bg-neutral-50"
                     onClick={()=>{
                       const line = (tests||[]).map(t => `${t.pass? 'PASS':'FAIL'} ${t.name}: expected=${t.expected}; got=${t.got}${t.note?`; note=${t.note}`:''}`).join(' | ');
-                      try { navigator.clipboard.writeText(line); } catch {}
+                      try { navigator.clipboard.writeText(line); } catch { void 0; } finally { try { window.dispatchEvent(new CustomEvent('huntspeak-toast', { detail: { message: 'Saved to clipboard successfully' } })); } catch { void 0; } }
                     }}
                     title="Copy plain text (single line)"
                   >Copy Plain</button>
@@ -1342,7 +1364,7 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
                       title="Click to copy this result as plain text"
                       onClick={()=>{
                         const line = `${t.pass? 'PASS':'FAIL'} ${t.name}: expected=${t.expected}; got=${t.got}${t.note?`; note=${t.note}`:''}`;
-                        try { navigator.clipboard.writeText(line); } catch {}
+                        try { navigator.clipboard.writeText(line); } catch { void 0; } finally { try { window.dispatchEvent(new CustomEvent('huntspeak-toast', { detail: { message: 'Saved to clipboard successfully' } })); } catch { void 0; } }
                       }}
                     >
                       {t.pass ? '✓' : '✗'} {t.name}: expected “{t.expected}” got “{t.got}”{t.note?` — ${t.note}`:''}
@@ -1384,7 +1406,7 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
                   <div className="grid grid-cols-2 gap-3">
                     {(() => {
                       const DEF_P = { WITH:'ri', TO:'ith', FROM:'ʌs', IN_AT:'la' } as const;
-                      const current = (t2Settings as any).particles || {};
+                      const current = (t2Settings as { particles?: Record<string,string> }).particles || {};
                       return (
                         <>
                       {([
@@ -1397,8 +1419,8 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
                           <div className="text-xs uppercase tracking-wide text-neutral-500 mb-1">{p.label}</div>
                           <input
                             className="w-full border rounded-lg px-2 py-2"
-                            value={(current as any)[p.key] || (DEF_P as any)[p.key]}
-                            onChange={e=>setT2Settings(s=>({ ...s, particles: { ...(s as any).particles, [p.key]: e.target.value } }))}
+                            value={(current as Record<string,string>)[p.key] || (DEF_P as Record<string,string>)[p.key]}
+                            onChange={e=>setT2Settings(s=>({ ...s, particles: { ...(s.particles || {}), [p.key]: e.target.value } }))}
                           />
                         </label>
                       ))}

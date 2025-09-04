@@ -47,7 +47,9 @@ export function translate(input: string, roots: Root[], nouns: Noun[]): T2Result
   const words = tokens.map(t=>t.text);
   const resLog: string[] = [];
 
-  const pron = words.find(w=>PRON.has(w)) as any as T2SemanticFrame['subject']|undefined;
+  type LowerSubject = 'i'|'you'|'he'|'she'|'we'|'they';
+  const lowerPron = words.find((w): w is LowerSubject => PRON.has(w));
+  const pron: T2SemanticFrame['subject'] | undefined = lowerPron ? (lowerPron === 'i' ? 'I' : lowerPron) : undefined;
   const frame: T2SemanticFrame = {
     subject: pron || 'I', verbRootId: null,
     tense: words.includes('will') ? 'future' : (words.includes('did')||words.includes('was')||words.includes('were')) ? 'past' : 'present',
@@ -149,4 +151,3 @@ export function translate(input: string, roots: Root[], nouns: Noun[]): T2Result
   if(!frame.verbRootId) warnings.push('Unknown verb');
   return { surface: parts.join(' ').trim(), variants, analysis, warnings };
 }
-

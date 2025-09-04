@@ -7,8 +7,8 @@ import { lexNoun } from "../lib/lex";
 import { LS_KEYS, useLocalStorageState } from "../lib/storage";
 import { buildFinite, withHabitual, withNegation, withProgressive } from "../lib/morphology";
 
-// Helper: best‑effort clipboard copy; ignore failures (e.g., permissions).
-const clip = async (text: string) => { try { await navigator.clipboard.writeText(text); } catch {} };
+// Helper: best‑effort clipboard copy; show toast on success.
+const clip = async (text: string) => { try { await navigator.clipboard.writeText(text); } catch { void 0; } finally { try { window.dispatchEvent(new CustomEvent('huntspeak-toast', { detail: { message: 'Saved to clipboard successfully' } })); } catch { void 0; } } };
 
 /**
  * Guided sentence builder.
@@ -33,6 +33,15 @@ export default function TalkPad({ roots, nouns, selectedRootId, onSelectRoot, sy
   onCreateNoun?: (n: { word: string; gloss?: string; synonyms?: string[] }) => void;
   onCreateRoot?: (r: { c1: string; c2: string; c3: string; gloss?: string; synonyms?: string[] }) => void;
 }){
+  // Particle mapping from Translator 2.0 settings (fallback to defaults)
+  type T2Settings = { coordinators: Record<'AND'|'OR'|'NOR'|'BUT', string>; particles: Record<'WITH'|'TO'|'FROM'|'IN_AT', string> };
+  const [t2Settings] = useLocalStorageState<T2Settings>(LS_KEYS.translator2Settings, { coordinators: { AND:'ʋa', OR:'ra', NOR:'ra', BUT:'ma' }, particles: { WITH:'ri', TO:'ith', FROM:'ʌs', IN_AT:'la' } });
+  const partCode = (en: 'with'|'to'|'from'|'in'|'at') => {
+    const cur = (t2Settings?.particles || {}) as Record<'WITH'|'TO'|'FROM'|'IN_AT', string>;
+    const DEF = { WITH:'ri', TO:'ith', FROM:'ʌs', IN_AT:'la' } as const;
+    const key = en==='with'?'WITH':en==='to'?'TO':en==='from'?'FROM':'IN_AT';
+    return cur[key] || DEF[key];
+  };
   const [state, setState] = useLocalStorageState(LS_KEYS.talk, {
     pronForm: PRONOUNS[0].form,
     rootId: roots[0]?.id || "",
@@ -103,9 +112,9 @@ export default function TalkPad({ roots, nouns, selectedRootId, onSelectRoot, sy
     parts.push({ text: pron.form });
     parts.push({ text: hsVerb });
     if (objectNoun) parts.push({ text: objectNoun.word });
-    if (withNoun) { parts.push({ text: "ri" }); parts.push({ text: withNoun.word }); }
-    if (state.toText.trim()) { parts.push({ text: "ith" }); const v = state.toText.trim(); const w = lexNoun(nouns, v); parts.push({ text: w, u: w === v, en: v }); }
-    if (state.fromText.trim()) { parts.push({ text: "ʌs" }); const v = state.fromText.trim(); const w = lexNoun(nouns, v); parts.push({ text: w, u: w === v, en: v }); }
+    if (withNoun) { parts.push({ text: partCode('with') }); parts.push({ text: withNoun.word }); }
+    if (state.toText.trim()) { parts.push({ text: partCode('to') }); const v = state.toText.trim(); const w = lexNoun(nouns, v); parts.push({ text: w, u: w === v, en: v }); }
+    if (state.fromText.trim()) { parts.push({ text: partCode('from') }); const v = state.fromText.trim(); const w = lexNoun(nouns, v); parts.push({ text: w, u: w === v, en: v }); }
     if (state.question) parts.push({ text: "qa?" });
     if (state.register.hush) parts.push({ text: "aᵘ" });
     if (state.register.attn) parts.push({ text: "ǃ" });
