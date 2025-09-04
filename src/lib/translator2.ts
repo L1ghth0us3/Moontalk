@@ -61,7 +61,11 @@ export function translate(input: string, roots: Root[], nouns: Noun[]): T2Result
   // particles present
   for(const k of Object.keys(PREP)){ if(words.includes(k)) frame.particles.push(PREP[k]); }
   // copula
-  const cop = roots.find(r=>/\bbe\b|\bexist\b/i.test(`${r.gloss}; ${(r.synonyms||[]).join('; ')}`));
+  // Identify copula strictly by signature k–r–n to avoid false positives such as
+  // verbs whose gloss contains phrases like "be sorry".
+  const cop = roots.find(r => (
+    (r.c1||'').toLowerCase() === 'k' && (r.c2||'').toLowerCase() === 'r' && (r.c3||'').toLowerCase() === 'n'
+  )) || undefined;
   const isBe = (w:string)=> ['be','am','is','are','was','were','been','being'].includes(w);
 
   // verb match (phrase then token with fuzzy)
@@ -80,13 +84,40 @@ export function translate(input: string, roots: Root[], nouns: Noun[]): T2Result
     // gloss exact
     hit = verbs.find(v=> splitItems(v.gloss).includes(base) );
     if(hit){ verb=hit; resLog.push(`verb '${w}' → '${hit.c1}${hit.c2}${hit.c3}' via gloss-exact`); break; }
-    // fuzzy
-    hit = verbs.find(v=> v.synonyms.map(norm).some(s=>edit1(base,s)) ) || verbs.find(v=> splitItems(v.gloss).some(s=>edit1(base,s)) );
+    // fuzzy — restrict to reasonably long tokens to avoid short collisions
+    if (base.length >= 5) {
+      hit = verbs.find(v=> v.synonyms.map(norm).some(s=>edit1(base,s)) ) || verbs.find(v=> splitItems(v.gloss).some(s=>edit1(base,s)) );
+    } else {
+      hit = undefined;
+    }
     if(hit){ verb=hit; resLog.push(`verb '${w}' → '${hit.c1}${hit.c2}${hit.c3}' via fuzzy(≤1)`); break; }
   }
   // objects (skip nouns governed by preps)
+  // Track consumed span for the matched verb to avoid reusing its tokens as nouns
+  let matchedVerbStart = -1;
+  let matchedVerbSpan = 0;
+  if (verb){
+    // Recompute start/span for clarity (phrase-first rules mirrored)
+    for (let i=0;i<tokens.length;i++){
+      const w = tokens[i].text;
+      if (w==='?'||PRON.has(w)||SPECIAL.has(w)||PREP[w]||isBe(w)) continue;
+      const two = tokens[i+1]?.text ? `${w} ${tokens[i+1].text}` : '';
+      if (two){
+        const exact = verbs.find(v=> splitItems(v.gloss).includes(two) || v.synonyms.map(norm).includes(norm(two)) );
+        if (exact && exact.id === verb.id){ matchedVerbStart = i; matchedVerbSpan = 2; break; }
+      }
+      const base = norm(stemVerb(w));
+      let hit = verbs.find(v=> v.synonyms.map(norm).includes(base) ) || verbs.find(v=> splitItems(v.gloss).includes(base));
+      if (!hit && base.length>=5){
+        hit = verbs.find(v=> v.synonyms.map(norm).some(s=>edit1(base,s)) ) || verbs.find(v=> splitItems(v.gloss).some(s=>edit1(base,s)) );
+      }
+      if (hit && hit.id === verb.id){ matchedVerbStart = i; matchedVerbSpan = 1; break; }
+    }
+  }
+
   for(let i=0;i<tokens.length;i++){
     const w=tokens[i].text; if(w==='?'||PRON.has(w)||SPECIAL.has(w)||PREP[w]||isBe(w)) continue;
+    if (matchedVerbStart >= 0 && i >= matchedVerbStart && i < matchedVerbStart + matchedVerbSpan) continue;
     const prev=i>0?tokens[i-1].text:''; if(prev && PREP[prev]) continue;
     const base1 = norm(w.endsWith('s')&&w.length>3&&!w.endsWith('ss')? w.slice(0,-1): w);
     // prefer exact word
@@ -96,8 +127,10 @@ export function translate(input: string, roots: Root[], nouns: Noun[]): T2Result
       n = ns.find(n=> (n.synonyms||[]).map(norm).includes(base1) ) || ns.find(n=> splitItems(n.gloss).includes(base1) );
     }
     if(!n){
-      // fuzzy
-      n = ns.find(n=> edit1(base1, norm(n.word)) ) || ns.find(n=> (n.synonyms||[]).map(norm).some(s=>edit1(base1,s)) ) || ns.find(n=> splitItems(n.gloss).some(s=>edit1(base1,s)) );
+      // fuzzy — restrict to reasonably long tokens to avoid short collisions (e.g., sit↔shit, move↔love, cave↔crave)
+      if (base1.length >= 5){
+        n = ns.find(n=> edit1(base1, norm(n.word)) ) || ns.find(n=> (n.synonyms||[]).map(norm).some(s=>edit1(base1,s)) ) || ns.find(n=> splitItems(n.gloss).some(s=>edit1(base1,s)) );
+      }
       if(n) resLog.push(`noun '${w}' → '${n.word}' via fuzzy(≤1)`);
     }
     if(n) frame.objects.push(n.id);
