@@ -35,3 +35,9 @@ Moontalk is a small, client‑only web app for composing role‑play friendly se
 ## Notes
 - Client‑only: do not paste secrets; all data is stored locally.
 - Exports are plain JSON; when schema changes, the app attempts a minimal migration or provides a safe reset.
+
+## Auto‑Push Hook
+- Every commit auto‑pushes the current branch (and any tags on that commit) via a `post-commit` hook in `.githooks/`.
+- Enabled by config: `git config core.hooksPath .githooks` (already set in this repo). Run the same after fresh clones.
+- Temporarily disable: set `NO_AUTO_PUSH=1` for that commit, e.g. `NO_AUTO_PUSH=1 git commit -m "wip"`.
+- Permanently disable: `git config --unset core.hooksPath` (or remove/rename `.githooks`).
