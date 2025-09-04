@@ -39,16 +39,23 @@ function parseArgs(argv){
 
 function showHelp(){
   console.log(`Moontalk Codex Workflow\n\n`+
-`Steps:\n`+
-`  1) npm run build  — type-check + Vite build\n`+
-`  2) npm run lint   — ESLint (errors fail)\n`+
-`  3) git status/diff summary\n`+
-`  4) (optional) commit + push\n\n`+
+`Gate steps (runs in order):\n`+
+`  1) npm run build   — Type-check + Vite build\n`+
+`  2) npm run lint    — ESLint (errors fail gate)\n`+
+`  3) npm run test    — Vitest suite (errors fail gate)\n`+
+`  4) git status/diff — Summary + diffstat\n`+
+`  5) (optional) commit + push using cached intent\n\n`+
 `Flags:\n`+
-`  --commit \"msg\", -m \"msg\"  Commit all changes with message\n`+
-`  --push                 Push after commit (also pushes tags pointing at HEAD)\n`+
-`  --allow-main           Allow committing on main (otherwise blocked)\n`+
-`  --help, -h            Show this help\n`);
+`  --commit \"msg\", -m \"msg\"   Cache commit intent message for step 5\n`+
+`  --wip                   If a gate step fails, create a WIP commit with intent\n`+
+`  --finalize              Squash consecutive WIP commits into the cached intent\n`+
+`  --push                  Push after commit/finalize (respects upstream)\n`+
+`  --allow-main            Allow operating on main (otherwise blocked)\n`+
+`  --help, -h             Show this help\n\n`+
+`Notes:\n`+
+`  • Intent caching is stored in .git/.codex_intent and cleared on success.\n`+
+`  • A post-commit hook may auto-push unless NO_AUTO_PUSH=1 is set.\n`+
+`  • Use --finalize to collapse consecutive WIPs into one clean commit.\n`);
 }
 
 async function main(){
