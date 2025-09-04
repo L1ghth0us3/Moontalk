@@ -262,17 +262,21 @@ export default function MoontalkApp(){
                 onClick={()=>setComposerTab('talk')}
               >Talk Pad</button>
               <button
-                aria-pressed={composerTab==='translator'}
-                className={`px-3 py-2 rounded-xl border transition ${composerTab==='translator' ? 'ring-2 ring-blue-300 border-blue-500 font-semibold' : 'border-neutral-300 hover:bg-neutral-50'}`}
-                onClick={()=>setComposerTab('translator')}
-              >Translator [Legacy]</button>
-              <button
                 aria-pressed={composerTab==='translator2'}
                 className={`px-3 py-2 rounded-xl border transition ${composerTab==='translator2' ? 'ring-2 ring-blue-300 border-blue-500 font-semibold' : 'border-neutral-300 hover:bg-neutral-50'}`}
                 onClick={()=>setComposerTab('translator2')}
               >Translator 2.0</button>
             </div>
-            {composerTab==='talk' ? (<TalkPadCollapse />) : (<TranslatorCollapse />)}
+            <div className="flex items-center gap-3">
+              {/* Subtle link to legacy translator, visually de-emphasized */}
+              <button
+                aria-pressed={composerTab==='translator'}
+                className={`text-xs px-2 py-1 rounded border transition ${composerTab==='translator' ? 'border-neutral-300 bg-neutral-50' : 'border-transparent text-neutral-500 hover:underline'}`}
+                onClick={()=>setComposerTab('translator')}
+                title="Open legacy translator"
+              >Translator [Legacy]</button>
+              {composerTab==='talk' ? (<TalkPadCollapse />) : (<TranslatorCollapse />)}
+            </div>
           </div>
           {composerTab==='talk' ? (
             <TalkPadBody />
