@@ -3,8 +3,16 @@
 All notable changes to this project will be documented in this file.
 
 ## [1.6.0-next] - Unreleased
-- Dev: expand in‑app Dev test runner with grouped scenarios and richer assertions; continue broadening Vitest coverage.
-- Build: small hardening and DX improvements under `1.6-dev`.
+- Dev: expanded in‑app Dev test runner (grouped scenarios, expected vs got, details panel with clause/frame/tokens/logs).
+- Tests: broadened Vitest coverage across particles, PP order, and simple coordination; added queen/with and shroud+traps cases.
+- Translator 2.0 (lib): major logic fixes and refactor groundwork
+  - Matching: prevent short fuzzy collisions (sit↔shit, move↔love, cave↔crave); skip verb tokens when collecting nouns; strict copula by k–r–n.
+  - Forms: handle 3sg -s verb stemming (e.g., sits → sit).
+  - Particles: resolve complements via word/synonyms/gloss (+ safe fuzzy≥5), and preserve PP order in surface.
+  - Coordination: simple AND split with subject elision on right; configurable joiner.
+  - Options: `translate(input, roots, nouns, opts)` accepts particles/coordinators/flags.
+  - Modularization start: extracted `tokens.ts`, `match.ts`, `types.ts`; component now calls the lib `translate()`.
+- Defaults: added verb root for “live; dwell” (f–th–h) to resolve “live” from built-ins.
 
 ## [1.5.0] - 2025-09-04
 - Workflow: introduce Codex helper (`npm run codex`) and `.githooks/post-commit` auto‑push. Gate = build + lint + status, with optional commit/push.

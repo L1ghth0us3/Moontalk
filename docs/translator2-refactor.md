@@ -5,7 +5,7 @@ Status: in progress (branch `refactor/translator2`)
 ## Phase 1 — Stabilize API & Wiring
 - [x] Single source: keep intake → match → frame → realize in `src/lib/translator2.ts`.
 - [x] Wire component: `src/components/Translator2.tsx` calls `translate()` and renders `surface` + `analysis`.
-- [ ] Options: add `opts` to `translate(input, roots, nouns, opts)`
+- [x] Options: add `opts` to `translate(input, roots, nouns, opts)`
   - particles: map for WITH/TO/FROM/IN_AT (defaults, overridable by UI settings)
   - coordinators: AND/OR/NOR/BUT strings
   - flags: behavior toggles (e.g., enableExistential, enableCoordination)
@@ -13,12 +13,12 @@ Status: in progress (branch `refactor/translator2`)
 
 ## Phase 2 — Modularize Library
 Split `src/lib/translator2.ts` into smaller modules under `src/lib/translator2/`:
-- `tokens.ts`: normalize/tokenize, pronoun detection, be‑forms, plural trimming, 3sg -s stemmer.
-- `match.ts`: verb/noun resolution (exact → synonyms → gloss → fuzzy≥5) + consumed‑span tracking.
-- `frames.ts`: build semantic frame (tense/neg/prog/hab/question), clause type.
-- `realize.ts`: subject forms, conjugation, PP ordering, subject elision on coordination.
-- `types.ts`: shared internal types for frames/results.
-- `index.ts`: export `translate()`; glue options and analysis logs.
+- [x] `tokens.ts`: normalize/tokenize, pronoun detection, be‑forms, plural trimming, 3sg -s stemmer.
+- [x] `match.ts`: verb/noun resolution (exact → synonyms → gloss → fuzzy≥5) + consumed‑span tracking.
+- [ ] `frames.ts`: build semantic frame (tense/neg/prog/hab/question), clause type.
+- [ ] `realize.ts`: subject forms, conjugation, PP ordering, subject elision on coordination.
+- [x] `types.ts`: shared internal types for frames/results.
+- [ ] `index.ts`: export `translate()`; glue options and analysis logs.
 
 ## Phase 3 — Features & Cleanup
 - Coordination
@@ -49,4 +49,3 @@ Split `src/lib/translator2.ts` into smaller modules under `src/lib/translator2/`
 - Behavior equals or improves current tests and Dev checks.
 - Options allow UI mapping overrides without code changes.
 - Code is modular, typed, and easily testable.
-
