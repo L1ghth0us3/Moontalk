@@ -254,12 +254,14 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
             particlePairs?: Array<{ part:string; nounId:string; noun?:string; en:string }>;
             clause?: string;
             resolutionLog?: string[];
+            unknownTokens?: string[];
           } | undefined;
           const frm = analysis?.frame;
           if (!frm) return null;
           const tokensFlat: string[] = analysis?.intake?.tokensFlat || [];
           const pairs = analysis?.particlePairs || [];
           const resLog: string[] = Array.isArray(analysis?.resolutionLog) ? (analysis?.resolutionLog as string[]) : [];
+          const unknown = Array.isArray(analysis?.unknownTokens) ? (analysis?.unknownTokens as string[]) : [];
           const objects = (frm.objects || []).map(id => nounsLocal.find(n=>n.id===id)?.word || id).join(', ') || '—';
           const flags = [frm.prog?'Prog':null, frm.hab?'Hab':null, frm.neg?'Neg':null].filter(Boolean).join(', ') || '—';
           return (
@@ -316,6 +318,20 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
                       <li key={i} className={/fuzzy/.test(line) ? 'text-amber-600 font-medium' : ''}>{line}</li>
                     ))}
                   </ul>
+                </div>
+              ) : null}
+              {unknown.length ? (
+                <div className="mt-2 text-sm">
+                  <div className="opacity-70 mb-1">Unknown tokens</div>
+                  <div className="flex flex-wrap gap-2 items-center">
+                    {unknown.map((w,i)=> (
+                      <span key={i} className="inline-flex items-center gap-2 px-2 py-1 rounded-full border border-neutral-300">
+                        <span className="text-red-700">{w}</span>
+                        <button className="text-xs px-2 py-1 rounded border border-neutral-300 hover:bg-neutral-50" onClick={()=>onCreateNoun?.({ word: w, gloss: w })}>Add as Noun</button>
+                        <button className="text-xs px-2 py-1 rounded border border-neutral-300 hover:bg-neutral-50" onClick={()=>onCreateRoot?.({ c1: '', c2: '', c3: '', gloss: w, synonyms: [] })}>Add as Verb</button>
+                      </span>
+                    ))}
+                  </div>
                 </div>
               ) : null}
               {showJSON && (

@@ -3,12 +3,13 @@ import { buildFinite, withHabitual, withNegation, withProgressive } from "../mor
 import type { T2SemanticFrame, T2Options, T2Result } from "./types";
 import { buildFrameFromTokens } from "./frames";
 import { hsSubjectFor, conjFinite } from "./realize";
-import { findNounByTokens } from "./match";
+import { findNounByTokens, findNounByTokensDetailed, findVerbByTokenDetailed, type LexVerb } from "./match";
 
 export type { T2SemanticFrame, T2Options, T2Result };
 
 export function translate(input: string, roots: Root[], nouns: Noun[], opts?: T2Options): T2Result {
   const ns = nouns.map(n=>({ id:n.id, word:n.word, gloss:n.gloss||'', synonyms:(n.synonyms||[]) as string[] }));
+  const vs: LexVerb[] = roots.map(r=>({ id:r.id, c1:r.c1, c2:r.c2, c3:r.c3, gloss:r.gloss||'', synonyms:(r.synonyms||[]) as string[] }));
 
   const PART_DEF = { WITH:'ri', TO:'ith', FROM:'ʌs', IN_AT:'la' } as const;
   const partMap = { ...PART_DEF, ...(opts?.particles||{}) } as Record<'WITH'|'TO'|'FROM'|'IN_AT', string>;
@@ -159,7 +160,34 @@ export function translate(input: string, roots: Root[], nouns: Noun[], opts?: T2
       resLogExtended.push(`particle '${p.en}' -> '${p.part}' with noun '${nounW}'`);
     }
   }
-  const analysis = { frame, intake: { input, tokens, tokensFlat: tokens.map(t=>t.text) }, clause, resolutionLog: resLogExtended, particlePairs: analysisPairs };
+  // Unknown tokens (skip helpers, preps, pronouns, be-forms, and coordinators)
+  const unknownTokens: string[] = (() => {
+    const unk: string[] = [];
+    const SPECIAL = new Set([ 'will','did','not','never','there','used' ]);
+    const PRON = new Set(['i','you','he','she','we','they']);
+    const COORD_BASE = new Set(['and','or','nor','but','plus']);
+    const COORD_AUX = new Set(['either','neither','not','only','as','well','also']);
+    const beSet = new Set(["be","am","is","are","was","were","been","being"]);
+    const isBe = (w: string) => beSet.has(w);
+    for (let i=0;i<tokens.length;i++){
+      const w = tokens[i].text;
+      if (w==='?') continue;
+      if (PREP[w]) continue;
+      if (SPECIAL.has(w) || PRON.has(w) || COORD_BASE.has(w) || COORD_AUX.has(w) || isBe(w)) continue;
+      // known verb?
+      const vHit = findVerbByTokenDetailed(vs, w, true).verb;
+      if (vHit) continue;
+      // known noun? prefer phrase first
+      const w2 = tokens[i+1]?.text;
+      const n2 = findNounByTokensDetailed(ns, w, w2);
+      if (n2.noun){ if (n2.span===2) i++; continue; }
+      // otherwise unknown
+      if (!unk.includes(w)) unk.push(w);
+    }
+    return unk;
+  })();
+
+  const analysis = { frame, intake: { input, tokens, tokensFlat: tokens.map(t=>t.text) }, clause, resolutionLog: resLogExtended, particlePairs: analysisPairs, unknownTokens };
   const warnings: string[] = [];
   if(!frame.verbRootId) warnings.push('Unknown verb');
 

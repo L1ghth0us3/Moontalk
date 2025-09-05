@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [1.6.0-next] - Unreleased
 - UI: Translator 2.0 shows pronouns in parentheses when they occur at the start of a clause or immediately after a coordinator (cosmetic hint; library surface unchanged).
+- Translator 2.0 (lib): expose `analysis.unknownTokens` (skips helpers/particles/pronouns/be/coordinators); UI displays unknowns with quick add-as Noun/Verb actions.
 - Docs: test docs enforcement flow (example entry).
 - Docs: broaden docs enforcement heuristics (src/workflow/build changes now require docs).
 - Dev: expanded in‑app Dev test runner (grouped scenarios, expected vs got, details panel with clause/frame/tokens/logs).
