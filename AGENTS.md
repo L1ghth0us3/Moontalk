@@ -20,6 +20,8 @@
 - Where to find details:
   - Rules, workflow, and tips: this file (Agent Ruleset, Codex Helper, Translator 2.0 Tips).
   - Hooks and auto-push: `.githooks/post-commit` (respects `NO_AUTO_PUSH=1`).
+  - Overview and features: `README.md` (what the app is and how to run it).
+  - Workflow helper script: `scripts/codex-workflow.mjs` (run via `npm run codex`; see `--help`).
 
 ## Project Structure & Module Organization
 - Source: `src/` (entry `src/main.tsx`, app shell `src/App.tsx`).
