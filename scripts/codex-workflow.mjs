@@ -76,7 +76,7 @@ function printSection(title){
 const sym = { ok: '✅', fail: '❌', info: 'ℹ️', warn: '⚠️' };
 
 function parseArgs(argv){
-  const args = { commitMsg: null, push: false, allowMain: false, wip: false, finalize: false, verbose: false, dryRun: false, order: null };
+  const args = { commitMsg: null, push: false, allowMain: false, wip: false, finalize: false, verbose: false, dryRun: false, order: null, rebind: false };
   for (let i=2;i<argv.length;i++){
     const a = argv[i];
     if (a === '--help' || a === '-h'){ args.help = true; }
@@ -87,6 +87,7 @@ function parseArgs(argv){
     else if (a === '--verbose'){ args.verbose = true; }
     else if (a === '--dry-run'){ args.dryRun = true; }
     else if (a === '--order'){ args.order = (argv[++i]||'').split(',').map(s=>s.trim()).filter(Boolean); }
+    else if (a === '--rebind'){ args.rebind = true; }
     else if (a === '--commit'){ args.commitMsg = argv[++i] || ''; }
     else if (a === '-m'){ args.commitMsg = argv[++i] || ''; }
     else { (args._ ||= []).push(a); }
@@ -204,7 +205,8 @@ async function main(){
   if (untracked) { console.log('\nUntracked/modified files:\n'+untracked); }
 
   // 5) Commit/finalize using cached intent (JSON)
-  const intent = getIntentMain();
+  const intentObj = loadIntentJSON();
+  const intent = intentObj?.main || '';
   if (args.finalize){
     if (!intent){ console.error('No cached intent found; cannot finalize.'); process.exit(4); }
     printSection('STEP 5: Finalize');
@@ -218,7 +220,25 @@ async function main(){
       console.error(`${sym.fail} No staged changes to commit. Stage files and rerun.`);
       process.exit(3);
     }
-    const commit = run('git',['commit','-m', intent], {}, 'git commit');
+    // Guard: staged tree mismatch unless --rebind
+    const stagedTreeNow = run('git',['write-tree'], {}, 'git write-tree (pre-commit)').out.trim();
+    if (intentObj && intentObj.stagedTree && intentObj.stagedTree !== stagedTreeNow){
+      if (!args.rebind){
+        console.error(`${sym.fail} Staged content changed since intent was created. Aborting commit.\n`+
+          `Use --rebind to update the intent's stagedTree to the current index and proceed.`);
+        process.exit(6);
+      } else {
+        try {
+          const j = loadIntentJSON() || { main:intent, secondary:[], createdAT:new Date().toISOString(), branch, stagedTree:'', amend:false };
+          j.stagedTree = stagedTreeNow;
+          writeFileSync(INTENT_JSON, JSON.stringify(j, null, 2), 'utf8');
+          if (VERBOSE) console.log(`${sym.info} Rebound intent.stagedTree to current index.`);
+        } catch {}
+      }
+    }
+    // Compose message: main + optional Secondary changes
+    const composed = composeCommitMessage(intentObj || { main:intent, secondary:[] });
+    const commit = run('git', ['commit', '-m', composed].concat(intentObj?.amend ? ['--amend'] : []), {}, 'git commit');
     process.stdout.write(commit.out);
     if (commit.code !== 0){ console.error('Commit failed.'); process.exit(commit.code); }
     console.log(`${sym.ok} Commit created.`);
@@ -251,6 +271,16 @@ function loadIntentJSON(){
 }
 
 function getIntentMain(){ const j = loadIntentJSON(); return j && typeof j.main==='string' ? j.main : ''; }
+
+function composeCommitMessage(j){
+  const lines = [String(j.main||'').trim()];
+  const notes = Array.isArray(j.secondary) ? j.secondary.filter(s=>String(s).trim()) : [];
+  if (notes.length){
+    lines.push('', 'Secondary changes:');
+    for (const n of notes){ lines.push(`- ${n}`); }
+  }
+  return lines.join('\n');
+}
 
 function doWipCommit(message, doPush){
   printSection('WIP Commit');
