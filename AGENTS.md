@@ -91,13 +91,17 @@ Instruction
 - Gate + iterate: if the script fails (build/lint/test), fix the code, stage the fixes, then rerun `npm run codex` without a new `-m`.
 - Rebind only when prompted: if the script says staged content changed but the scope is still the same feature, rerun with `--rebind`.
 - No amend during fix iterations: do not use `--amend` while addressing failures. Use `--amend` only after everything is green to add a tiny clarification.
-- After success: optionally push with `npm run codex -- --push` (or rely on the auto‑push hook; set `NO_AUTO_PUSH=1` to disable locally).
+- After success: push with `npm run codex -- --push` (independent step; sets upstream if missing). Avoid `git pull --rebase` unless a push is rejected as non‑fast‑forward.
 - Rebase rule: never run `git pull --rebase` unless a push was rejected as non‑fast‑forward.
 
 Notes
 - Intent is stored at `.git/.codex_intent.json` and cleared after a successful commit.
 - A post-commit hook may auto-push; set `NO_AUTO_PUSH=1` to disable.
 - The helper prints clear STEP lines and ✅/❌ for each phase.
+
+### Auto‑Rebind & Notes Hygiene
+- Auto‑rebind: when safe (same branch, intent < 4h old, and staged paths are a subset or superset of the original), the helper auto‑rebinds and proceeds. Otherwise it aborts with new/removed path lists and asks for `--rebind`.
+- Commit notes: secondary notes are concise and tidy. The footer shows at most one bullet per category (build, lint, test, meta), ordered and deduped; omitted entirely if there are no notes.
 
 ### Using the codex-workflow helper (required for commits)
 - Always stage intentionally: add specific paths or use `git add -p` to stage only what belongs in the commit.

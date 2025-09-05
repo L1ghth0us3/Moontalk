@@ -131,34 +131,31 @@ function showHelp(){
 `  3) npm run test    — Vitest suite (failures fail gate)\n`+
 `  4) git status/diff — summary + diffstat\n`+
 `  5) commit (if intent cached & staged matches)\n\n`+
-`Workflow:\n`+
-`  1) Stage intended changes (use 'git add -p').\n`+
-`  2) Cache intent: node scripts/codex-workflow.mjs -m \"type(scope): concise intent\".\n`+
-`  3) If gate fails: fix code, stage fixes, rerun without a new -m.\n`+
-`  4) Use --rebind ONLY if prompted that staged content changed and the scope is still the same feature.\n`+
-`  5) Do NOT use --amend during fix iterations; reserve it for a tiny clarification after green.\n`+
-`  6) After success: optionally --push. Never 'git pull --rebase' unless a push was rejected as non-fast-forward.\n\n`+
-`Usage examples:\n`+
-`  node scripts/codex-workflow.mjs -m \"feat: add X\"\n`+
-`  node scripts/codex-workflow.mjs                (rerun after fixes)\n`+
-`  node scripts/codex-workflow.mjs --amend        (after green: tiny clarification)\n`+
-`  node scripts/codex-workflow.mjs --rebind       (update stagedTree to current index)\n`+
-`  node scripts/codex-workflow.mjs --clear        (delete intent cache)\n\n`+
-`Flags:\n`+
-`  --commit \"msg\", -m \"msg\"   Cache commit intent message\n`+
-`  --amend                 Use --amend when committing the cached intent\n`+
-`  --rebind                Update cache.stagedTree to current index\n`+
-`  --clear                 Delete intent cache and exit\n`+
-`  --order a,b,c           Pipeline order (default build,lint,test)\n`+
-`  --push                  Push current branch (independent step; sets upstream if missing)\n`+
-`  --verbose               Verbose command logging\n`+
-`  --dry-run               Log actions; skip mutating commands\n`+
-`  --allow-main            Allow operating on main (otherwise blocked)\n`+
-`  --help, -h              Show this help\n\n`+
-`Contract:\n`+
-`  • Never commit unless all checks pass.\n`+
-`  • Cache lives at .git/.codex_intent.json (cleared after successful commit).\n`+
-`  • On non-zero exit: fix issues, restage, and rerun without changing -m.\n`);
+`Usage (copy/paste):\n`+
+`  First run (stage then set intent):\n`+
+`    node scripts/codex-workflow.mjs -m \"feat(scope): concise intent\"\n`+
+`  Fix iteration (no new message):\n`+
+`    node scripts/codex-workflow.mjs\n`+
+`  Rebind (only when prompted, same scope):\n`+
+`    node scripts/codex-workflow.mjs --rebind\n`+
+`  Amend (only after green to clarify):\n`+
+`    node scripts/codex-workflow.mjs --amend\n`+
+`  Push current branch (independent step):\n`+
+`    node scripts/codex-workflow.mjs --push\n\n`+
+`Intent cache:\n`+
+`  Path: .git/.codex_intent.json\n`+
+`  Fields: { main, secondary[], createdAT, branch, stagedTree, paths[] }\n`+
+`  Meaning: caches your main commit line and the exact staged surface for safety.\n\n`+
+`Exit codes (and what to do):\n`+
+`  0   OK                 — Gate passed. If commit created, run --push.\n`+
+`  10  E_NO_STAGED        — Stage changes (git add ...) or set intent (-m).\n`+
+`  11  E_CHECK_FAIL       — Fix issues, stage fixes, then rerun (no new -m).\n`+
+`  12  E_TREE_MISMATCH    — If scope unchanged, rerun with --rebind; otherwise clear intent or restage.\n`+
+`  13  E_PUSH_REJECTED    — Fetch, rebase onto origin/<branch>, resolve, rerun checks, then --push again.\n`+
+`  2   E_MAIN_PROTECTED   — Switch to a *-dev branch or pass --allow-main.\n\n`+
+`Notes hygiene:\n`+
+`  Commit footer keeps at most one bullet per category (build, lint, test, meta),\n`+
+`  ordered and deduped; omitted entirely if no notes.\n`);
 }
 
 async function main(){
@@ -183,8 +180,7 @@ async function main(){
   console.log(`Last:   ${last || '—'}`);
   console.log(`Remotes:\n${remotes || '(none)'}`);
   if (!args.allowMain && (branch === 'main' || branch === 'master')){
-    console.error(`ERROR: Refusing to operate on '${branch}'. Switch to a *-dev branch or pass --allow-main.`);
-    process.exit(EXIT.E_MAIN_PROTECTED);
+    return exitOneLine(EXIT.E_MAIN_PROTECTED, "Switch to a *-dev branch or pass --allow-main.");
   }
 
   // --clear: remove intent cache and exit cleanly
@@ -310,10 +306,9 @@ async function main(){
           // Explain which paths changed and require explicit --rebind
           const added = [...nowPaths].filter(p=>!cachedPaths.has(p));
           const removed = [...cachedPaths].filter(p=>!nowPaths.has(p));
-          console.log('Staged content changed since intent. If scope unchanged, rerun with --rebind; otherwise clear intent or restage');
           if (added.length) console.log('New staged paths:\n- ' + added.join('\n- '));
           if (removed.length) console.log('Removed staged paths:\n- ' + removed.join('\n- '));
-          process.exit(EXIT.E_TREE_MISMATCH);
+          return exitOneLine(EXIT.E_TREE_MISMATCH, 'if scope unchanged, rerun with --rebind; otherwise clear intent or restage');
         }
       } else {
         try {
