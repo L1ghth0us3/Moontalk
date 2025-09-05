@@ -17,6 +17,15 @@ All notable changes to this project will be documented in this file.
   - Pronoun fix: map 3pl `they` → `te` for correct finite forms.
   - Tests: added multiple‑AND and OR coordination cases; suite now at 25 green tests.
 - Defaults: added verb root for “live; dwell” (f–th–h) to resolve “live” from built-ins.
+ - Workflow helper: codex-workflow overhaul for agents and humans
+   - Intent cache: repo‑local JSON at `.git/.codex_intent.json` with `{ main, secondary[], createdAT, branch, stagedTree, amend }`.
+   - Gate: runs build → lint → test; order configurable via `--order build,lint,test`.
+   - Failure notes: on first failure, appends a concise secondary note (TS codes / eslint counts / test failed count). Notes are deduplicated across runs.
+   - Exit codes: distinct codes for clear automation (0=success, 1=no staged, 2=gate/commit failure, 3=staged‑tree mismatch, 4=finalize error, 5=clear error).
+   - Commit safety: staged‑only commits; early exit with guidance when nothing staged; staged‑tree guard with `--rebind` escape hatch.
+   - Message composition: commits use cached main plus optional “Secondary changes:” bullet list from cache; supports `--amend`.
+   - Ergonomics: `--verbose` logging, `--dry-run`, `--clear`, `--rebind`, and guidance “NEXT:” line printed at end of each run.
+   - Docs: header and `--help` expanded with purpose, examples, contract; AGENTS.md updated with required usage and guardrails.
 
 ## [1.5.0] - 2025-09-04
 - Workflow: introduce Codex helper (`npm run codex`) and `.githooks/post-commit` auto‑push. Gate = build + lint + status, with optional commit/push.
