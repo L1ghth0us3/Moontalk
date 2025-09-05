@@ -3,6 +3,7 @@
 All notable changes to this project will be documented in this file.
 
 ## [1.6.0-next] - Unreleased
+- Docs: test docs enforcement flow (example entry).
 - Dev: expanded in‑app Dev test runner (grouped scenarios, expected vs got, details panel with clause/frame/tokens/logs).
 - Tests: broadened Vitest coverage across particles, PP order, and simple coordination; added queen/with and shroud+traps cases.
 - Translator 2.0 (lib): major logic fixes and refactor groundwork → public API moved to `src/lib/translator2/index.ts`
