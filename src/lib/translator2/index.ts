@@ -3,7 +3,7 @@ import { buildFinite, withHabitual, withNegation, withProgressive } from "../mor
 import type { T2SemanticFrame, T2Options, T2Result } from "./types";
 import { buildFrameFromTokens } from "./frames";
 import { hsSubjectFor, conjFinite } from "./realize";
-import { findNounByTokens, findNounByTokensDetailed, findVerbByTokenDetailed, type LexVerb } from "./match";
+import { findNounByTokens, findNounByTokensDetailed, findVerbByTokenDetailed, findVerbByPhrase, type LexVerb } from "./match";
 
 export type { T2SemanticFrame, T2Options, T2Result };
 
@@ -21,7 +21,7 @@ export function translate(input: string, roots: Root[], nouns: Noun[], opts?: T2
   const frame = built.frame;
   const clause = built.clause;
   const tokens = built.tokens;
-  const words = built.words;
+  // const words = built.words; // no longer needed with tightened split heuristic
   const wordAt = (i:number)=> tokens[i]?.text;
 
   const parts: string[] = [] as string[];
@@ -34,6 +34,8 @@ export function translate(input: string, roots: Root[], nouns: Noun[], opts?: T2
     let i = startIdx; const ids: string[] = [];
     let either=false, neither=false, notOnly=false; let type: 'AND'|'OR'|'NOR'|'BUT' = 'AND';
     const readOne = (): boolean => {
+      // Skip any repeated prepositions like "or with X"
+      while (true){ const w = wordAt(i); if (!w) break; if (PREP[w]) { i++; continue; } break; }
       const w1 = wordAt(i); if(!w1) return false;
       const hit = findNounByTokens(ns, w1, wordAt(i+1));
       if (hit.noun){ ids.push(hit.noun.id); i += hit.span; return true; }
@@ -192,13 +194,31 @@ export function translate(input: string, roots: Root[], nouns: Noun[], opts?: T2
   if(!frame.verbRootId) warnings.push('Unknown verb');
 
   if (opts?.flags?.enableCoordination ?? true){
+    // Tighten heuristic: only split where both sides contain a verb-like token
+    const beSet = new Set(["be","am","is","are","was","were","been","being"]);
+    const isBe = (w: string) => beSet.has(w);
+    const hasVerb = (side: typeof tokens): boolean => {
+      // Treat copular 'be' as verb-like
+      if (side.some(t => isBe(t.text))) return true;
+      for (let i=0;i<side.length;i++){
+        const w = side[i].text;
+        if (w==='?' || PREP[w]) continue;
+        const two = side[i+1]?.text ? `${w} ${side[i+1].text}` : '';
+        if (two){ const p = findVerbByPhrase(vs, two); if (p) return true; }
+        const det = findVerbByTokenDetailed(vs, w, true).verb; if (det) return true;
+      }
+      return false;
+    };
     const splitPoints: Array<{ idx:number; type:'AND'|'OR'|'NOR'|'BUT' }> = [];
-    for (let i=0;i<words.length;i++){
-      const w = words[i];
-      if (w==='and') splitPoints.push({ idx:i, type:'AND' });
-      else if (w==='or') splitPoints.push({ idx:i, type:'OR' });
-      else if (w==='nor') splitPoints.push({ idx:i, type:'NOR' });
-      else if (w==='but') splitPoints.push({ idx:i, type:'BUT' });
+    for (let i=0;i<tokens.length;i++){
+      const w = tokens[i].text;
+      if (w==='and' || w==='or' || w==='nor' || w==='but'){
+        const left = tokens.slice(0,i);
+        const right = tokens.slice(i+1);
+        if (hasVerb(left) && hasVerb(right)){
+          splitPoints.push({ idx:i, type: w==='and'?'AND': w==='or'?'OR': w==='nor'?'NOR':'BUT' });
+        }
+      }
     }
     if (splitPoints.length){
       const spans: Array<{ start:number; end:number; type?: 'AND'|'OR'|'NOR'|'BUT' }> = [];
