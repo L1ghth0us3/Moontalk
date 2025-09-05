@@ -14,10 +14,17 @@
 - Lib: `lib/morphology.ts`, `lib/lex.ts`, `lib/translator2/*`, `lib/storage.ts`, `types.ts`, `data/*`.
 
 ## Build, Test, and Development Commands
-- `npm run dev`: Start Vite dev server with HMR.
-- `npm run build`: Type-check (`tsc -b`) then production build via Vite.
+- `npm run codex` (primary): Run the Codex workflow helper (build → lint → test → status), compose commit message from cached intent, and optionally push. Use flags after `--`.
+  - Examples:
+    - Validate + cache intent: `npm run codex -- -m "feat: <intent>"`
+    - Rerun after fixes: `npm run codex`
+    - Amend after green: `npm run codex -- --amend`
+    - Rebind staged tree if scope changed: `npm run codex -- --rebind`
+    - Clear cache: `npm run codex -- --clear`
+    - Push after commit: `npm run codex -- --push`
+- `npm run dev`: Start Vite dev server with HMR (for live development). Still commit via the helper.
+- `npm run build` / `npm run lint` / `npm run test`: Allowed for local debugging, but do not use these to create commits. Always commit through `npm run codex`.
 - `npm run preview`: Preview the production build locally.
-- `npm run lint`: Run ESLint on the project.
 
 ## Coding Style & Naming Conventions
 - Language: TypeScript (strict). React function components.
@@ -65,11 +72,12 @@ Instruction
 ## Agent Ruleset
 - Plan first: outline steps with the plan tool and keep it updated.
 - Small, focused changes: keep diffs tight and reversible.
-- Run the gate: prefer `npm run codex` to build, lint, test before committing.
+- Gate + commit via helper: always use `npm run codex` as the primary tool for validation and commits.
 - Branch discipline: work on `*-dev` branches; avoid committing on `main` unless explicitly allowed.
-- Commit intent: pass `-m "<type(scope): message>"` to cache intent; commit only after a green gate.
-- Use WIP mode when failing: add `--wip` to checkpoint progress while fixing gate failures.
-- Finalize WIPs: once green, run `--finalize` to squash consecutive WIPs into the cached intent.
+- Commit intent: pass `-m "<type(scope): message>"` to cache intent; the helper will commit only after a green gate.
+- On non‑zero exit: do NOT create ad‑hoc commits. Fix issues, restage intentionally, and rerun `npm run codex` without changing the original `-m`.
+- Amend sparingly: use `--amend` only to add small clarifications to the same change set after everything is green.
+- Staged tree guard: if warned about staged tree mismatch, either restage to match the original scope or pass `--rebind` if the scope legitimately changed.
 - No secrets: never add secrets or unvetted env files; prefer `import.meta.env` if needed.
 
 ### Branching and Reverts
@@ -78,12 +86,13 @@ Instruction
 - Keep commits small; revert bad changes with `git revert <sha>` and reattempt cleanly.
 
 ## Agent Workflow (Codex Helper)
-- Validate only: `npm run codex`
-- Validate and cache intent: `npm run codex -- -m "feat(ui): tweak list rows"`
-- WIP while fixing failures: `npm run codex -- -m "feat: add X" --wip`
-- Finalize WIPs into intent: `npm run codex -- --finalize`
-- Commit and push after green gate: `npm run codex -- -m "fix: correct copula detection" --push`
-- On main (discouraged): `npm run codex -- --allow-main -m "hotfix: …" --push`
+- Stage intentionally: add specific paths or use `git add -p`.
+- Start a task (cache intent): `npm run codex -- -m "feat: <intent>"`
+- Iterate: on failure, the helper appends a concise secondary note. Fix, restage, rerun `npm run codex` (do not change `-m`).
+- Commit: when green, the helper composes the message (main + optional “Secondary changes”) and commits. Use `--push` to push.
+- Amend: if you need to append a small tweak after green, run `npm run codex -- --amend`.
+- Scope changed? If warned about staged tree mismatch, either restage to the original scope or run `npm run codex -- --rebind`.
+- On main (discouraged): `npm run codex -- --allow-main -m "hotfix: …" --push`.
 
 Notes
 - Intent is stored at `.git/.codex_intent.json` and cleared after a successful commit.
