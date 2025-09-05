@@ -43,3 +43,4 @@ Moontalk is a small, client‑only web app for composing role‑play friendly se
 - Enabled by config: `git config core.hooksPath .githooks` (already set in this repo). Run the same after fresh clones.
 - Temporarily disable: set `NO_AUTO_PUSH=1` for that commit, e.g. `NO_AUTO_PUSH=1 git commit -m "wip"`.
 - Permanently disable: `git config --unset core.hooksPath` (or remove/rename `.githooks`).
+// temp

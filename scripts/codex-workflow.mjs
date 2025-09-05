@@ -76,7 +76,7 @@ function printSection(title){
 const sym = { ok: '✅', fail: '❌', info: 'ℹ️', warn: '⚠️' };
 
 function parseArgs(argv){
-  const args = { commitMsg: null, push: false, allowMain: false, wip: false, finalize: false, verbose: false, dryRun: false };
+  const args = { commitMsg: null, push: false, allowMain: false, wip: false, finalize: false, verbose: false, dryRun: false, order: null };
   for (let i=2;i<argv.length;i++){
     const a = argv[i];
     if (a === '--help' || a === '-h'){ args.help = true; }
@@ -86,6 +86,7 @@ function parseArgs(argv){
     else if (a === '--finalize'){ args.finalize = true; }
     else if (a === '--verbose'){ args.verbose = true; }
     else if (a === '--dry-run'){ args.dryRun = true; }
+    else if (a === '--order'){ args.order = (argv[++i]||'').split(',').map(s=>s.trim()).filter(Boolean); }
     else if (a === '--commit'){ args.commitMsg = argv[++i] || ''; }
     else if (a === '-m'){ args.commitMsg = argv[++i] || ''; }
     else { (args._ ||= []).push(a); }
@@ -167,62 +168,30 @@ async function main(){
     process.exit(3);
   }
 
-  // If an explicit commit message was provided, cache intent early
-  if (args.commitMsg != null){
-    try {
-      if (!existsSync('.git')) mkdirSync('.git', { recursive: true });
-      writeFileSync(INTENT_PATH, String(args.commitMsg), 'utf8');
-    } catch {}
-  }
-
-  // 1) Build
-  printSection('STEP 1: Build (npm run build)');
-  const build = run('npm',['run','build'], {}, 'npm run build');
-  process.stdout.write(build.out);
-  if (build.code !== 0){
-    console.error(`\n${sym.fail} Build failed with exit ${build.code}. Fix errors above and rerun.`);
-    if (args.wip){
-      // Create a WIP commit capturing current work-in-progress
-      const base = getIntentMain() || 'progress';
-      const msg = `WIP: ${base}`;
-      doWipCommit(msg, args.push);
+  // Pipeline (default build -> lint -> test); configurable via --order build,lint,test
+  const order = Array.isArray(args.order) && args.order.length ? args.order : ['build','lint','test'];
+  for (const step of order){
+    if (step === 'build'){
+      printSection('STEP: Build (npm run build)');
+      const res = run('npm',['run','build'], {}, 'npm run build');
+      process.stdout.write(res.out);
+      if (res.code !== 0){ appendSecondaryNote(summarizeBuild(res.out)); console.error(`\n${sym.fail} Build failed with exit ${res.code}.`); process.exit(res.code || 1); }
+      console.log(`\n${sym.ok} Build succeeded.`);
+    } else if (step === 'lint'){
+      printSection('STEP: Lint (npm run lint)');
+      const res = run('npm',['run','lint'], {}, 'npm run lint');
+      process.stdout.write(res.out);
+      if (res.code !== 0){ appendSecondaryNote(summarizeLint(res.out)); console.error(`\n${sym.fail} Lint failed with exit ${res.code}.`); process.exit(res.code || 1); }
+      const summaryLine = (res.out.split(/\r?\n/).reverse().find(l=>/problems \(\d+ errors?, \d+ warnings?\)/.test(l))||'').trim(); if (summaryLine) console.log(`\n${sym.info} ESLint summary: ${summaryLine}`);
+      console.log(`\n${sym.ok} Lint completed.`);
+    } else if (step === 'test'){
+      printSection('STEP: Tests (npm run test)');
+      const res = run('npm',['run','test'], {}, 'npm run test');
+      process.stdout.write(res.out);
+      if (res.code !== 0){ appendSecondaryNote(summarizeTest(res.out)); console.error(`\n${sym.fail} Tests failed with exit ${res.code}.`); process.exit(res.code || 1); }
+      console.log(`\n${sym.ok} Tests passed.`);
     }
-    process.exit(build.code);
   }
-  console.log(`\n${sym.ok} Build succeeded.`);
-
-  // 2) Lint
-  printSection('STEP 2: Lint (npm run lint)');
-  const lint = run('npm',['run','lint'], {}, 'npm run lint');
-  process.stdout.write(lint.out);
-  if (lint.code !== 0){
-    console.error(`\n${sym.fail} Lint failed with exit ${lint.code}. Fix errors above and rerun.`);
-    if (args.wip){
-      const baseLint = getIntentMain() || 'progress';
-      const msg = `WIP: ${baseLint} (lint)`;
-      doWipCommit(msg, args.push);
-    }
-    process.exit(lint.code);
-  }
-  // Extract summary if present
-  const summaryLine = (lint.out.split(/\r?\n/).reverse().find(l=>/problems \(\d+ errors?, \d+ warnings?\)/.test(l))||'').trim();
-  if (summaryLine) console.log(`\n${sym.info} ESLint summary: ${summaryLine}`);
-  console.log(`\n${sym.ok} Lint completed.`);
-
-  // 3) Tests
-  printSection('STEP 3: Tests (npm run test)');
-  const tests = run('npm',['run','test'], {}, 'npm run test');
-  process.stdout.write(tests.out);
-  if (tests.code !== 0){
-    console.error(`\n${sym.fail} Tests failed with exit ${tests.code}. Fix errors above and rerun.`);
-    if (args.wip){
-      const baseTests = getIntentMain() || 'progress';
-      const msg = `WIP: ${baseTests} (tests)`;
-      doWipCommit(msg, args.push);
-    }
-    process.exit(tests.code);
-  }
-  console.log(`\n${sym.ok} Tests passed.`);
 
   // 3) Status + diffstat
   printSection('STEP 4: Git Status');
@@ -315,3 +284,30 @@ function finalizeWip(finalMessage, doPush, branch){
 }
 
 main().catch(err=>{ console.error(err); process.exit(1); });
+
+// ===== Failure note helpers =====
+function appendSecondaryNote(note){
+  try {
+    const j = loadIntentJSON();
+    if (!j) return; // no cache → nothing to append
+    if (!Array.isArray(j.secondary)) j.secondary = [];
+    j.secondary.push(String(note));
+    writeFileSync('.git/.codex_intent.json', JSON.stringify(j, null, 2), 'utf8');
+    if (VERBOSE) console.log(`${sym.info} Appended note to intent: ${note}`);
+  } catch {}
+}
+function summarizeBuild(out){
+  const codes = Array.from(new Set((out.match(/TS\d{3,5}/g)||[]))).slice(0,3);
+  return codes.length ? `build: resolve type errors (${codes.join(', ')})` : 'build: fix build errors';
+}
+function summarizeLint(out){
+  const line = (out.split(/\r?\n/).find(l=>/\berror\b/.test(l) && /\s[a-z0-9-]+$/.test(l))||'').trim();
+  const m = line.match(/([a-z0-9-]+)$/);
+  const rule = m ? m[1] : null;
+  return rule ? `lint: address ESLint violations (${rule})` : 'lint: address ESLint violations';
+}
+function summarizeTest(out){
+  const m = out.match(/Tests\s+(\d+)\s+failed/i);
+  const n = m ? Number(m[1]) : null;
+  return n ? `test: fix failing tests (${n} failed)` : 'test: fix failing tests';
+}
