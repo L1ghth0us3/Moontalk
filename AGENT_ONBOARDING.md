@@ -7,9 +7,9 @@ This onboarding is now streamlined. The canonical rules and workflow live in `AG
 - Cache intent and validate: `npm run codex -- -m "type(scope): concise intent"`
 - If the gate fails: fix the code, stage the fixes, and rerun `npm run codex` (do not supply a new `-m`). Use `--rebind` only if prompted that staged content changed and the scope is still the same feature.
 - Do not use `--amend` during fix iterations. After everything is green, you may use `--amend` for a tiny clarification.
-- After success: optionally push with `npm run codex -- --push`. Never run `git pull --rebase` unless a push was rejected as non‑fast‑forward.
- - After success: push with `npm run codex -- --push` (independent step; sets upstream if missing). Avoid `git pull --rebase` unless a push is rejected as non‑fast‑forward.
+- After success: push with `npm run codex -- --push` (independent step; sets upstream if missing). Avoid `git pull --rebase` unless a push is rejected as non‑fast‑forward.
 - Dev server: `npm run dev` · Build: `npm run build` · Lint: `npm run lint`
+- Playbook: `npm run codex -- --help` (usage, exit codes with next steps, intent cache)
 
 ## Quick Orientation (15 min)
 1) Skim `src/MoontalkApp.tsx` for shell, modals, and theme handling.

@@ -18,14 +18,15 @@ All notable changes to this project will be documented in this file.
   - Tests: added multiple‑AND and OR coordination cases; suite now at 25 green tests.
 - Defaults: added verb root for “live; dwell” (f–th–h) to resolve “live” from built-ins.
  - Workflow helper: codex-workflow overhaul for agents and humans
-   - Intent cache: repo‑local JSON at `.git/.codex_intent.json` with `{ main, secondary[], createdAT, branch, stagedTree, amend }`.
+   - Intent cache: repo‑local JSON at `.git/.codex_intent.json` with `{ main, secondary[], createdAT, branch, stagedTree, paths[] }`.
    - Gate: runs build → lint → test; order configurable via `--order build,lint,test`.
-   - Failure notes: on first failure, appends a concise secondary note (TS codes / eslint counts / test failed count). Notes are deduplicated across runs.
-   - Exit codes: distinct codes for clear automation (e.g., no staged, check fail, staged‑tree mismatch, push rejected).
-   - Commit safety: staged‑only commits; early exit with guidance when nothing staged; staged‑tree guard with `--rebind` escape hatch.
-   - Message composition: commits use cached main plus optional “Secondary changes:” bullet list from cache; supports `--amend`.
-   - Ergonomics: `--verbose` logging, `--dry-run`, `--clear`, `--rebind`, and guidance “NEXT:” line printed at end of each run.
-   - Docs: header and `--help` expanded with purpose, examples, contract; AGENTS.md updated with required usage and guardrails.
+   - Exit codes: distinct codes with one‑line next steps (0 OK, 10 E_NO_STAGED, 11 E_CHECK_FAIL, 12 E_TREE_MISMATCH, 13 E_PUSH_REJECTED, 2 E_MAIN_PROTECTED).
+   - Commit safety: staged‑only commits; single‑line guidance for every failure; smarter staged‑tree guard (auto‑rebind when safe: same branch, intent < 4h, staged paths subset/superset; otherwise show new/removed paths and require `--rebind`).
+   - Push: decoupled from commit; independent `--push` (sets upstream if missing). On non‑fast‑forward, exits E_PUSH_REJECTED with fetch/rebase guidance.
+   - Amend: guarded — only honored on a green commit; ignored during failing runs with a gentle notice.
+   - Message composition: tidy “Secondary changes” footer — at most one bullet per category (build, lint, test, meta), ordered and deduped; omitted entirely if empty.
+   - Ergonomics: `--verbose`, `--dry-run`, `--clear`, `--rebind`; expanded `--help` (copy‑paste playbook, exit codes, intent cache) and a 20‑second header briefing.
+   - Cleanups: removed legacy `--wip`/`--finalize` flow; docs updated across README, AGENTS.md, onboarding.
 
 ## [1.5.0] - 2025-09-04
 - Workflow: introduce Codex helper (`npm run codex`) and `.githooks/post-commit` auto‑push. Gate = build + lint + status, with optional commit/push.

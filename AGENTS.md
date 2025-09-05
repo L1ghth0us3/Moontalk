@@ -92,6 +92,7 @@ Instruction
 - Rebind only when prompted: if the script says staged content changed but the scope is still the same feature, rerun with `--rebind`.
 - No amend during fix iterations: do not use `--amend` while addressing failures. Use `--amend` only after everything is green to add a tiny clarification.
 - After success: push with `npm run codex -- --push` (independent step; sets upstream if missing). Avoid `git pull --rebase` unless a push is rejected as non‑fast‑forward.
+- Learn-by-example: run `npm run codex -- --help` for a copy‑paste playbook (usage, exit codes with next steps, and intent cache details).
 - Rebase rule: never run `git pull --rebase` unless a push was rejected as non‑fast‑forward.
 
 Notes
@@ -108,7 +109,7 @@ Notes
 - Start a task by caching intent with a clear Conventional Commit message:
   - `node scripts/codex-workflow.mjs -m "feat: <intent>"`
 - If the script exits non‑zero, do NOT create ad‑hoc commits. Fix issues, restage, and rerun the helper without changing the original message (`-m`).
-- Use `--amend` only after everything is green if you need to add small clarifications to the same change set.
+- Use `--amend` only after everything is green if you need to add small clarifications to the same change set; it is ignored (with a gentle notice) during failing runs.
 - If warned about a staged tree mismatch, either restage to match the original scope or explicitly pass `--rebind` if the scope legitimately changed.
 
 ## Translator 2.0 Tips
