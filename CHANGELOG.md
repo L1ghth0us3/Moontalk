@@ -26,7 +26,7 @@ All notable changes to this project will be documented in this file.
    - Amend: guarded — only honored on a green commit; ignored during failing runs with a gentle notice.
    - Message composition: tidy “Secondary changes” footer — at most one bullet per category (build, lint, test, meta), ordered and deduped; omitted entirely if empty.
    - Ergonomics: `--verbose`, `--dry-run`, `--clear`, `--rebind`; expanded `--help` (copy‑paste playbook, exit codes, intent cache) and a 20‑second header briefing.
-   - Cleanups: removed legacy `--wip`/`--finalize` flow; docs updated across README, AGENTS.md, onboarding.
+   - Cleanups: removed legacy `--wip`/`--finalize` flow; docs updated across README and AGENTS.md; merged onboarding into AGENTS.md (Onboarding & Guidance section).
 
 ## [1.5.0] - 2025-09-04
 - Workflow: introduce Codex helper (`npm run codex`) and `.githooks/post-commit` auto‑push. Gate = build + lint + status, with optional commit/push.

@@ -1,5 +1,26 @@
 # Repository Guidelines
 
+## Onboarding & Guidance
+- Quick Runbook:
+  - Validate: `npm run codex`
+  - Cache intent: `npm run codex -- -m "type(scope): concise intent"`
+  - On failure: fix → stage → rerun (no new `-m`)
+  - Rebind only when prompted (same scope): `npm run codex -- --rebind`
+  - Amend only after green (tiny polish): `npm run codex -- --amend`
+  - Push as a separate step: `npm run codex -- --push` (sets upstream if missing)
+  - Playbook: `npm run codex -- --help` (usage, exit codes with next steps, intent cache)
+- Quick Orientation (15 min):
+  1) Skim `src/MoontalkApp.tsx` for shell, modals, and theme handling.
+  2) Read `src/components/TalkPad.tsx` for sentence composition and toggles.
+  3) Read `src/components/FreeTranslator.tsx` for copula/existential/locative/possession flows.
+  4) Review `src/lib/morphology.ts` and `src/lib/translator2/*` for core logic.
+  5) Open `src/components/editors/*` for Roots/Nouns persistence and filtering.
+  6) Review `src/index.css` for theme classes used by the shell.
+  7) Read `src/pages/WhatIsThis.tsx` for the player-facing guide.
+- Where to find details:
+  - Rules, workflow, and tips: this file (Agent Ruleset, Codex Helper, Translator 2.0 Tips).
+  - Hooks and auto-push: `.githooks/post-commit` (respects `NO_AUTO_PUSH=1`).
+
 ## Project Structure & Module Organization
 - Source: `src/` (entry `src/main.tsx`, app shell `src/App.tsx`).
 - UI: `src/MoontalkApp.tsx` (core logic + subcomponents), styles in `src/index.css` (Tailwind v4 via `@tailwindcss/vite`).
