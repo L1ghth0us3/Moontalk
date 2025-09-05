@@ -354,9 +354,19 @@ function getIntentMain(){ const j = loadIntentJSON(); return j && typeof j.main=
 function composeCommitMessage(j){
   const lines = [String(j.main||'').trim()];
   const notes = Array.isArray(j.secondary) ? j.secondary.filter(s=>String(s).trim()) : [];
-  if (notes.length){
+  // Coalesce to at most one per category with priority: build -> lint -> test -> meta
+  const order = ['build','lint','test','meta'];
+  const pick = new Map();
+  for (let i=notes.length-1;i>=0;i--){
+    const n = String(notes[i]);
+    const cat = categorizeNote(n);
+    if (order.includes(cat) && !pick.has(cat)) pick.set(cat, formatNote(cat, n));
+  }
+  const finalNotes = [];
+  for (const cat of order){ if (pick.has(cat)) finalNotes.push(pick.get(cat)); }
+  if (finalNotes.length){
     lines.push('', 'Secondary changes:');
-    for (const n of notes){ lines.push(`- ${n}`); }
+    for (const n of finalNotes){ lines.push(`- ${n}`); }
   }
   return lines.join('\n');
 }
@@ -413,10 +423,8 @@ function appendSecondaryNote(note){
 }
 function summarizeBuild(out, exitCode){
   const codes = Array.from(new Set((out.match(/TS\d{3,5}/g)||[]))).slice(0,3);
-  const parts = [];
-  if (codes.length) parts.push(codes.join(', '));
-  if (typeof exitCode === 'number') parts.push(`exit ${exitCode}`);
-  return parts.length ? `build: errors (${parts.join('; ')})` : 'build: errors';
+  if (codes.length) return `build: resolve ${codes[0]}`;
+  return 'build: resolve errors';
 }
 function summarizeLint(out){
   const summary = out.match(/problems\s*\((\d+)\s*errors?,\s*(\d+)\s*warnings?\)/i);
@@ -427,13 +435,25 @@ function summarizeLint(out){
   const firstRuleLine = (out.split(/\r?\n/).find(l=>/\berror\b/.test(l) && /\s[a-z0-9-]+$/.test(l))||'').trim();
   const m = firstRuleLine.match(/([a-z0-9-]+)$/);
   const rule = m ? m[1] : null;
-  const bits = [];
-  if (err!=null || warn!=null){ bits.push(`${err??0}e/${warn??0}w`); }
-  if (rule) bits.push(rule);
-  return bits.length ? `lint: ${bits.join(' ')}` : 'lint: errors';
+  if (rule) return `lint: fix ${rule}`;
+  return err!=null ? 'lint: fix lint errors' : 'lint: address warnings';
 }
 function summarizeTest(out){
   const m = out.match(/Tests\s+(\d+)\s+failed/i);
   const n = m ? Number(m[1]) : null;
-  return n ? `test: ${n} failed` : 'test: failures';
+  return n ? `test: ${n} failing tests` : 'test: failing tests';
+}
+
+function categorizeNote(note){
+  const s = String(note).toLowerCase();
+  if (s.startsWith('build:')) return 'build';
+  if (s.startsWith('lint:')) return 'lint';
+  if (s.startsWith('test:')) return 'test';
+  if (s.startsWith('meta:')) return 'meta';
+  return 'meta';
+}
+function formatNote(cat, note){
+  const s = String(note).trim();
+  // Already prefixed consistently; return as-is
+  return s;
 }
