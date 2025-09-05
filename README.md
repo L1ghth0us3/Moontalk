@@ -23,6 +23,15 @@ Moontalk is a small, client‑only web app for composing role‑play friendly se
 - Build: `npm run build`
 - Preview prod: `npm run preview`
 - Lint: `npm run lint`
+- Gate (build+lint+tests): `npm run codex`
+
+## Workflow Helper (codex)
+- First run (stage, then set intent): `npm run codex -- -m "feat(scope): concise intent"`
+- Fix iteration (no new message): `npm run codex`
+- Rebind only when prompted (same scope): `npm run codex -- --rebind`
+- Amend only after green (tiny polish): `npm run codex -- --amend`
+- Push as a separate step: `npm run codex -- --push` (sets upstream if missing)
+- More details: `npm run codex -- --help` (usage, exit codes, intent cache)
 
 ## Version Overview
 - 1.6‑dev (current): expanded Dev test runner (grouped scenarios), ongoing test coverage; lazy‑loaded Dev runner; general hardening.
@@ -38,7 +47,7 @@ Moontalk is a small, client‑only web app for composing role‑play friendly se
 - Exports are plain JSON; when schema changes, the app attempts a minimal migration or provides a safe reset.
 
 ## Auto‑Push Hook
-- Every commit auto‑pushes the current branch (and any tags on that commit) via a `post-commit` hook in `.githooks/`.
+- This repo includes a `post-commit` hook in `.githooks/` that auto‑pushes your branch (and any tags on that commit). The helper also supports a manual `--push` step; use it when you prefer explicit control.
 - Enabled by config: `git config core.hooksPath .githooks` (already set in this repo). Run the same after fresh clones.
 - Temporarily disable: set `NO_AUTO_PUSH=1` for that commit, e.g. `NO_AUTO_PUSH=1 git commit -m "wip"`.
 - Permanently disable: `git config --unset core.hooksPath` (or remove/rename `.githooks`).

@@ -14,6 +14,7 @@ const R0 = [
   { c1: "q", c2: "r", c3: "b", gloss: "draw near; approach", synonyms: ["approach", "near", "come"] },
   { c1: "t", c2: "r", c3: "f", gloss: "hear; detect", synonyms: ["hear", "detect", "listen"] },
   { c1: "k", c2: "r", c3: "n", gloss: "be; exist", synonyms: ["be", "exist", "copula"] },
+  { c1: "f", c2: "th", c3: "h", gloss: "live; dwell", synonyms: ["live", "dwell", "reside"] },
 ] as const;
 const mergeRoots = [...SEED_ROOTS, ...R0];
 const seenR = new Set<string>();
