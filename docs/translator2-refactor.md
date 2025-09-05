@@ -23,7 +23,9 @@ Split `src/lib/translator2.ts` into smaller modules under `src/lib/translator2/`
 ## Phase 3 — Features & Cleanup
 - Coordination
   - [x] Support multiple joiners (and/or/nor/but), keep per‑clause settings; joiners configurable via options
-  - [ ] Improve NP/VP list detection and join using options mappings (either/neither, not only … but)
+  - [x] Improve NP/VP list detection and join using options mappings (either/neither, not only … but)
+    - Implemented in lib: NP lists for direct objects and PP complements; VP/Clause lists via coordinator splitting with subject elision; all joiners mapped via `opts.coordinators`.
+    - Note: clause splitting currently uses a simple coordinator scan; it works for tested inputs. Future hardening could restrict splits to positions where both sides contain a verb-like token.
 - Existential expletive (optional)
   - Proper parse + generator; add tests and re‑enable in Dev modal
 - Analysis
