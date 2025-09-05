@@ -152,7 +152,14 @@ export function translate(input: string, roots: Root[], nouns: Noun[], opts?: T2
   if(frame.question) parts.push('qa?');
 
   let surface = parts.join(' ').trim();
-  const analysis = { frame, intake: { input, tokens, tokensFlat: tokens.map(t=>t.text) }, clause, resolutionLog: built.resolutionLog, particlePairs: analysisPairs };
+  const resLogExtended = [...built.resolutionLog];
+  if (analysisPairs.length){
+    for (const p of analysisPairs){
+      const nounW = ns.find(n=>n.id===p.nounId)?.word || p.noun || p.nounId;
+      resLogExtended.push(`particle '${p.en}' -> '${p.part}' with noun '${nounW}'`);
+    }
+  }
+  const analysis = { frame, intake: { input, tokens, tokensFlat: tokens.map(t=>t.text) }, clause, resolutionLog: resLogExtended, particlePairs: analysisPairs };
   const warnings: string[] = [];
   if(!frame.verbRootId) warnings.push('Unknown verb');
 

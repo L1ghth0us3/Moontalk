@@ -1,7 +1,7 @@
 import type { Root, Noun } from "../../types";
 import type { T2SemanticFrame } from "./types";
 import { tokenize } from "./tokens";
-import { findVerbByPhrase, findVerbByToken, findNounByTokens, type LexVerb, type LexNoun } from "./match";
+import { findVerbByPhrase, findVerbByTokenDetailed, findNounByTokensDetailed, type LexVerb, type LexNoun } from "./match";
 
 export function buildFrameFromTokens(input: string, roots: Root[], nouns: Noun[], PREP: Record<string,string>){
   const tokens = tokenize(input||'');
@@ -36,9 +36,9 @@ export function buildFrameFromTokens(input: string, roots: Root[], nouns: Noun[]
   for(let i=0;i<tokens.length;i++){
     const w=tokens[i].text; if(w==='?'||PRON.has(w)||SPECIAL.has(w)||PREP[w]||isBe(w)) continue;
     const two = tokens[i+1]?.text ? `${w} ${tokens[i+1].text}` : '';
-    if(two){ const exact = findVerbByPhrase(verbsLex, two); if(exact){ verb=exact; resLog.push(`verb '${two}' → via phrase-exact`); break; } }
-    const hit = findVerbByToken(verbsLex, w, true);
-    if(hit){ verb=hit; resLog.push(`verb '${w}' → via token-match`); break; }
+    if(two){ const exact = findVerbByPhrase(verbsLex, two); if(exact){ verb=exact; resLog.push(`verb:phrase '${two}' -> '${exact.c1}${exact.c2}${exact.c3}' via phrase-exact`); break; } }
+    const det = findVerbByTokenDetailed(verbsLex, w, true);
+    if(det.verb){ verb=det.verb; const via = det.via || 'token'; resLog.push(`verb:token '${w}' -> '${det.verb.c1}${det.verb.c2}${det.verb.c3}' via ${via}`); break; }
   }
 
   // objects (skip nouns governed by preps; avoid reusing verb span)
@@ -48,7 +48,7 @@ export function buildFrameFromTokens(input: string, roots: Root[], nouns: Noun[]
       const w=tokens[i].text; if(w==='?'||PRON.has(w)||SPECIAL.has(w)||PREP[w]||isBe(w)) continue;
       const two = tokens[i+1]?.text ? `${w} ${tokens[i+1].text}` : '';
       if (two){ const exact = findVerbByPhrase(verbsLex, two); if (exact && exact.id===verb.id){ matchedVerbStart=i; matchedVerbSpan=2; break; } }
-      const hit = findVerbByToken(verbsLex, w, true);
+      const hit = findVerbByTokenDetailed(verbsLex, w, true).verb;
       if (hit && hit.id===verb.id){ matchedVerbStart=i; matchedVerbSpan=1; break; }
     }
   }
@@ -56,8 +56,15 @@ export function buildFrameFromTokens(input: string, roots: Root[], nouns: Noun[]
     const w=tokens[i].text; if(w==='?'||PRON.has(w)||SPECIAL.has(w)||PREP[w]||isBe(w)) continue;
     if (matchedVerbStart >= 0 && i >= matchedVerbStart && i < matchedVerbStart + matchedVerbSpan) continue;
     const prev=i>0?tokens[i-1].text:''; if(prev && PREP[prev]) continue;
-    const mn = findNounByTokens(nounsLex, w, tokens[i+1]?.text);
-    if (mn.noun){ frame.objects.push(mn.noun.id); if (mn.span===2) i++; }
+    const mn = findNounByTokensDetailed(nounsLex, w, tokens[i+1]?.text);
+    if (mn.noun){
+      frame.objects.push(mn.noun.id);
+      const via = mn.via || 'word-exact';
+      const surface = mn.noun.word;
+      const src = (mn.span===2 && tokens[i+1]) ? `${w} ${tokens[i+1].text}` : w;
+      resLog.push(`noun:${mn.span===2?'phrase':'token'} '${src}' -> '${surface}' via ${via}`);
+      if (mn.span===2) i++;
+    }
   }
 
   const clause: 'copular'|'existential'|'transitive' = words[0]==='there' ? 'existential' : (!verb && frame.objects.length>0 ? 'copular' : 'transitive');

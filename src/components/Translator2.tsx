@@ -1111,7 +1111,10 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
           if (!frm) return null;
           const subjHS = hsSubjectFor(frm.subject);
           const objects = frm.objects.map(id => wordOfNounId(id)).join(', ') || '—';
-          const particles = pairParticlesWithNounsFromTokens(intakeTokens).map(p => `${p.part} ${wordOfNounId(p.nounId)}`).join(' • ') || '—';
+          const libPairs = ((result?.analysis as unknown as { particlePairs?: Array<{ part:string; nounId:string; noun?:string; en:string }> })?.particlePairs) || [];
+          const fallbackPairs = pairParticlesWithNounsFromTokens(intakeTokens).map(p => ({ ...p, noun: wordOfNounId(p.nounId) }));
+          const particlePairs = (libPairs.length ? libPairs : fallbackPairs) as Array<{ part:string; nounId:string; noun?:string; en:string }>;
+          const particles = particlePairs.map(p => `${p.part} ${p.noun || wordOfNounId(p.nounId)}`).join(' • ') || '—';
           const coord = detectCoordination(intakeTokens);
           const clauseCoord = detectClauseCoordination(intakeTokens);
           const verbsAll = detectAllVerbs(intakeTokens);
@@ -1196,14 +1199,15 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
                   [P_MAP.FROM]: { en: EN_LABEL.FROM, triggers: ['from'] },
                   [P_MAP.IN_AT]: { en: EN_LABEL.IN_AT, triggers: ['in','at'] },
                 } as Record<string, { en: string; triggers: string[] }>;
-                const pairs = pairParticlesWithNounsFromTokens(intakeTokens);
+                const libPairs = ((result?.analysis as unknown as { particlePairs?: Array<{ part:string; nounId:string; noun?:string; en:string }> })?.particlePairs) || [];
+                const pairs = (libPairs.length ? libPairs : pairParticlesWithNounsFromTokens(intakeTokens).map(p=>({ ...p, noun: wordOfNounId(p.nounId) }))) as Array<{ part:string; nounId:string; noun?:string; en:string }>;
                 if (!pairs.length) return null;
                 // group by particle code
                 const map = new Map<string, { triggers: Set<string>; nouns: Set<string> }>();
                 for (const p of pairs){
                   const ent = map.get(p.part) || { triggers: new Set(), nouns: new Set() };
                   ent.triggers.add(p.en);
-                  ent.nouns.add(wordOfNounId(p.nounId));
+                  ent.nouns.add(p.noun || wordOfNounId(p.nounId));
                   map.set(p.part, ent);
                 }
                 const items = Array.from(map.entries());

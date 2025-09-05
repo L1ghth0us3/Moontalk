@@ -30,7 +30,7 @@ Split `src/lib/translator2.ts` into smaller modules under `src/lib/translator2/`
   - Proper parse + generator; add tests and re‑enable in Dev modal
 - Analysis
   - [x] Include particle→noun pairs in `analysis.particlePairs`
-  - [ ] Standardize `resolutionLog` messages
+  - [x] Standardize `resolutionLog` messages (verb/noun match paths, particle mapping)
 - Cleanup
   - Remove duplicate matching/generation helpers from the component (UI stays thin)
 

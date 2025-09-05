@@ -23,6 +23,23 @@ export function findVerbByToken(verbs: LexVerb[], token: string, allowFuzzy = tr
   return null;
 }
 
+export type MatchVia = 'synonym-exact'|'gloss-exact'|'word-exact'|'synonym-fuzzy'|'gloss-fuzzy'|'word-fuzzy'|'phrase-exact';
+
+export function findVerbByTokenDetailed(verbs: LexVerb[], token: string, allowFuzzy = true): { verb: LexVerb | null; via?: MatchVia }{
+  const base = norm(stemVerb(token));
+  let hit = verbs.find(v=> v.synonyms.map(norm).includes(base) );
+  if (hit) return { verb: hit, via: 'synonym-exact' };
+  hit = verbs.find(v=> splitItems(v.gloss).includes(base) );
+  if (hit) return { verb: hit, via: 'gloss-exact' };
+  if (allowFuzzy && base.length >= 5){
+    hit = verbs.find(v=> v.synonyms.map(norm).some(s=>edit1(base,s)) );
+    if (hit) return { verb: hit, via: 'synonym-fuzzy' };
+    hit = verbs.find(v=> splitItems(v.gloss).some(s=>edit1(base,s)) );
+    if (hit) return { verb: hit, via: 'gloss-fuzzy' };
+  }
+  return { verb: null };
+}
+
 export function findNounByTokens(nouns: LexNoun[], w1: string, w2?: string | undefined): { noun: LexNoun | null; span: 1|2 }{
   const b1 = norm(w1.endsWith('s')&&w1.length>3&&!w1.endsWith('ss')? w1.slice(0,-1): w1);
   const b2 = w2 ? `${b1} ${norm(w2.endsWith('s')&&w2.length>3&&!w2.endsWith('ss')? w2.slice(0,-1): w2)}` : undefined;
@@ -46,6 +63,40 @@ export function findNounByTokens(nouns: LexNoun[], w1: string, w2?: string | und
       || nouns.find(n=> (n.synonyms||[]).map(norm).some(s=>edit1(b1,s)))
       || nouns.find(n=> splitItems(n.gloss).some(s=>edit1(b1,s)));
     if (n1) return { noun: n1, span: 1 };
+  }
+  return { noun: null, span: 1 };
+}
+
+export function findNounByTokensDetailed(nouns: LexNoun[], w1: string, w2?: string | undefined): { noun: LexNoun | null; span: 1|2; via?: MatchVia }{
+  const b1 = norm(w1.endsWith('s')&&w1.length>3&&!w1.endsWith('ss')? w1.slice(0,-1): w1);
+  const b2 = w2 ? `${b1} ${norm(w2.endsWith('s')&&w2.length>3&&!w2.endsWith('ss')? w2.slice(0,-1): w2)}` : undefined;
+  if (b2){
+    let nPhrase = nouns.find(x=> (x.synonyms||[]).map(norm).includes(b2) );
+    if (nPhrase) return { noun: nPhrase, span: 2, via: 'synonym-exact' };
+    nPhrase = nouns.find(x=> splitItems(x.gloss).includes(b2) );
+    if (nPhrase) return { noun: nPhrase, span: 2, via: 'gloss-exact' };
+  }
+  let n0 = nouns.find(n=> norm(n.word)===b1 );
+  if (n0) return { noun: n0, span: 1, via: 'word-exact' };
+  n0 = nouns.find(n=> (n.synonyms||[]).map(norm).includes(b1) );
+  if (n0) return { noun: n0, span: 1, via: 'synonym-exact' };
+  n0 = nouns.find(n=> splitItems(n.gloss).includes(b1) );
+  if (n0) return { noun: n0, span: 1, via: 'gloss-exact' };
+  if (b1.length >= 5){
+    if (b2){
+      let n2 = nouns.find(n=> edit1(b2, norm(n.word)));
+      if (n2) return { noun: n2, span: 2, via: 'word-fuzzy' };
+      n2 = nouns.find(n=> (n.synonyms||[]).map(norm).some(s=>edit1(b2,s)));
+      if (n2) return { noun: n2, span: 2, via: 'synonym-fuzzy' };
+      n2 = nouns.find(n=> splitItems(n.gloss).some(s=>edit1(b2,s)));
+      if (n2) return { noun: n2, span: 2, via: 'gloss-fuzzy' };
+    }
+    let n1 = nouns.find(n=> edit1(b1, norm(n.word)));
+    if (n1) return { noun: n1, span: 1, via: 'word-fuzzy' };
+    n1 = nouns.find(n=> (n.synonyms||[]).map(norm).some(s=>edit1(b1,s)));
+    if (n1) return { noun: n1, span: 1, via: 'synonym-fuzzy' };
+    n1 = nouns.find(n=> splitItems(n.gloss).some(s=>edit1(b1,s)));
+    if (n1) return { noun: n1, span: 1, via: 'gloss-fuzzy' };
   }
   return { noun: null, span: 1 };
 }
