@@ -27,10 +27,11 @@ Split the translator into smaller modules under `src/lib/translator2/`:
   - [ ] Optional tightening: only split clauses on coordinators when both sides contain a verb (heuristic).
 - Analysis & Logging
   - [x] Include particle→noun pairs in `analysis.particlePairs`.
-  - [ ] Add `analysis.unknownTokens` computed from intake (skips PRON/SPECIAL/PREP/coordinators; excludes matched spans).
+  - [x] Add `analysis.unknownTokens` computed from intake (skips PRON/SPECIAL/PREP/coordinators; excludes matched spans).
   - [ ] Standardize `resolutionLog` messages and `via` tags for verbs/nouns/particles.
 - UI Cleanup
-  - [ ] Remove duplicate tokenizer/matcher/generator from `src/components/Translator2.tsx`; rely solely on library output.
+  - [x] Remove duplicate tokenizer/matcher/generator from `src/components/Translator2.tsx`; rely solely on library output.
+  - [x] Cosmetic only: wrap pronouns in parentheses at clause start/after joiners (UI display hint; library surface unchanged).
 - Deferred (out of scope for now)
   - Existential expletive (“there is/are …”): parser/generator/tests intentionally postponed.
 
