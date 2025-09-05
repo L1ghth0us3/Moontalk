@@ -26,7 +26,7 @@
 //
 // Cache
 // - Path: .git/.codex_intent.json
-// - Fields: { main, secondary[], createdAT, branch, stagedTree, amend }
+// - Fields: { main, secondary[], createdAT, branch, stagedTree }
 // - Agents: on non‑zero exit, fix issues, restage, and rerun without changing
 //   the main message (-m). Use --rebind if staged content legitimately changed.
 //
@@ -36,11 +36,11 @@
 //    Use --verbose (or CODEX_VERBOSE=1) to show each command + exit code.
 // 3) Shows Git status + diffstat.
 // 4) If intent exists and staged matches cache (or --rebind), composes and
-//    creates a commit (uses --amend if intent.amend=true). Then clears cache.
+//    creates a commit (honors --amend only on green commit). Then clears cache.
 //
 // Flags / Env
 // - --commit "msg", -m "msg"  Cache commit intent message
-// - --amend                    Mark cached intent to use --amend on commit
+// - --amend                    Apply --amend on commit (only on green commit)
 // - --rebind                   Update intent.stagedTree to current index
 // - --clear                    Delete cache and exit
 // - --order a,b,c              Pipeline order (default build,lint,test)
@@ -91,16 +91,24 @@ function printSection(title){
   console.log(`\n${title}\n${line}`);
 }
 const sym = { ok: '✅', fail: '❌', info: 'ℹ️', warn: '⚠️' };
+// Distinct exit codes for clear failure modes
+const EXIT = {
+  OK: 0,
+  E_NO_STAGED: 10,
+  E_CHECK_FAIL: 11,
+  E_TREE_MISMATCH: 12,
+  E_PUSH_REJECTED: 13,
+  E_MAIN_PROTECTED: 2,
+  E_MISC: 1,
+};
 
 function parseArgs(argv){
-  const args = { commitMsg: null, push: false, allowMain: false, wip: false, finalize: false, verbose: false, dryRun: false, order: null, rebind: false, clear: false, amend: false };
+  const args = { commitMsg: null, push: false, allowMain: false, verbose: false, dryRun: false, order: null, rebind: false, clear: false, amend: false };
   for (let i=2;i<argv.length;i++){
     const a = argv[i];
     if (a === '--help' || a === '-h'){ args.help = true; }
     else if (a === '--push'){ args.push = true; }
     else if (a === '--allow-main'){ args.allowMain = true; }
-    else if (a === '--wip'){ args.wip = true; }
-    else if (a === '--finalize'){ args.finalize = true; }
     else if (a === '--verbose'){ args.verbose = true; }
     else if (a === '--dry-run'){ args.dryRun = true; }
     else if (a === '--order'){ args.order = (argv[++i]||'').split(',').map(s=>s.trim()).filter(Boolean); }
@@ -123,10 +131,17 @@ function showHelp(){
 `  3) npm run test    — Vitest suite (failures fail gate)\n`+
 `  4) git status/diff — summary + diffstat\n`+
 `  5) commit (if intent cached & staged matches)\n\n`+
+`Workflow:\n`+
+`  1) Stage intended changes (use 'git add -p').\n`+
+`  2) Cache intent: node scripts/codex-workflow.mjs -m \"type(scope): concise intent\".\n`+
+`  3) If gate fails: fix code, stage fixes, rerun without a new -m.\n`+
+`  4) Use --rebind ONLY if prompted that staged content changed and the scope is still the same feature.\n`+
+`  5) Do NOT use --amend during fix iterations; reserve it for a tiny clarification after green.\n`+
+`  6) After success: optionally --push. Never 'git pull --rebase' unless a push was rejected as non-fast-forward.\n\n`+
 `Usage examples:\n`+
 `  node scripts/codex-workflow.mjs -m \"feat: add X\"\n`+
 `  node scripts/codex-workflow.mjs                (rerun after fixes)\n`+
-`  node scripts/codex-workflow.mjs --amend        (mark intent to amend)\n`+
+`  node scripts/codex-workflow.mjs --amend        (after green: tiny clarification)\n`+
 `  node scripts/codex-workflow.mjs --rebind       (update stagedTree to current index)\n`+
 `  node scripts/codex-workflow.mjs --clear        (delete intent cache)\n\n`+
 `Flags:\n`+
@@ -135,7 +150,7 @@ function showHelp(){
 `  --rebind                Update cache.stagedTree to current index\n`+
 `  --clear                 Delete intent cache and exit\n`+
 `  --order a,b,c           Pipeline order (default build,lint,test)\n`+
-`  --push                  Push after commit (respects upstream)\n`+
+`  --push                  Push current branch (independent step; sets upstream if missing)\n`+
 `  --verbose               Verbose command logging\n`+
 `  --dry-run               Log actions; skip mutating commands\n`+
 `  --allow-main            Allow operating on main (otherwise blocked)\n`+
@@ -168,8 +183,8 @@ async function main(){
   console.log(`Last:   ${last || '—'}`);
   console.log(`Remotes:\n${remotes || '(none)'}`);
   if (!args.allowMain && (branch === 'main' || branch === 'master')){
-    console.error(`\nERROR: Refusing to operate on '${branch}'. Switch to a *-dev branch or pass --allow-main.`);
-    process.exit(2);
+    console.error(`ERROR: Refusing to operate on '${branch}'. Switch to a *-dev branch or pass --allow-main.`);
+    process.exit(EXIT.E_MAIN_PROTECTED);
   }
 
   // --clear: remove intent cache and exit cleanly
@@ -179,18 +194,25 @@ async function main(){
     process.exit(0);
   }
 
+  // Standalone push mode: allow pushing without staged changes or intent
+  // Runs before any staged-change guards or pipeline
+  if (args.push && !args.commitMsg && !existsSync(INTENT_JSON)){
+    printSection('Push');
+    const res = pushCurrentBranch(branch);
+    if (res.code !== 0){
+      return exitOneLine(EXIT.E_PUSH_REJECTED, 'Push was rejected (non-fast-forward). Run git fetch, git rebase origin/'+branch+', resolve conflicts, re-run the script (checks), then --push again');
+    }
+    console.log(`${sym.ok} Push completed.`);
+    return nextAndExit(EXIT.OK, 'Branch pushed.');
+  }
+
   // Intent cache: create/overwrite on message; otherwise reuse if present
   // NOTE: We require staged changes before creating/modifying the cache (except --clear above)
 
-  // Early guard: require staged changes (prevents accidental blanket add/commit)
+  // Early guard: require staged changes for caching/updating intent and for commit path
   const staged = run('git',['diff','--name-only','--cached'], {}, 'git diff --cached').out.trim();
-  if (!staged){
-    const hasIntent = existsSync(INTENT_JSON);
-    const guide = hasIntent ? `Stage changes that correspond to this intent or clear with --clear.`
-      : `Provide a commit message to set intent or stage changes and rerun.`;
-    console.error(`\n${sym.fail} No staged changes detected. ${guide}\n`+
-      `Tip: Use 'git status' to review and stage selectively.`);
-    process.exit(3);
+  if (!staged && args.commitMsg == null && !existsSync(INTENT_JSON)){
+    return exitOneLine(EXIT.E_NO_STAGED, 'Stage changes (git add ...) or provide a message to set intent.');
   }
 
   // With staged changes, now handle cache create/update/reuse
@@ -198,18 +220,22 @@ async function main(){
     try {
       if (!existsSync('.git')) mkdirSync('.git', { recursive: true });
       const stagedTree = run('git',['write-tree'], {}, 'git write-tree').out.trim();
-      const intent = { main: String(args.commitMsg), secondary: [], createdAT: new Date().toISOString(), branch, stagedTree, amend: !!args.amend };
+      const stagedPaths = getStagedPaths();
+      const intent = { main: String(args.commitMsg), secondary: [], createdAT: new Date().toISOString(), branch, stagedTree, paths: stagedPaths };
       writeFileSync(INTENT_JSON, JSON.stringify(intent, null, 2), 'utf8');
       if (VERBOSE) console.log(`${sym.info} Intent cached at ${INTENT_JSON}`);
     } catch (e) {
       console.error(`${sym.warn} Failed to write intent cache: ${e && e.message ? e.message : String(e)}`);
     }
   } else if (existsSync(INTENT_JSON)){
-    if (args.amend){
-      try { const j = loadIntentJSON() || {}; j.amend = true; writeFileSync(INTENT_JSON, JSON.stringify(j, null, 2), 'utf8'); if (VERBOSE) console.log(`${sym.info} Set intent.amend=true`); } catch {}
-    }
     if (args.rebind){
-      try { const j = loadIntentJSON() || {}; j.stagedTree = run('git',['write-tree'], {}, 'git write-tree (rebind)').out.trim(); writeFileSync(INTENT_JSON, JSON.stringify(j, null, 2), 'utf8'); if (VERBOSE) console.log(`${sym.info} Rebound intent.stagedTree to current index.`); } catch {}
+      try {
+        const j = loadIntentJSON() || {};
+        j.stagedTree = run('git',['write-tree'], {}, 'git write-tree (rebind)').out.trim();
+        j.paths = getStagedPaths();
+        writeFileSync(INTENT_JSON, JSON.stringify(j, null, 2), 'utf8');
+        if (VERBOSE) console.log(`${sym.info} Rebound intent.stagedTree to current index.`);
+      } catch {}
     }
     if (VERBOSE) { try { const j=loadIntentJSON(); if (j) console.log(`${sym.info} Using cached intent: ${j.main||'(empty)'}`); } catch {} }
   } else {
@@ -223,20 +249,20 @@ async function main(){
       printSection('STEP: Build (npm run build)');
       const res = run('npm',['run','build'], {}, 'npm run build');
       process.stdout.write(res.out);
-      if (res.code !== 0){ appendSecondaryNote(summarizeBuild(res.out, res.code)); console.error(`\n${sym.fail} Build failed with exit ${res.code}.`); return nextAndExit(2, 'Fix build errors, restage, rerun codex (no new -m)'); }
+      if (res.code !== 0){ appendSecondaryNote(summarizeBuild(res.out, res.code)); return exitOneLine(EXIT.E_CHECK_FAIL, args.amend ? "'--amend' is only applied on a green commit; continue fixing and rerun." : 'fix issues, stage fixes, then rerun (no new message).'); }
       console.log(`\n${sym.ok} Build succeeded.`);
     } else if (step === 'lint'){
       printSection('STEP: Lint (npm run lint)');
       const res = run('npm',['run','lint'], {}, 'npm run lint');
       process.stdout.write(res.out);
-      if (res.code !== 0){ appendSecondaryNote(summarizeLint(res.out)); console.error(`\n${sym.fail} Lint failed with exit ${res.code}.`); return nextAndExit(2, 'Fix lint errors, restage, rerun codex (no new -m)'); }
+      if (res.code !== 0){ appendSecondaryNote(summarizeLint(res.out)); return exitOneLine(EXIT.E_CHECK_FAIL, args.amend ? "'--amend' is only applied on a green commit; continue fixing and rerun." : 'fix issues, stage fixes, then rerun (no new message).'); }
       const summaryLine = (res.out.split(/\r?\n/).reverse().find(l=>/problems \(\d+ errors?, \d+ warnings?\)/.test(l))||'').trim(); if (summaryLine) console.log(`\n${sym.info} ESLint summary: ${summaryLine}`);
       console.log(`\n${sym.ok} Lint completed.`);
     } else if (step === 'test'){
       printSection('STEP: Tests (npm run test)');
       const res = run('npm',['run','test'], {}, 'npm run test');
       process.stdout.write(res.out);
-      if (res.code !== 0){ appendSecondaryNote(summarizeTest(res.out)); console.error(`\n${sym.fail} Tests failed with exit ${res.code}.`); return nextAndExit(2, 'Fix tests, restage, rerun codex (no new -m)'); }
+      if (res.code !== 0){ appendSecondaryNote(summarizeTest(res.out)); return exitOneLine(EXIT.E_CHECK_FAIL, args.amend ? "'--amend' is only applied on a green commit; continue fixing and rerun." : 'fix issues, stage fixes, then rerun (no new message).'); }
       console.log(`\n${sym.ok} Tests passed.`);
     }
   }
@@ -251,30 +277,49 @@ async function main(){
   const untracked = run('git',['ls-files','-m','-o','--exclude-standard'], {}, 'git ls-files').out.trim();
   if (untracked) { console.log('\nUntracked/modified files:\n'+untracked); }
 
-  // 5) Commit/finalize using cached intent (JSON)
+  // 5) Commit using cached intent (JSON)
   const intentObj = loadIntentJSON();
   const intent = intentObj?.main || '';
-  if (args.finalize){
-    if (!intent){ console.error('No cached intent found; cannot finalize.'); return nextAndExit(4, 'Set intent (-m "...") then rerun with --finalize'); }
-    printSection('STEP 5: Finalize');
-    finalizeWip(intent, args.push, branch);
-    try { unlinkSync(INTENT_JSON); } catch {}
-  } else if (intent){
+  if (intent){
     printSection('STEP 5: Commit');
     // Respect staged-only policy: do not auto-add; commit only what's staged
     const stagedNow = run('git',['diff','--name-only','--cached'], {}, 'git diff --cached (pre-commit)').out.trim();
-    if (!stagedNow){ console.error(`${sym.fail} No staged changes to commit. Stage files and rerun.`); return nextAndExit(1, 'Stage files to commit for this intent'); }
+    if (!stagedNow){ return exitOneLine(EXIT.E_NO_STAGED, 'Stage changes (git add ...) or provide a message to set intent.'); }
     // Guard: staged tree mismatch unless --rebind
     const stagedTreeNow = run('git',['write-tree'], {}, 'git write-tree (pre-commit)').out.trim();
     if (intentObj && intentObj.stagedTree && intentObj.stagedTree !== stagedTreeNow){
       if (!args.rebind){
-        console.error(`${sym.fail} Staged content changed since intent was created. Aborting commit.\n`+
-          `Use --rebind to update the intent's stagedTree to the current index and proceed.`);
-        return nextAndExit(3, 'Review staged diff; rerun with --rebind to proceed');
+        // Attempt safe auto-rebind when branch unchanged, cache is fresh, and paths are subset/superset
+        const nowPaths = new Set(getStagedPaths());
+        const cachedPaths = new Set(Array.isArray(intentObj.paths)? intentObj.paths : []);
+        const hasCachedPaths = cachedPaths.size > 0;
+        const branchSame = (intentObj.branch || '') === branch;
+        const fresh = intentObj.createdAT ? isYoungerThanHours(intentObj.createdAT, 4) : false;
+        const subset = hasCachedPaths && isSubsetOf(nowPaths, cachedPaths);
+        const superset = hasCachedPaths && isSubsetOf(cachedPaths, nowPaths);
+        if (branchSame && fresh && hasCachedPaths && (subset || superset)){
+          try {
+            const j = loadIntentJSON() || { main:intent, secondary:[], createdAT:new Date().toISOString(), branch, stagedTree:'' };
+            j.stagedTree = stagedTreeNow;
+            j.paths = Array.from(nowPaths).sort();
+            writeFileSync(INTENT_JSON, JSON.stringify(j, null, 2), 'utf8');
+            appendSecondaryNote('meta: rebind after fixes');
+            if (VERBOSE) console.log(`${sym.info} Auto-rebound intent.stagedTree to current index (subset/superset within 4h).`);
+          } catch {}
+        } else {
+          // Explain which paths changed and require explicit --rebind
+          const added = [...nowPaths].filter(p=>!cachedPaths.has(p));
+          const removed = [...cachedPaths].filter(p=>!nowPaths.has(p));
+          console.log('Staged content changed since intent. If scope unchanged, rerun with --rebind; otherwise clear intent or restage');
+          if (added.length) console.log('New staged paths:\n- ' + added.join('\n- '));
+          if (removed.length) console.log('Removed staged paths:\n- ' + removed.join('\n- '));
+          process.exit(EXIT.E_TREE_MISMATCH);
+        }
       } else {
         try {
-          const j = loadIntentJSON() || { main:intent, secondary:[], createdAT:new Date().toISOString(), branch, stagedTree:'', amend:false };
+          const j = loadIntentJSON() || { main:intent, secondary:[], createdAT:new Date().toISOString(), branch, stagedTree:'' };
           j.stagedTree = stagedTreeNow;
+          j.paths = getStagedPaths();
           writeFileSync(INTENT_JSON, JSON.stringify(j, null, 2), 'utf8');
           if (VERBOSE) console.log(`${sym.info} Rebound intent.stagedTree to current index.`);
         } catch {}
@@ -282,21 +327,14 @@ async function main(){
     }
     // Compose message: main + optional Secondary changes
     const composed = composeCommitMessage(intentObj || { main:intent, secondary:[] });
-    const commit = run('git', ['commit', '-m', composed].concat(intentObj?.amend ? ['--amend'] : []), {}, 'git commit');
+    const commitArgs = ['commit','-m', composed].concat(args.amend ? ['--amend'] : []);
+    const commit = run('git', commitArgs, {}, 'git commit');
     process.stdout.write(commit.out);
     if (commit.code !== 0){ console.error('Commit failed.'); return nextAndExit(commit.code||1, 'Resolve git error and rerun'); }
     console.log(`${sym.ok} Commit created.`);
     try { unlinkSync(INTENT_JSON); } catch {}
-    if (args.push){
-      printSection('STEP 6: Push');
-      const upstream = run('git',['rev-parse','--abbrev-ref','--symbolic-full-name','@{u}'], {}, 'git rev-parse @{u}');
-      let push;
-      if (upstream.code === 0){ push = run('git',['push'], {}, 'git push'); }
-      else { push = run('git',['push','-u','origin', branch], {}, 'git push -u'); }
-      process.stdout.write(push.out);
-      console.log(`${sym.ok} Push completed.`);
-    } else { console.log(`\n${sym.info} Note: Auto-push hook may push this commit. To force push here, re-run with --push.`); }
-    return nextAndExit(0, 'Gate passed; commit created. Push or open a PR.');
+    console.log(`\n${sym.info} To push this branch, run with --push (separate step).`);
+    return nextAndExit(0, 'Gate passed; commit created. Now run --push or open a PR.');
   } else {
     console.log(`${sym.info} No intent cached. Skipping commit.`);
     return nextAndExit(0, 'Gate passed; stage changes and run with -m to commit, or --clear');
@@ -323,37 +361,6 @@ function composeCommitMessage(j){
   return lines.join('\n');
 }
 
-function doWipCommit(message, doPush){
-  printSection('WIP Commit');
-  // Respect staged-only policy for WIP: do not auto-add; commit staged only
-  const staged = run('git',['diff','--name-only','--cached'], {}, 'git diff --cached (WIP)').out.trim();
-  if (!staged){ console.error('No staged changes to WIP-commit.'); return; }
-  const commit = run('git',['commit','-m', message], {}, 'git commit (WIP)'); process.stdout.write(commit.out);
-  if (commit.code !== 0){ console.error('WIP commit failed.'); return; }
-  if (doPush){ const push = run('git',['push'], {}, 'git push (WIP)'); process.stdout.write(push.out); }
-}
-
-function finalizeWip(finalMessage, doPush, branch){
-  // Find consecutive WIP commits from HEAD backwards
-  const log = run('git',['--no-pager','log','--pretty=%H%x09%s','-n','50'], {}, 'git log (finalize)').out.trim().split(/\r?\n/).filter(Boolean);
-  let count = 0; let oldestWip = '';
-  for (const line of log){ const [hash, subj] = line.split('\t'); if (/^WIP:/i.test(subj||'')){ oldestWip = hash; count++; } else break; }
-  if (count === 0){
-    // No WIP range → plain commit
-    const staged = run('git',['diff','--name-only','--cached'], {}, 'git diff --cached (finalize)').out.trim();
-    if (!staged){ console.error('No staged changes to commit during finalize.'); return; }
-    const commit = run('git',['commit','-m', finalMessage], {}, 'git commit (finalize)'); process.stdout.write(commit.out);
-    if (doPush){ const upstream = run('git',['rev-parse','--abbrev-ref','--symbolic-full-name','@{u}'], {}, 'git rev-parse @{u}'); const push = upstream.code===0? run('git',['push'], {}, 'git push (finalize)') : run('git',['push','-u','origin', branch], {}, 'git push -u (finalize)'); process.stdout.write(push.out); }
-    return;
-  }
-  // Reset soft to parent of oldest WIP, then commit with final message
-  const parent = run('git',['rev-parse', `${oldestWip}^`], {}, 'git rev-parse parent (finalize)').out.trim();
-  if (!parent){ console.error('Could not resolve parent of oldest WIP.'); return; }
-  const reset = run('git',['reset','--soft', parent], {}, 'git reset --soft (finalize)'); if (reset.code !== 0){ console.error(reset.out); return; }
-  const commit = run('git',['commit','-m', finalMessage], {}, 'git commit (finalize)'); process.stdout.write(commit.out);
-  if (doPush){ const upstream = run('git',['rev-parse','--abbrev-ref','--symbolic-full-name','@{u}'], {}, 'git rev-parse @{u}'); const push = upstream.code===0? run('git',['push'], {}, 'git push (finalize)') : run('git',['push','-u','origin', branch], {}, 'git push -u (finalize)'); process.stdout.write(push.out); }
-}
-
 main().catch(err=>{ console.error(err); process.exit(1); });
 
 function nextAndExit(code, nextMsg){
@@ -361,6 +368,35 @@ function nextAndExit(code, nextMsg){
   const tag = ok ? sym.ok : sym.fail;
   console.log(`\n${tag} NEXT: ${nextMsg}`);
   process.exit(code);
+}
+
+// Output exactly one guidance line, then exit with the given code.
+function exitOneLine(code, msg){
+  console.log(String(msg).trim());
+  process.exit(Number(code)||1);
+}
+
+function getStagedPaths(){
+  const out = run('git',['diff','--name-only','--cached'], {}, 'git diff --name-only --cached').out;
+  return out.split(/\r?\n/).map(s=>s.trim()).filter(Boolean).sort();
+}
+
+function isSubsetOf(aSet, bSet){
+  for (const v of aSet){ if (!bSet.has(v)) return false; }
+  return true;
+}
+
+function isYoungerThanHours(iso, hours){
+  try { const t = new Date(iso).getTime(); if (!isFinite(t)) return false; return (Date.now() - t) < (hours*3600*1000); } catch { return false; }
+}
+
+function pushCurrentBranch(branch){
+  const upstream = run('git',['rev-parse','--abbrev-ref','--symbolic-full-name','@{u}'], {}, 'git rev-parse @{u}');
+  let push;
+  if (upstream.code === 0){ push = run('git',['push'], {}, 'git push'); }
+  else { push = run('git',['push','-u','origin', branch], {}, 'git push -u'); }
+  process.stdout.write(push.out);
+  return { code: push.code };
 }
 
 // ===== Failure note helpers =====

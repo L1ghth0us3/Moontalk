@@ -53,7 +53,7 @@
 - Examples:
   - `feat(talkpad): add habitual toggle to finite builder`
   - `fix(translator2): handle 3sg -s except 'ss'`
-  - `docs: clarify codex --finalize behavior`
+  - `docs: clarify codex workflow`
 
 Instruction
 - Before committing with intent, review the previous commit on your branch, confirm what changed, and ensure the commit message (subject/body) summarizes everything changed since that commit.
@@ -87,12 +87,12 @@ Instruction
 
 ## Agent Workflow (Codex Helper)
 - Stage intentionally: add specific paths or use `git add -p`.
-- Start a task (cache intent): `npm run codex -- -m "feat: <intent>"`
-- Iterate: on failure, the helper appends a concise secondary note. Fix, restage, rerun `npm run codex` (do not change `-m`).
-- Commit: when green, the helper composes the message (main + optional “Secondary changes”) and commits. Use `--push` to push.
-- Amend: if you need to append a small tweak after green, run `npm run codex -- --amend`.
-- Scope changed? If warned about staged tree mismatch, either restage to the original scope or run `npm run codex -- --rebind`.
-- On main (discouraged): `npm run codex -- --allow-main -m "hotfix: …" --push`.
+- Cache intent: `npm run codex -- -m "type(scope): concise intent"`.
+- Gate + iterate: if the script fails (build/lint/test), fix the code, stage the fixes, then rerun `npm run codex` without a new `-m`.
+- Rebind only when prompted: if the script says staged content changed but the scope is still the same feature, rerun with `--rebind`.
+- No amend during fix iterations: do not use `--amend` while addressing failures. Use `--amend` only after everything is green to add a tiny clarification.
+- After success: optionally push with `npm run codex -- --push` (or rely on the auto‑push hook; set `NO_AUTO_PUSH=1` to disable locally).
+- Rebase rule: never run `git pull --rebase` unless a push was rejected as non‑fast‑forward.
 
 Notes
 - Intent is stored at `.git/.codex_intent.json` and cleared after a successful commit.

@@ -4,9 +4,10 @@ This onboarding is now streamlined. The canonical rules and workflow live in `AG
 
 ## Quick Runbook
 - Validate gate: `npm run codex`
-- Cache intent and validate: `npm run codex -- -m "feat: add X"`
-- WIP on failures: `npm run codex -- -m "feat: add X" --wip`
-- Finalize WIPs: `npm run codex -- --finalize`
+- Cache intent and validate: `npm run codex -- -m "type(scope): concise intent"`
+- If the gate fails: fix the code, stage the fixes, and rerun `npm run codex` (do not supply a new `-m`). Use `--rebind` only if prompted that staged content changed and the scope is still the same feature.
+- Do not use `--amend` during fix iterations. After everything is green, you may use `--amend` for a tiny clarification.
+- After success: optionally push with `npm run codex -- --push`. Never run `git pull --rebase` unless a push was rejected as non‑fast‑forward.
 - Dev server: `npm run dev` · Build: `npm run build` · Lint: `npm run lint`
 
 ## Quick Orientation (15 min)
@@ -22,5 +23,5 @@ This onboarding is now streamlined. The canonical rules and workflow live in `AG
 - Rules, workflow, and tips: see `AGENTS.md` (Agent Ruleset, Codex Helper, Translator 2.0 Tips).
 - Hooks and auto-push: `.githooks/post-commit` (respects `NO_AUTO_PUSH=1`).
 
-If anything is unclear or missing, update `AGENTS.md` first; keep this file minimal.
 
+If anything is unclear or missing, update `AGENTS.md` first; keep this file minimal.

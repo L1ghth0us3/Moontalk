@@ -21,7 +21,7 @@ All notable changes to this project will be documented in this file.
    - Intent cache: repo‑local JSON at `.git/.codex_intent.json` with `{ main, secondary[], createdAT, branch, stagedTree, amend }`.
    - Gate: runs build → lint → test; order configurable via `--order build,lint,test`.
    - Failure notes: on first failure, appends a concise secondary note (TS codes / eslint counts / test failed count). Notes are deduplicated across runs.
-   - Exit codes: distinct codes for clear automation (0=success, 1=no staged, 2=gate/commit failure, 3=staged‑tree mismatch, 4=finalize error, 5=clear error).
+   - Exit codes: distinct codes for clear automation (e.g., no staged, check fail, staged‑tree mismatch, push rejected).
    - Commit safety: staged‑only commits; early exit with guidance when nothing staged; staged‑tree guard with `--rebind` escape hatch.
    - Message composition: commits use cached main plus optional “Secondary changes:” bullet list from cache; supports `--amend`.
    - Ergonomics: `--verbose` logging, `--dry-run`, `--clear`, `--rebind`, and guidance “NEXT:” line printed at end of each run.
