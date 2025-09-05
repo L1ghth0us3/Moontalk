@@ -5,6 +5,13 @@
 // - Single entry point for build/lint/test and intent caching → safe, repeatable
 //   workflow for Codex agents and humans. It only commits when all checks pass.
 //
+// 20‑second Briefing (don’t skip)
+// - Stage intentionally before first run (use `git add -p`).
+// - On failure: fix → stage → rerun (no new -m).
+// - Use --rebind only if scope is unchanged (same feature surface).
+// - Use --amend only after green to polish the same commit.
+// - Use --push after success; only rebase if push was rejected.
+//
 // Usage (examples)
 // - Validate and cache intent:
 //   node scripts/codex-workflow.mjs -m "feat: add X"
