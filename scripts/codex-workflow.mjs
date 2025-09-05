@@ -428,23 +428,51 @@ function checkDocsRequirement(intent, stagedPaths){
   const docsPaths = stagedPaths.filter(isDocPath);
   const nonDocs = stagedPaths.filter(p=>!isDocPath(p));
   const { type, scope } = parseConventional(intent||'');
+  const onlyTests = nonDocs.length>0 && nonDocs.every(isTestPath);
+
+  // Broad heuristic: require docs for most user-visible or workflow-impacting changes
   let requires = false;
-  if (nonDocs.length === 0) requires = false;
-  else if (stagedPaths.includes('scripts/codex-workflow.mjs')) requires = true;
-  else if (type === 'feat' || type === 'refactor' || type === 'perf' || type === 'build') requires = true;
-  else if (scope && /(codex|workflow)/i.test(scope)) requires = true;
+  if (nonDocs.length === 0){
+    requires = false;
+  } else if (onlyTests && (type === 'test' || type === 'chore')){
+    requires = false;
+  } else if (nonDocs.some(isWorkflowPath)){
+    requires = true;
+  } else if (nonDocs.some(isUserFacingPath)){
+    requires = true;
+  } else if (['feat','fix','refactor','perf','build','chore','ci'].includes(type)){
+    requires = true;
+  } else if (scope && /(codex|workflow|translator|ui|docs)/i.test(scope)){
+    requires = true;
+  }
+
   const suggested = suggestDocsFiles(stagedPaths);
   return { requires, hasDocs: docsPaths.length>0, suggested };
 }
 function isDocPath(p){ return p === 'README.md' || p === 'AGENTS.md' || p === 'CHANGELOG.md' || (/^docs\/.+\.md$/i).test(p); }
+function isTestPath(p){ return /^tests\//.test(p) || /\.test\.(t|j)sx?$/.test(p); }
+function isUserFacingPath(p){ return /^src\//.test(p) || /^public\//.test(p) || /^assets\//.test(p) || /^pages\//.test(p) || /^components\//.test(p) || /^data\//.test(p); }
+function isWorkflowPath(p){
+  return /^scripts\//.test(p)
+    || p === 'vite.config.ts'
+    || p === 'eslint.config.js'
+    || p === 'vitest.config.ts'
+    || /^tsconfig(\..+)?\.json$/.test(p)
+    || /^package(-lock)?\.json$/.test(p)
+    || /^\.githooks\//.test(p)
+    || /^\.github\//.test(p);
+}
 function parseConventional(s){
   const m = String(s).match(/^(\w+)(?:\(([^)]+)\))?:/);
   return { type: m ? m[1] : '', scope: m ? m[2] : '' };
 }
 function suggestDocsFiles(staged){
   const list = new Set();
-  if (staged.includes('scripts/codex-workflow.mjs')){ list.add('AGENTS.md'); list.add('README.md'); list.add('CHANGELOG.md'); }
-  else { list.add('CHANGELOG.md'); }
+  const anyWorkflow = staged.some(isWorkflowPath);
+  const anyUserFacing = staged.some(isUserFacingPath);
+  if (anyWorkflow){ list.add('AGENTS.md'); list.add('README.md'); }
+  if (anyUserFacing){ list.add('README.md'); }
+  list.add('CHANGELOG.md');
   return Array.from(list);
 }
 
