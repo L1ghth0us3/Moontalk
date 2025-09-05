@@ -24,14 +24,18 @@ Split the translator into smaller modules under `src/lib/translator2/`:
 - Coordination
   - [x] Support multiple joiners (and/or/nor/but); joiners configurable via options.
   - [x] NP list detection in direct objects and PP complements; subject elision across coordinated clauses.
-  - [ ] Optional tightening: only split clauses on coordinators when both sides contain a verb (heuristic).
+  - [x] Tighten clause splitting: only split on coordinators when both sides contain a verb-like token.
 - Analysis & Logging
   - [x] Include particle→noun pairs in `analysis.particlePairs`.
   - [x] Add `analysis.unknownTokens` computed from intake (skips PRON/SPECIAL/PREP/coordinators; excludes matched spans).
-  - [ ] Standardize `resolutionLog` messages and `via` tags for verbs/nouns/particles.
+  - [x] Standardize `resolutionLog` messages and `via` tags for verbs/nouns/particles.
 - UI Cleanup
   - [x] Remove duplicate tokenizer/matcher/generator from `src/components/Translator2.tsx`; rely solely on library output.
   - [x] Cosmetic only: wrap pronouns in parentheses at clause start/after joiners (UI display hint; library surface unchanged).
+
+Remaining nice-to-haves (optional)
+- Expose coordinator metadata used for multi-clause joins in `analysis`.
+- Expand test cases for additional coordinator patterns and mixed PP + clause coordination.
 - Deferred (out of scope for now)
   - Existential expletive (“there is/are …”): parser/generator/tests intentionally postponed.
 
