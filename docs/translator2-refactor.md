@@ -29,7 +29,8 @@ Split `src/lib/translator2.ts` into smaller modules under `src/lib/translator2/`
 - Existential expletive (optional)
   - Proper parse + generator; add tests and re‑enable in Dev modal
 - Analysis
-  - Standardize `resolutionLog` messages; include particle→noun pairs
+  - [x] Include particle→noun pairs in `analysis.particlePairs`
+  - [ ] Standardize `resolutionLog` messages
 - Cleanup
   - Remove duplicate matching/generation helpers from the component (UI stays thin)
 

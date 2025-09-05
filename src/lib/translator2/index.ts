@@ -27,6 +27,71 @@ export function translate(input: string, roots: Root[], nouns: Noun[], opts?: T2
   const variants: string[] = [];
   const sj = hsSubjectFor(frame.subject);
   const verbRoot = frame.verbRootId ? roots.find(r=>r.id===frame.verbRootId) : null;
+
+  // Helper: collect NP lists after an index, returning ids + type + end index.
+  const collectNounList = (startIdx: number): { ids: string[]; type: 'AND'|'OR'|'NOR'|'BUT'; end: number } | null => {
+    let i = startIdx; const ids: string[] = [];
+    let either=false, neither=false, notOnly=false; let type: 'AND'|'OR'|'NOR'|'BUT' = 'AND';
+    const readOne = (): boolean => {
+      const w1 = wordAt(i); if(!w1) return false;
+      const hit = findNounByTokens(ns, w1, wordAt(i+1));
+      if (hit.noun){ ids.push(hit.noun.id); i += hit.span; return true; }
+      return false;
+    };
+    // allow leading markers (either/neither/not only)
+    while (true){ const w = wordAt(i); const w2 = wordAt(i+1);
+      if (w==='either'){ either=true; i++; continue; }
+      if (w==='neither'){ neither=true; i++; continue; }
+      if (w==='not' && w2==='only'){ notOnly=true; i+=2; continue; }
+      break;
+    }
+    if (!readOne()) return null;
+    // read coordinator and next item(s)
+    while(true){
+      const w = wordAt(i);
+      if (w==='and' || w==='or' || w==='nor' || w==='but' || (w==='as' && wordAt(i+1)==='well' && wordAt(i+2)==='as') || w==='plus'){
+        if (w==='and' || w==='plus' || (w==='as' && wordAt(i+1)==='well' && wordAt(i+2)==='as')){ type = 'AND'; i += (w==='as'?3:1); }
+        else if (w==='or'){ type = either ? 'OR' : 'OR'; i++; }
+        else if (w==='nor'){ type = neither ? 'NOR' : 'NOR'; i++; }
+        else if (w==='but'){ type = notOnly ? 'BUT' : 'BUT'; i++; }
+        // optional 'also' after but
+        if (wordAt(i)==='also') i++;
+        // next item required
+        if (!readOne()) break;
+        continue;
+      }
+      break;
+    }
+    return { ids, type, end: i };
+  };
+
+  // Analysis: particle→noun pairs discovered from the intake tokens
+  const analysisPairs: Array<{ part: string; nounId: string; noun?: string; en: string }> = [];
+  {
+    const seen = new Set<string>();
+    for (let i=0;i<tokens.length;i++){
+      const w = tokens[i].text;
+      const part = PREP[w];
+      if (!part) continue;
+      const lst = collectNounList(i+1);
+      if (lst && lst.ids.length>0){
+        for (const id of lst.ids){
+          const key = `${part}:${id}`; if (seen.has(key)) continue; seen.add(key);
+          const noun = ns.find(n=>n.id===id)?.word;
+          analysisPairs.push({ part, nounId: id, noun, en: w });
+        }
+        i = lst.end - 1;
+        continue;
+      }
+      const found = findNounByTokens(ns, wordAt(i+1)||'', wordAt(i+2));
+      if (found.noun){
+        const key = `${part}:${found.noun.id}`; if (!seen.has(key)){
+          seen.add(key);
+          analysisPairs.push({ part, nounId: found.noun.id, noun: found.noun.word, en: w });
+        }
+      }
+    }
+  }
   if(clause==='existential'){
     const copR = verbRoot || null; if(copR){ parts.push(conjFinite(copR, {form:'se',subjV:'e'}, frame.tense, {prog:false,hab:frame.hab,neg:frame.neg}, true, buildFinite, withProgressive, withHabitual, withNegation)); }
     if(frame.objects[0]){ const n = ns.find(n=>n.id===frame.objects[0]); if(n) parts.push(n.word); }
@@ -44,41 +109,6 @@ export function translate(input: string, roots: Root[], nouns: Noun[], opts?: T2
     const pushJoined = (ids: string[], join: 'AND'|'OR'|'NOR'|'BUT') => {
       const j = coords[join] || coords.AND;
       ids.forEach((id, idx) => { const w = ns.find(n=>n.id===id)?.word; if(!w) return; if(idx>0) parts.push(j); parts.push(w); });
-    };
-    const collectNounList = (startIdx: number): { ids: string[]; type: 'AND'|'OR'|'NOR'|'BUT'; end: number } | null => {
-      let i = startIdx; const ids: string[] = [];
-      let either=false, neither=false, notOnly=false; let type: 'AND'|'OR'|'NOR'|'BUT' = 'AND';
-      const readOne = (): boolean => {
-        const w1 = wordAt(i); if(!w1) return false;
-        const hit = findNounByTokens(ns, w1, wordAt(i+1));
-        if (hit.noun){ ids.push(hit.noun.id); i += hit.span; return true; }
-        return false;
-      };
-      // allow leading markers (either/neither/not only)
-      while (true){ const w = wordAt(i); const w2 = wordAt(i+1);
-        if (w==='either'){ either=true; i++; continue; }
-        if (w==='neither'){ neither=true; i++; continue; }
-        if (w==='not' && w2==='only'){ notOnly=true; i+=2; continue; }
-        break;
-      }
-      if (!readOne()) return null;
-      // read coordinator and next item(s)
-      while(true){
-        const w = wordAt(i);
-        if (w==='and' || w==='or' || w==='nor' || w==='but' || (w==='as' && wordAt(i+1)==='well' && wordAt(i+2)==='as') || w==='plus'){
-          if (w==='and' || w==='plus' || (w==='as' && wordAt(i+1)==='well' && wordAt(i+2)==='as')){ type = 'AND'; i += (w==='as'?3:1); }
-          else if (w==='or'){ type = either ? 'OR' : 'OR'; i++; }
-          else if (w==='nor'){ type = neither ? 'NOR' : 'NOR'; i++; }
-          else if (w==='but'){ type = notOnly ? 'BUT' : 'BUT'; i++; }
-          // optional 'also' after but
-          if (wordAt(i)==='also') i++;
-          // next item required
-          if (!readOne()) break;
-          continue;
-        }
-        break;
-      }
-      return { ids, type, end: i };
     };
 
     if(frame.objects[0]){
@@ -105,7 +135,12 @@ export function translate(input: string, roots: Root[], nouns: Noun[], opts?: T2
       const lst = collectNounList(i+1);
       if (lst && lst.ids.length>=1){
         parts.push(part);
-        if (lst.ids.length>=2) pushJoined(lst.ids, lst.type); else { const wId = lst.ids[0]; const w = ns.find(n=>n.id===wId)?.word; if (w) parts.push(w); }
+        if (lst.ids.length>=2) {
+          // analysis pairs already captured; emit joined nouns for surface
+          pushJoined(lst.ids, lst.type);
+        } else {
+          const wId = lst.ids[0]; const w = ns.find(n=>n.id===wId)?.word; if (w) parts.push(w);
+        }
         i = lst.end-1; continue;
       }
       const w2 = tokens[i+1]?.text; if (!w2) continue;
@@ -117,7 +152,7 @@ export function translate(input: string, roots: Root[], nouns: Noun[], opts?: T2
   if(frame.question) parts.push('qa?');
 
   let surface = parts.join(' ').trim();
-  const analysis = { frame, intake: { input, tokens, tokensFlat: tokens.map(t=>t.text) }, clause, resolutionLog: built.resolutionLog };
+  const analysis = { frame, intake: { input, tokens, tokensFlat: tokens.map(t=>t.text) }, clause, resolutionLog: built.resolutionLog, particlePairs: analysisPairs };
   const warnings: string[] = [];
   if(!frame.verbRootId) warnings.push('Unknown verb');
 
