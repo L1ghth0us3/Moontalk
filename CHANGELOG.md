@@ -6,6 +6,10 @@ All notable changes to this project will be documented in this file.
 - UI: Translator 2.0 shows pronouns in parentheses when they occur at the start of a clause or immediately after a coordinator (cosmetic hint; library surface unchanged).
 - Translator 2.0 (lib): expose `analysis.unknownTokens` (skips helpers/particles/pronouns/be/coordinators); UI displays unknowns with quick add-as Noun/Verb actions.
 - Translator 2.0 (lib): tighten clause coordination splitting — only split on AND/OR/NOR/BUT when both sides contain a verb-like token; still handles repeated prepositions inside PP lists (e.g., “with X or with Y”).
+- Translator 2.0 (lib): standardized analysis.resolutionLog formats:
+  - verb: "verb:token 'hunt' -> root 'klb' via synonym-exact"; phrase matches use "verb:phrase ... via phrase-exact".
+  - noun: "noun:token 'hunter' -> word 'kalāb' via word-exact" (or phrase).
+  - particle: "particle:en 'with' -> code 'ri' + noun 'kalāb'".
 - Docs: test docs enforcement flow (example entry).
 - Docs: broaden docs enforcement heuristics (src/workflow/build changes now require docs).
 - Dev: expanded in‑app Dev test runner (grouped scenarios, expected vs got, details panel with clause/frame/tokens/logs).

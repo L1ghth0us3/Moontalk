@@ -36,9 +36,12 @@ export function buildFrameFromTokens(input: string, roots: Root[], nouns: Noun[]
   for(let i=0;i<tokens.length;i++){
     const w=tokens[i].text; if(w==='?'||PRON.has(w)||SPECIAL.has(w)||PREP[w]||isBe(w)) continue;
     const two = tokens[i+1]?.text ? `${w} ${tokens[i+1].text}` : '';
-    if(two){ const exact = findVerbByPhrase(verbsLex, two); if(exact){ verb=exact; resLog.push(`verb:phrase '${two}' -> '${exact.c1}${exact.c2}${exact.c3}' via phrase-exact`); break; } }
+    if(two){
+      const exact = findVerbByPhrase(verbsLex, two);
+      if(exact){ verb=exact; resLog.push(`verb:phrase '${two}' -> root '${exact.c1}${exact.c2}${exact.c3}' via phrase-exact`); break; }
+    }
     const det = findVerbByTokenDetailed(verbsLex, w, true);
-    if(det.verb){ verb=det.verb; const via = det.via || 'token'; resLog.push(`verb:token '${w}' -> '${det.verb.c1}${det.verb.c2}${det.verb.c3}' via ${via}`); break; }
+    if(det.verb){ verb=det.verb; const via = det.via!; resLog.push(`verb:token '${w}' -> root '${det.verb.c1}${det.verb.c2}${det.verb.c3}' via ${via}`); break; }
   }
 
   // objects (skip nouns governed by preps; avoid reusing verb span)
@@ -59,10 +62,10 @@ export function buildFrameFromTokens(input: string, roots: Root[], nouns: Noun[]
     const mn = findNounByTokensDetailed(nounsLex, w, tokens[i+1]?.text);
     if (mn.noun){
       frame.objects.push(mn.noun.id);
-      const via = mn.via || 'word-exact';
+      const via = mn.via!;
       const surface = mn.noun.word;
       const src = (mn.span===2 && tokens[i+1]) ? `${w} ${tokens[i+1].text}` : w;
-      resLog.push(`noun:${mn.span===2?'phrase':'token'} '${src}' -> '${surface}' via ${via}`);
+      resLog.push(`noun:${mn.span===2?'phrase':'token'} '${src}' -> word '${surface}' via ${via}`);
       if (mn.span===2) i++;
     }
   }

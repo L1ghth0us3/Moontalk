@@ -159,7 +159,7 @@ export function translate(input: string, roots: Root[], nouns: Noun[], opts?: T2
   if (analysisPairs.length){
     for (const p of analysisPairs){
       const nounW = ns.find(n=>n.id===p.nounId)?.word || p.noun || p.nounId;
-      resLogExtended.push(`particle '${p.en}' -> '${p.part}' with noun '${nounW}'`);
+      resLogExtended.push(`particle:en '${p.en}' -> code '${p.part}' + noun '${nounW}'`);
     }
   }
   // Unknown tokens (skip helpers, preps, pronouns, be-forms, and coordinators)
