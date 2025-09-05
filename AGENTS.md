@@ -86,9 +86,17 @@ Instruction
 - On main (discouraged): `npm run codex -- --allow-main -m "hotfix: …" --push`
 
 Notes
-- Intent is stored at `.git/.codex_intent` and cleared after a successful commit.
+- Intent is stored at `.git/.codex_intent.json` and cleared after a successful commit.
 - A post-commit hook may auto-push; set `NO_AUTO_PUSH=1` to disable.
 - The helper prints clear STEP lines and ✅/❌ for each phase.
+
+### Using the codex-workflow helper (required for commits)
+- Always stage intentionally: add specific paths or use `git add -p` to stage only what belongs in the commit.
+- Start a task by caching intent with a clear Conventional Commit message:
+  - `node scripts/codex-workflow.mjs -m "feat: <intent>"`
+- If the script exits non‑zero, do NOT create ad‑hoc commits. Fix issues, restage, and rerun the helper without changing the original message (`-m`).
+- Use `--amend` only after everything is green if you need to add small clarifications to the same change set.
+- If warned about a staged tree mismatch, either restage to match the original scope or explicitly pass `--rebind` if the scope legitimately changed.
 
 ## Translator 2.0 Tips
 - Avoid regex word boundaries with non‑ASCII (e.g., `ɪ`); prefer space/token anchors.

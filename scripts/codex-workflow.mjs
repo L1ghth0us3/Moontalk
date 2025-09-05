@@ -1,43 +1,60 @@
 #!/usr/bin/env node
 // Moontalk Codex Workflow Helper
+// -----------------------------------------------------------------------------
+// Purpose
+// - Single entry point for build/lint/test and intent caching → safe, repeatable
+//   workflow for Codex agents and humans. It only commits when all checks pass.
 //
-// What this script does (documented):
+// Usage (examples)
+// - Validate and cache intent:
+//   node scripts/codex-workflow.mjs -m "feat: add X"
+// - Re-run after fixes (do not change message):
+//   node scripts/codex-workflow.mjs
+// - Amend the eventual commit:
+//   node scripts/codex-workflow.mjs --amend
+// - Rebind staged tree to current index (when staged content changed intentionally):
+//   node scripts/codex-workflow.mjs --rebind
+// - Clear intent cache:
+//   node scripts/codex-workflow.mjs --clear
+// - Verbose logging for agents:
+//   node scripts/codex-workflow.mjs --verbose
+//
+// Contract
+// - Never commit unless all checks pass (build → lint → test).
+// - Commit message = cached main line plus optional "Secondary changes:" bullets
+//   from concise failure notes collected across runs.
+//
+// Cache
+// - Path: .git/.codex_intent.json
+// - Fields: { main, secondary[], createdAT, branch, stagedTree, amend }
+// - Agents: on non‑zero exit, fix issues, restage, and rerun without changing
+//   the main message (-m). Use --rebind if staged content legitimately changed.
+//
+// What this script does
 // 1) Prints Git context (branch, last commit, remotes).
-// 2) Validates work via gate steps, in order:
-//    2.1) Build → `npm run build` (type-check + Vite build)
-//    2.2) Lint  → `npm run lint` (ESLint; warnings allowed, errors fail)
-//    2.3) Test  → `npm run test` (Vitest; failures fail)
-//    Each step's start/end and exit code can be printed with --verbose (or CODEX_VERBOSE=1).
+// 2) Validates via gate steps in order (configurable): build → lint → test.
+//    Use --verbose (or CODEX_VERBOSE=1) to show each command + exit code.
 // 3) Shows Git status + diffstat.
-// 4) If a commit intent is cached (or provided via -m/--commit), attempts to commit and (optionally) push.
-//    - By default, will create a normal commit with message = cached intent.
-//    - With --finalize, collapses consecutive WIP commits into the cached intent.
-//    - With --wip and a failing gate, creates a WIP commit.
+// 4) If intent exists and staged matches cache (or --rebind), composes and
+//    creates a commit (uses --amend if intent.amend=true). Then clears cache.
 //
-// Important commit safety:
-// - If there are NO STAGED CHANGES (`git diff --cached` is empty), the script exits early
-//   with a clear message and non-zero exit code (unless --help). This prevents accidental
-//   commits that stage everything automatically without review.
+// Flags / Env
+// - --commit "msg", -m "msg"  Cache commit intent message
+// - --amend                    Mark cached intent to use --amend on commit
+// - --rebind                   Update intent.stagedTree to current index
+// - --clear                    Delete cache and exit
+// - --order a,b,c              Pipeline order (default build,lint,test)
+// - --push                     Push after commit (respects upstream)
+// - --verbose                  Verbose command logging
+// - --dry-run                  Print actions; skip mutating commands
+// - --allow-main               Allow operating on main (otherwise blocked)
+// - --help, -h                 Show help
 //
-// Usage:
-//   node scripts/codex-workflow.mjs [--commit|-m "msg"] [--push] [--allow-main] [--verbose] [--dry-run]
-//   node scripts/codex-workflow.mjs --help
-//
-// Flags / Env:
-//   --verbose or CODEX_VERBOSE=1  → Print each step + command start/end and exit codes
-//   --dry-run  or CODEX_DRY_RUN=1 → Show what would run; skip mutating actions (commit/push/reset)
-//   --commit "msg", -m "msg"      → Cache commit intent message for step 5
-//   --wip                         → If a gate step fails, create a WIP commit with intent
-//   --finalize                    → Squash consecutive WIPs into the cached intent
-//   --push                        → Push after commit/finalize (respects upstream)
-//   --allow-main                  → Allow operating on main (otherwise blocked)
-//   --help, -h                    → Show help
-//
-// Exit codes:
-//   0  success (gate passed; commit may or may not be created)
-//   2  refused to operate on main without --allow-main
-//   3  no staged changes (script stops early)
-//   >0 any step failure (build/lint/test; or commit/push failure)
+// Exit codes
+// - 0  success (gate passed; commit may or may not be created)
+// - 2  refused to operate on main without --allow-main
+// - 3  no staged changes (script stops early)
+// - >0 step/commit/push failure
 
 import { spawnSync } from 'node:child_process';
 import { EOL } from 'node:os';
@@ -76,7 +93,7 @@ function printSection(title){
 const sym = { ok: '✅', fail: '❌', info: 'ℹ️', warn: '⚠️' };
 
 function parseArgs(argv){
-  const args = { commitMsg: null, push: false, allowMain: false, wip: false, finalize: false, verbose: false, dryRun: false, order: null, rebind: false };
+  const args = { commitMsg: null, push: false, allowMain: false, wip: false, finalize: false, verbose: false, dryRun: false, order: null, rebind: false, clear: false, amend: false };
   for (let i=2;i<argv.length;i++){
     const a = argv[i];
     if (a === '--help' || a === '-h'){ args.help = true; }
@@ -88,6 +105,8 @@ function parseArgs(argv){
     else if (a === '--dry-run'){ args.dryRun = true; }
     else if (a === '--order'){ args.order = (argv[++i]||'').split(',').map(s=>s.trim()).filter(Boolean); }
     else if (a === '--rebind'){ args.rebind = true; }
+    else if (a === '--clear'){ args.clear = true; }
+    else if (a === '--amend'){ args.amend = true; }
     else if (a === '--commit'){ args.commitMsg = argv[++i] || ''; }
     else if (a === '-m'){ args.commitMsg = argv[++i] || ''; }
     else { (args._ ||= []).push(a); }
@@ -97,23 +116,34 @@ function parseArgs(argv){
 
 function showHelp(){
   console.log(`Moontalk Codex Workflow\n\n`+
-`Gate steps (runs in order):\n`+
-`  1) npm run build   — Type-check + Vite build\n`+
+`Purpose: single entry for build/lint/test with intent caching. Commits only when all checks pass.\n\n`+
+`Pipeline (default order):\n`+
+`  1) npm run build   — type-check + Vite build\n`+
 `  2) npm run lint    — ESLint (errors fail gate)\n`+
-`  3) npm run test    — Vitest suite (errors fail gate)\n`+
-`  4) git status/diff — Summary + diffstat\n`+
-`  5) (optional) commit + push using cached intent\n\n`+
+`  3) npm run test    — Vitest suite (failures fail gate)\n`+
+`  4) git status/diff — summary + diffstat\n`+
+`  5) commit (if intent cached & staged matches)\n\n`+
+`Usage examples:\n`+
+`  node scripts/codex-workflow.mjs -m \"feat: add X\"\n`+
+`  node scripts/codex-workflow.mjs                (rerun after fixes)\n`+
+`  node scripts/codex-workflow.mjs --amend        (mark intent to amend)\n`+
+`  node scripts/codex-workflow.mjs --rebind       (update stagedTree to current index)\n`+
+`  node scripts/codex-workflow.mjs --clear        (delete intent cache)\n\n`+
 `Flags:\n`+
-`  --commit \"msg\", -m \"msg\"   Cache commit intent message for step 5\n`+
-`  --wip                   If a gate step fails, create a WIP commit with intent\n`+
-`  --finalize              Squash consecutive WIP commits into the cached intent\n`+
-`  --push                  Push after commit/finalize (respects upstream)\n`+
+`  --commit \"msg\", -m \"msg\"   Cache commit intent message\n`+
+`  --amend                 Use --amend when committing the cached intent\n`+
+`  --rebind                Update cache.stagedTree to current index\n`+
+`  --clear                 Delete intent cache and exit\n`+
+`  --order a,b,c           Pipeline order (default build,lint,test)\n`+
+`  --push                  Push after commit (respects upstream)\n`+
+`  --verbose               Verbose command logging\n`+
+`  --dry-run               Log actions; skip mutating commands\n`+
 `  --allow-main            Allow operating on main (otherwise blocked)\n`+
-`  --help, -h             Show this help\n\n`+
-`Notes:\n`+
-`  • Intent caching is stored in .git/.codex_intent.json and cleared on success.\n`+
-`  • A post-commit hook may auto-push unless NO_AUTO_PUSH=1 is set.\n`+
-`  • Use --finalize to collapse consecutive WIPs into one clean commit.\n`);
+`  --help, -h              Show this help\n\n`+
+`Contract:\n`+
+`  • Never commit unless all checks pass.\n`+
+`  • Cache lives at .git/.codex_intent.json (cleared after successful commit).\n`+
+`  • On non-zero exit: fix issues, restage, and rerun without changing -m.\n`);
 }
 
 async function main(){
@@ -142,31 +172,48 @@ async function main(){
     process.exit(2);
   }
 
+  // --clear: remove intent cache and exit cleanly
+  if (args.clear){
+    try { if (existsSync(INTENT_JSON)) { unlinkSync(INTENT_JSON); console.log(`${sym.ok} Cleared intent cache.`); } else { console.log(`${sym.info} No intent cache to clear.`); } }
+    catch (e) { console.error(`${sym.warn} Failed to clear intent cache: ${e && e.message ? e.message : String(e)}`); process.exit(5); }
+    process.exit(0);
+  }
+
   // Intent cache: create/overwrite on message; otherwise reuse if present
+  // NOTE: We require staged changes before creating/modifying the cache (except --clear above)
+
+  // Early guard: require staged changes (prevents accidental blanket add/commit)
+  const staged = run('git',['diff','--name-only','--cached'], {}, 'git diff --cached').out.trim();
+  if (!staged){
+    const hasIntent = existsSync(INTENT_JSON);
+    const guide = hasIntent ? `Stage changes that correspond to this intent or clear with --clear.`
+      : `Provide a commit message to set intent or stage changes and rerun.`;
+    console.error(`\n${sym.fail} No staged changes detected. ${guide}\n`+
+      `Tip: Use 'git status' to review and stage selectively.`);
+    process.exit(3);
+  }
+
+  // With staged changes, now handle cache create/update/reuse
   if (args.commitMsg != null){
     try {
       if (!existsSync('.git')) mkdirSync('.git', { recursive: true });
       const stagedTree = run('git',['write-tree'], {}, 'git write-tree').out.trim();
-      const intent = { main: String(args.commitMsg), secondary: [], createdAT: new Date().toISOString(), branch, stagedTree, amend: false };
+      const intent = { main: String(args.commitMsg), secondary: [], createdAT: new Date().toISOString(), branch, stagedTree, amend: !!args.amend };
       writeFileSync(INTENT_JSON, JSON.stringify(intent, null, 2), 'utf8');
       if (VERBOSE) console.log(`${sym.info} Intent cached at ${INTENT_JSON}`);
     } catch (e) {
       console.error(`${sym.warn} Failed to write intent cache: ${e && e.message ? e.message : String(e)}`);
     }
-  } else {
-    if (!existsSync(INTENT_JSON)){
-      console.log(`${sym.info} Provide a commit message to set intent or stage changes and rerun.`);
-    } else if (VERBOSE) {
-      try { const j = JSON.parse(readFileSync(INTENT_JSON,'utf8')); console.log(`${sym.info} Using cached intent: ${j.main||'(empty)'}`); } catch {}
+  } else if (existsSync(INTENT_JSON)){
+    if (args.amend){
+      try { const j = loadIntentJSON() || {}; j.amend = true; writeFileSync(INTENT_JSON, JSON.stringify(j, null, 2), 'utf8'); if (VERBOSE) console.log(`${sym.info} Set intent.amend=true`); } catch {}
     }
-  }
-
-  // Early guard: require staged changes (prevents accidental blanket add/commit)
-  const staged = run('git',['diff','--name-only','--cached'], {}, 'git diff --cached').out.trim();
-  if (!staged){
-    console.error(`\n${sym.fail} No staged changes detected. Stage your intended changes (git add -p / files) and rerun.\n`+
-      `Tip: Use 'git status' to review and stage selectively.`);
-    process.exit(3);
+    if (args.rebind){
+      try { const j = loadIntentJSON() || {}; j.stagedTree = run('git',['write-tree'], {}, 'git write-tree (rebind)').out.trim(); writeFileSync(INTENT_JSON, JSON.stringify(j, null, 2), 'utf8'); if (VERBOSE) console.log(`${sym.info} Rebound intent.stagedTree to current index.`); } catch {}
+    }
+    if (VERBOSE) { try { const j=loadIntentJSON(); if (j) console.log(`${sym.info} Using cached intent: ${j.main||'(empty)'}`); } catch {} }
+  } else {
+    console.log(`${sym.info} Provide a commit message to set intent or stage changes and rerun.`);
   }
 
   // Pipeline (default build -> lint -> test); configurable via --order build,lint,test
@@ -176,20 +223,20 @@ async function main(){
       printSection('STEP: Build (npm run build)');
       const res = run('npm',['run','build'], {}, 'npm run build');
       process.stdout.write(res.out);
-      if (res.code !== 0){ appendSecondaryNote(summarizeBuild(res.out)); console.error(`\n${sym.fail} Build failed with exit ${res.code}.`); process.exit(res.code || 1); }
+      if (res.code !== 0){ appendSecondaryNote(summarizeBuild(res.out, res.code)); console.error(`\n${sym.fail} Build failed with exit ${res.code}.`); return nextAndExit(2, 'Fix build errors, restage, rerun codex (no new -m)'); }
       console.log(`\n${sym.ok} Build succeeded.`);
     } else if (step === 'lint'){
       printSection('STEP: Lint (npm run lint)');
       const res = run('npm',['run','lint'], {}, 'npm run lint');
       process.stdout.write(res.out);
-      if (res.code !== 0){ appendSecondaryNote(summarizeLint(res.out)); console.error(`\n${sym.fail} Lint failed with exit ${res.code}.`); process.exit(res.code || 1); }
+      if (res.code !== 0){ appendSecondaryNote(summarizeLint(res.out)); console.error(`\n${sym.fail} Lint failed with exit ${res.code}.`); return nextAndExit(2, 'Fix lint errors, restage, rerun codex (no new -m)'); }
       const summaryLine = (res.out.split(/\r?\n/).reverse().find(l=>/problems \(\d+ errors?, \d+ warnings?\)/.test(l))||'').trim(); if (summaryLine) console.log(`\n${sym.info} ESLint summary: ${summaryLine}`);
       console.log(`\n${sym.ok} Lint completed.`);
     } else if (step === 'test'){
       printSection('STEP: Tests (npm run test)');
       const res = run('npm',['run','test'], {}, 'npm run test');
       process.stdout.write(res.out);
-      if (res.code !== 0){ appendSecondaryNote(summarizeTest(res.out)); console.error(`\n${sym.fail} Tests failed with exit ${res.code}.`); process.exit(res.code || 1); }
+      if (res.code !== 0){ appendSecondaryNote(summarizeTest(res.out)); console.error(`\n${sym.fail} Tests failed with exit ${res.code}.`); return nextAndExit(2, 'Fix tests, restage, rerun codex (no new -m)'); }
       console.log(`\n${sym.ok} Tests passed.`);
     }
   }
@@ -208,7 +255,7 @@ async function main(){
   const intentObj = loadIntentJSON();
   const intent = intentObj?.main || '';
   if (args.finalize){
-    if (!intent){ console.error('No cached intent found; cannot finalize.'); process.exit(4); }
+    if (!intent){ console.error('No cached intent found; cannot finalize.'); return nextAndExit(4, 'Set intent (-m "...") then rerun with --finalize'); }
     printSection('STEP 5: Finalize');
     finalizeWip(intent, args.push, branch);
     try { unlinkSync(INTENT_JSON); } catch {}
@@ -216,17 +263,14 @@ async function main(){
     printSection('STEP 5: Commit');
     // Respect staged-only policy: do not auto-add; commit only what's staged
     const stagedNow = run('git',['diff','--name-only','--cached'], {}, 'git diff --cached (pre-commit)').out.trim();
-    if (!stagedNow){
-      console.error(`${sym.fail} No staged changes to commit. Stage files and rerun.`);
-      process.exit(3);
-    }
+    if (!stagedNow){ console.error(`${sym.fail} No staged changes to commit. Stage files and rerun.`); return nextAndExit(1, 'Stage files to commit for this intent'); }
     // Guard: staged tree mismatch unless --rebind
     const stagedTreeNow = run('git',['write-tree'], {}, 'git write-tree (pre-commit)').out.trim();
     if (intentObj && intentObj.stagedTree && intentObj.stagedTree !== stagedTreeNow){
       if (!args.rebind){
         console.error(`${sym.fail} Staged content changed since intent was created. Aborting commit.\n`+
           `Use --rebind to update the intent's stagedTree to the current index and proceed.`);
-        process.exit(6);
+        return nextAndExit(3, 'Review staged diff; rerun with --rebind to proceed');
       } else {
         try {
           const j = loadIntentJSON() || { main:intent, secondary:[], createdAT:new Date().toISOString(), branch, stagedTree:'', amend:false };
@@ -240,7 +284,7 @@ async function main(){
     const composed = composeCommitMessage(intentObj || { main:intent, secondary:[] });
     const commit = run('git', ['commit', '-m', composed].concat(intentObj?.amend ? ['--amend'] : []), {}, 'git commit');
     process.stdout.write(commit.out);
-    if (commit.code !== 0){ console.error('Commit failed.'); process.exit(commit.code); }
+    if (commit.code !== 0){ console.error('Commit failed.'); return nextAndExit(commit.code||1, 'Resolve git error and rerun'); }
     console.log(`${sym.ok} Commit created.`);
     try { unlinkSync(INTENT_JSON); } catch {}
     if (args.push){
@@ -251,15 +295,12 @@ async function main(){
       else { push = run('git',['push','-u','origin', branch], {}, 'git push -u'); }
       process.stdout.write(push.out);
       console.log(`${sym.ok} Push completed.`);
-    } else {
-      console.log(`\n${sym.info} Note: Auto-push hook may push this commit. To force push here, re-run with --push.`);
-    }
+    } else { console.log(`\n${sym.info} Note: Auto-push hook may push this commit. To force push here, re-run with --push.`); }
+    return nextAndExit(0, 'Gate passed; commit created. Push or open a PR.');
   } else {
     console.log(`${sym.info} No intent cached. Skipping commit.`);
+    return nextAndExit(0, 'Gate passed; stage changes and run with -m to commit, or --clear');
   }
-
-  printSection('Done');
-  console.log(`${sym.ok} Build+Lint gate passed. Review status above.`);
 }
 
 function loadIntentJSON(){
@@ -315,29 +356,48 @@ function finalizeWip(finalMessage, doPush, branch){
 
 main().catch(err=>{ console.error(err); process.exit(1); });
 
+function nextAndExit(code, nextMsg){
+  const ok = code === 0;
+  const tag = ok ? sym.ok : sym.fail;
+  console.log(`\n${tag} NEXT: ${nextMsg}`);
+  process.exit(code);
+}
+
 // ===== Failure note helpers =====
 function appendSecondaryNote(note){
   try {
     const j = loadIntentJSON();
     if (!j) return; // no cache → nothing to append
     if (!Array.isArray(j.secondary)) j.secondary = [];
-    j.secondary.push(String(note));
+    const msg = String(note);
+    if (!j.secondary.includes(msg)) j.secondary.push(msg);
     writeFileSync('.git/.codex_intent.json', JSON.stringify(j, null, 2), 'utf8');
     if (VERBOSE) console.log(`${sym.info} Appended note to intent: ${note}`);
   } catch {}
 }
-function summarizeBuild(out){
+function summarizeBuild(out, exitCode){
   const codes = Array.from(new Set((out.match(/TS\d{3,5}/g)||[]))).slice(0,3);
-  return codes.length ? `build: resolve type errors (${codes.join(', ')})` : 'build: fix build errors';
+  const parts = [];
+  if (codes.length) parts.push(codes.join(', '));
+  if (typeof exitCode === 'number') parts.push(`exit ${exitCode}`);
+  return parts.length ? `build: errors (${parts.join('; ')})` : 'build: errors';
 }
 function summarizeLint(out){
-  const line = (out.split(/\r?\n/).find(l=>/\berror\b/.test(l) && /\s[a-z0-9-]+$/.test(l))||'').trim();
-  const m = line.match(/([a-z0-9-]+)$/);
+  const summary = out.match(/problems\s*\((\d+)\s*errors?,\s*(\d+)\s*warnings?\)/i);
+  let err = summary ? Number(summary[1]) : null;
+  let warn = summary ? Number(summary[2]) : null;
+  if (err==null){ err = (out.match(/\berror\b/gi)||[]).length; if (err===0) err = null; }
+  if (warn==null){ warn = (out.match(/\bwarning\b/gi)||[]).length; if (warn===0) warn = null; }
+  const firstRuleLine = (out.split(/\r?\n/).find(l=>/\berror\b/.test(l) && /\s[a-z0-9-]+$/.test(l))||'').trim();
+  const m = firstRuleLine.match(/([a-z0-9-]+)$/);
   const rule = m ? m[1] : null;
-  return rule ? `lint: address ESLint violations (${rule})` : 'lint: address ESLint violations';
+  const bits = [];
+  if (err!=null || warn!=null){ bits.push(`${err??0}e/${warn??0}w`); }
+  if (rule) bits.push(rule);
+  return bits.length ? `lint: ${bits.join(' ')}` : 'lint: errors';
 }
 function summarizeTest(out){
   const m = out.match(/Tests\s+(\d+)\s+failed/i);
   const n = m ? Number(m[1]) : null;
-  return n ? `test: fix failing tests (${n} failed)` : 'test: fix failing tests';
+  return n ? `test: ${n} failed` : 'test: failures';
 }
