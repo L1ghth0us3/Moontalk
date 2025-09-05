@@ -105,6 +105,7 @@ const EXIT = {
   E_CHECK_FAIL: 11,
   E_TREE_MISMATCH: 12,
   E_PUSH_REJECTED: 13,
+  E_DOCS_REQUIRED: 14,
   E_MAIN_PROTECTED: 2,
   E_MISC: 1,
 };
@@ -159,6 +160,7 @@ function showHelp(){
 `  11  E_CHECK_FAIL       — Fix issues, stage fixes, then rerun (no new -m).\n`+
 `  12  E_TREE_MISMATCH    — If scope unchanged, rerun with --rebind; otherwise clear intent or restage.\n`+
 `  13  E_PUSH_REJECTED    — Fetch, rebase onto origin/<branch>, resolve, rerun checks, then --push again.\n`+
+`  14  E_DOCS_REQUIRED    — Update docs (CHANGELOG/AGENTS/README), stage, then rerun.\n`
 `  2   E_MAIN_PROTECTED   — Switch to a *-dev branch or pass --allow-main.\n\n`+
 `Notes hygiene:\n`+
 `  Commit footer keeps at most one bullet per category (build, lint, test, meta),\n`+
@@ -327,6 +329,17 @@ async function main(){
         } catch {}
       }
     }
+    // Docs enforcement: require docs updates when warranted (before composing message)
+    const stagedListNow = getStagedPaths();
+    const docsCheck = checkDocsRequirement(intent, stagedListNow);
+    if (docsCheck.requires && !docsCheck.hasDocs){
+      if (docsCheck.suggested && docsCheck.suggested.length){
+        console.log('Consider updating docs files: '+docsCheck.suggested.join(', '));
+      }
+      return exitOneLine(EXIT.E_DOCS_REQUIRED, 'Docs required: update docs (CHANGELOG/AGENTS/README), stage changes, then rerun.');
+    }
+    if (docsCheck.hasDocs){ appendSecondaryNote('docs: update documentation'); }
+
     // Compose message: main + optional Secondary changes
     const composed = composeCommitMessage(intentObj || { main:intent, secondary:[] });
     const commitArgs = ['commit','-m', composed].concat(args.amend ? ['--amend'] : []);
@@ -357,7 +370,7 @@ function composeCommitMessage(j){
   const lines = [String(j.main||'').trim()];
   const notes = Array.isArray(j.secondary) ? j.secondary.filter(s=>String(s).trim()) : [];
   // Coalesce to at most one per category with priority: build -> lint -> test -> meta
-  const order = ['build','lint','test','meta'];
+  const order = ['build','lint','test','docs','meta'];
   const pick = new Map();
   for (let i=notes.length-1;i>=0;i--){
     const n = String(notes[i]);
@@ -411,6 +424,30 @@ function pushCurrentBranch(branch){
   return { code: push.code };
 }
 
+function checkDocsRequirement(intent, stagedPaths){
+  const docsPaths = stagedPaths.filter(isDocPath);
+  const nonDocs = stagedPaths.filter(p=>!isDocPath(p));
+  const { type, scope } = parseConventional(intent||'');
+  let requires = false;
+  if (nonDocs.length === 0) requires = false;
+  else if (stagedPaths.includes('scripts/codex-workflow.mjs')) requires = true;
+  else if (type === 'feat' || type === 'refactor' || type === 'perf' || type === 'build') requires = true;
+  else if (scope && /(codex|workflow)/i.test(scope)) requires = true;
+  const suggested = suggestDocsFiles(stagedPaths);
+  return { requires, hasDocs: docsPaths.length>0, suggested };
+}
+function isDocPath(p){ return p === 'README.md' || p === 'AGENTS.md' || p === 'CHANGELOG.md' || (/^docs\/.+\.md$/i).test(p); }
+function parseConventional(s){
+  const m = String(s).match(/^(\w+)(?:\(([^)]+)\))?:/);
+  return { type: m ? m[1] : '', scope: m ? m[2] : '' };
+}
+function suggestDocsFiles(staged){
+  const list = new Set();
+  if (staged.includes('scripts/codex-workflow.mjs')){ list.add('AGENTS.md'); list.add('README.md'); list.add('CHANGELOG.md'); }
+  else { list.add('CHANGELOG.md'); }
+  return Array.from(list);
+}
+
 // ===== Failure note helpers =====
 function appendSecondaryNote(note){
   try {
@@ -451,6 +488,7 @@ function categorizeNote(note){
   if (s.startsWith('build:')) return 'build';
   if (s.startsWith('lint:')) return 'lint';
   if (s.startsWith('test:')) return 'test';
+  if (s.startsWith('docs:')) return 'docs';
   if (s.startsWith('meta:')) return 'meta';
   return 'meta';
 }

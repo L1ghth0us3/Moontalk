@@ -24,6 +24,7 @@ All notable changes to this project will be documented in this file.
    - Commit safety: staged‑only commits; single‑line guidance for every failure; smarter staged‑tree guard (auto‑rebind when safe: same branch, intent < 4h, staged paths subset/superset; otherwise show new/removed paths and require `--rebind`).
    - Push: decoupled from commit; independent `--push` (sets upstream if missing). On non‑fast‑forward, exits E_PUSH_REJECTED with fetch/rebase guidance.
    - Amend: guarded — only honored on a green commit; ignored during failing runs with a gentle notice.
+   - Docs enforcement: requires docs updates before committing when warranted (e.g., workflow or feature changes); adds a `docs:` note in the commit footer when docs are updated.
    - Message composition: tidy “Secondary changes” footer — at most one bullet per category (build, lint, test, meta), ordered and deduped; omitted entirely if empty.
    - Ergonomics: `--verbose`, `--dry-run`, `--clear`, `--rebind`; expanded `--help` (copy‑paste playbook, exit codes, intent cache) and a 20‑second header briefing.
    - Cleanups: removed legacy `--wip`/`--finalize` flow; docs updated across README and AGENTS.md; merged onboarding into AGENTS.md (Onboarding & Guidance section).
