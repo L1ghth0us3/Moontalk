@@ -10,6 +10,8 @@ import { useLocalStorageState, LS_KEYS } from "../lib/storage";
 export type Result = { surface: string; variants: string[]; analysis: Record<string, unknown>; warnings: string[] };
 
 export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }: { roots: Root[]; nouns: Noun[]; onCreateNoun?: (n: { word: string; gloss?: string; synonyms?: string[] })=>void; onCreateRoot?: (r: { c1: string; c2: string; c3: string; gloss?: string; synonyms?: string[] })=>void; }){
+  // Touch optional callback to satisfy noUnusedParameters
+  void onCreateRoot;
   // Local lexicon (editable via embedded editors)
   const [rootsLocal, setRootsLocal] = useState<Root[]>(roots);
   const [nounsLocal, setNounsLocal] = useState<Noun[]>(nouns);
@@ -56,21 +58,17 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
     if (!val) { setResult(null); lastComputed.current = ""; return; }
     liveTimer.current = window.setTimeout(() => {
       if (lastComputed.current !== val) {
-        onTranslate();
+        const r = translateLib(val, rootsLocal, nounsLocal, {
+          particles: t2Settings?.particles,
+          coordinators: t2Settings?.coordinators,
+          flags: { enableCoordination: true },
+        });
+        setResult({ surface: r.surface, variants: r.variants, analysis: r.analysis, warnings: r.warnings });
         lastComputed.current = val;
       }
     }, 120);
     return () => { if (liveTimer.current) { clearTimeout(liveTimer.current); liveTimer.current = null; } };
-  }, [englishInput]);
-
-  function onTranslate(){
-    const r = translateLib(englishInput, rootsLocal, nounsLocal, {
-      particles: t2Settings?.particles,
-      coordinators: t2Settings?.coordinators,
-      flags: { enableCoordination: true },
-    });
-    setResult({ surface: r.surface, variants: r.variants, analysis: r.analysis, warnings: r.warnings });
-  }
+  }, [englishInput, rootsLocal, nounsLocal, t2Settings]);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -145,6 +143,7 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
               onCreateNoun={(n)=>{
                 const id = Math.random().toString(36).slice(2,10);
                 setNounsLocal(prev => [{ id, word: n.word, gloss: n.gloss || "", synonyms: n.synonyms || [] }, ...prev]);
+                try { onCreateNoun?.(n); } catch { /* ignore */ }
               }}
             />
           </div>
@@ -176,6 +175,7 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
                     setNounsLocal(next);
                     try { localStorage.setItem(LS_KEYS.nouns, JSON.stringify(next)); } catch { /* ignore */ }
                     setNounsKey(k=>k+1);
+                    try { onCreateNoun?.(n); } catch { /* ignore */ }
                   }} />
                 </>
               );
@@ -216,7 +216,20 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
           </div>
         </div>
         <div className="text-xl font-semibold mb-3 min-h-10">
-          {result?.surface || "(nothing yet)"}
+          {(() => {
+            const surface = result?.surface || "";
+            if (!surface) return "(nothing yet)";
+            // Cosmetic: wrap pronouns in parentheses when at start or after a joiner
+            const joiners = new Set<string>(Object.values((t2Settings?.coordinators ?? { AND:'ʋa', OR:'ra', NOR:'ra', BUT:'ma' }) as Record<'AND'|'OR'|'NOR'|'BUT', string>));
+            const pron = new Set(["ɪ","tɪ","su","tu","se","te"]);
+            const toks = surface.split(/\s+/);
+            for (let i=0;i<toks.length;i++){
+              if (pron.has(toks[i]) && (i===0 || joiners.has(toks[i-1]))){
+                toks[i] = `(${toks[i]})`;
+              }
+            }
+            return toks.join(' ');
+          })()}
         </div>
 
         {/* Variants */}
@@ -235,18 +248,24 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
 
         {/* Analysis (from library) */}
         {(() => {
-          const a = (result?.analysis || {}) as any;
-          const frm = a?.frame as { subject?: string; tense?: string; neg?: boolean; prog?: boolean; hab?: boolean; question?: boolean; verbRootId?: string|null; objects?: string[] } | undefined;
+          const analysis = (result?.analysis || {}) as {
+            frame?: { subject?: string; tense?: string; neg?: boolean; prog?: boolean; hab?: boolean; question?: boolean; verbRootId?: string|null; objects?: string[] };
+            intake?: { tokensFlat?: string[] };
+            particlePairs?: Array<{ part:string; nounId:string; noun?:string; en:string }>;
+            clause?: string;
+            resolutionLog?: string[];
+          } | undefined;
+          const frm = analysis?.frame;
           if (!frm) return null;
-          const tokensFlat: string[] = (a?.intake?.tokensFlat || []) as string[];
-          const pairs = (a?.particlePairs || []) as Array<{ part:string; nounId:string; noun?:string; en:string }>;
-          const resLog: string[] = Array.isArray(a?.resolutionLog) ? a.resolutionLog as string[] : [];
+          const tokensFlat: string[] = analysis?.intake?.tokensFlat || [];
+          const pairs = analysis?.particlePairs || [];
+          const resLog: string[] = Array.isArray(analysis?.resolutionLog) ? (analysis?.resolutionLog as string[]) : [];
           const objects = (frm.objects || []).map(id => nounsLocal.find(n=>n.id===id)?.word || id).join(', ') || '—';
           const flags = [frm.prog?'Prog':null, frm.hab?'Hab':null, frm.neg?'Neg':null].filter(Boolean).join(', ') || '—';
           return (
             <div className="rounded-lg border p-2 analysis-panel">
               <div className="grid grid-cols-[10rem_1fr] gap-x-4 gap-y-1 text-sm">
-                <div className="opacity-70">Clause</div><div>{a?.clause || '—'}</div>
+                <div className="opacity-70">Clause</div><div>{analysis?.clause || '—'}</div>
                 <div className="opacity-70">Subject</div><div>{frm.subject || '—'}</div>
                 <div className="opacity-70">Tense</div><div>{frm.tense || '—'}</div>
                 <div className="opacity-70">Flags</div><div>{flags}</div>
@@ -372,4 +391,3 @@ export default function Translator2({ roots, nouns, onCreateNoun, onCreateRoot }
     </div>
   );
 }
-
